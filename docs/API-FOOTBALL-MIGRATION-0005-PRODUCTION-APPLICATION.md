@@ -40,7 +40,7 @@ Mutation is admitted only after the existing live-storage preflight reports `REA
 - historical direct `teamsheet-data-platform` Cron count exactly zero;
 - conservative account-wide D1 daily write admission.
 
-The daily write guard performs one fixed Cloudflare GraphQL analytics read for current-UTC-day D1 `rowsWritten` across the account and refuses mutation above 50,000 rows written. The Free-plan daily write limit is 100,000, so this reserves 50,000 rows of headroom before the migration is even reachable. Analytics is defence in depth, not a claim of zero-latency billing telemetry: any future attended dispatch must also recheck the Cloudflare dashboard immediately before approval. If the existing read credential cannot read the D1 analytics dataset, preflight fails closed; this repository change does not widen any credential.
+The daily write guard performs one fixed Cloudflare GraphQL analytics read for current-UTC-day D1 `rowsWritten` across the account and refuses mutation above 50,000 rows written. The Free-plan daily write limit is 100,000, so this reserves 50,000 rows of headroom before the migration is even reachable. Cloudflare's GraphQL Analytics API requires Account Analytics Read, so the workflow deliberately uses a separate future secret `DATA_STEWARD_CLOUDFLARE_ANALYTICS_TOKEN` rather than widening or reusing the existing Workers/D1 read token. This PR does **not** provision that token; absence fails closed and provisioning remains part of a later owner-approved execution prerequisite. Analytics is defence in depth, not a claim of zero-latency billing telemetry: any future attended dispatch must also recheck the Cloudflare dashboard immediately before approval.
 
 ## Execution and recovery
 
