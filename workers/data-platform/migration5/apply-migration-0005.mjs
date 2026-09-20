@@ -8,7 +8,7 @@ import {
   MIGRATION_0005_NOT_APPLIED,MIGRATION_0005_PATH,MIGRATION_0005_REQUIRED_OBJECTS,
   MIGRATION_0005_STATE_EXACT_POST,MIGRATION_0005_STATE_EXACT_PRE,
   assertPinnedMigration0005Statements,assertSameOfficialFplAuthority,classifyMigration0005State,
-  officialFplAuthoritySnapshot,splitMigration0005Sql,validateMigration0005Post,validateMigration0005Pre
+  officialFplAuthoritySnapshot,splitMigration0005Sql,validateMigration0005Post,validateMigration0005Pre,validateMigration0005SettledPost
 } from './migration-0005-contract.mjs';
 
 const API_BASE='https://api.cloudflare.com/client/v4';
@@ -26,10 +26,8 @@ const gitBlobSha=content=>createHash('sha1').update(`blob ${Buffer.byteLength(co
 const d1Url=(accountId,databaseId,suffix)=>`${API_BASE}/accounts/${encodeURIComponent(accountId)}/d1/database/${encodeURIComponent(databaseId)}${suffix}`;
 
 const LEDGER_SQL='SELECT version,name,applied_at FROM schema_migrations ORDER BY version';
-const OBJECT_NAMES=Object.freeze([...new Set([
-  ...MIGRATION_0005_BASE_OBJECTS.map(row=>row.name),...MIGRATION_0005_REQUIRED_OBJECTS.map(row=>row.name),...MIGRATION_0005_FORBIDDEN_LATER_OBJECTS
-])]);
-const OBJECT_SQL=`SELECT type,name,tbl_name FROM sqlite_master WHERE name IN (${OBJECT_NAMES.map(name=>`'${name}'`).join(',')}) ORDER BY type,name`;
+const BASE_OBJECT_NAMES=Object.freeze([...new Set(MIGRATION_0005_BASE_OBJECTS.map(row=>row.name))]);
+const OBJECT_SQL=`SELECT type,name,tbl_name FROM sqlite_master WHERE name LIKE 'api_football_%' OR name IN (${BASE_OBJECT_NAMES.map(name=>`'${name}'`).join(',')}) ORDER BY type,name`;
 const FK_SQL='PRAGMA foreign_key_check';
 const RIGHTS_COLUMNS_SQL='PRAGMA table_info(data_source_revisions)';
 const PARTICIPATION_COLUMNS_SQL='PRAGMA table_info(provider_participation_revisions)';
@@ -200,6 +198,10 @@ export async function applyMigration0005(options){
   catch(error){error.migration0005Phase='pre_reconciliation';error.mutationIssued=false;throw error;}
   if(before.state===MIGRATION_0005_STATE_EXACT_POST){
     const applied=await client.reconcile({post:true,nowIso:nowIso()});
+    validateMigration0005SettledPost({
+      state:applied.state,counts:applied.counts,foreignKeys:applied.foreignKeys,rightsColumns:applied.rightsColumns,
+      sourceRows:applied.sourceRows,revisionRows:applied.revisionRows,runtimeRows:applied.runtimeRows,emptyCounts:applied.emptyCounts
+    });
     return reportBase({classification:MIGRATION_0005_ALREADY_APPLIED,ok:false,mutationIssued:false,before:applied,after:applied,accounting:client.accounting});
   }
   validateMigration0005Pre({
