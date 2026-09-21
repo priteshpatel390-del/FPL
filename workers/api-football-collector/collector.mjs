@@ -2,6 +2,8 @@ import {apiFootballRequestInit,buildPinnedApiFootballUrl,sendApiFootballRequest}
 import {completeAttempt,readOfficialFplAuthority,reserveAttempt} from './d1-persistence.mjs';
 import {classifyCompletion,readBoundedJson,validateAuthority,validateCollectorRequest,validatePlannerConfiguration,validateRuntimeActivation,validateRuntimeConfiguration} from './runtime-contracts.mjs';
 import {planScheduledCollection} from './planner-orchestrator.mjs';
+import {validateProviderPayload} from './semantic-validation.mjs';
+import {runOneShotDiscoveryGeneration} from './activation-orchestrator.mjs';
 
 const safe=result=>Object.freeze(result);
 export function sanitizedEvent(event={}){
@@ -9,7 +11,7 @@ export function sanitizedEvent(event={}){
   return Object.freeze(Object.fromEntries(allowed.filter(key=>event[key]!==undefined).map(key=>[key,event[key]])));
 }
 
-export async function executeReservedRequest({env,request,fetchImpl=globalThis.fetch,now=()=>new Date().toISOString(),maxResponseBytes=null,timeoutSignal}={}){
+export async function executeReservedRequest({env,request,fetchImpl=globalThis.fetch,now=()=>new Date().toISOString(),maxResponseBytes=null,timeoutSignal,semanticContext={},persistValidated}={}){
   const contract=validateCollectorRequest(request);if(!contract.ok)return contract;
   const pinned=buildPinnedApiFootballUrl(request?.endpoint,request?.search);
   if(!pinned.ok)return pinned;
@@ -36,12 +38,17 @@ export async function executeReservedRequest({env,request,fetchImpl=globalThis.f
   if(sent.response.status===429){await completeAttempt(env.TEAMSHEET_DATA_DB,{attemptId:request.attemptId,completion,now:now()});return safe({ok:false,reason:'quota_exhausted'});}
   if(!sent.response.ok){await completeAttempt(env.TEAMSHEET_DATA_DB,{attemptId:request.attemptId,completion,now:now()});return safe({ok:false,reason:'provider_unavailable'});}
   let decoded;try{decoded=await readBoundedJson(sent.response,{maxBytes:maxResponseBytes});}catch{decoded=safe({ok:false,reason:'provider_schema_invalid'});}
-  if(!decoded.ok)completion=safe({...completion,outcome:'SCHEMA_FAILURE'});
+  if(!decoded.ok){completion=safe({...completion,outcome:'SCHEMA_FAILURE'});await completeAttempt(env.TEAMSHEET_DATA_DB,{attemptId:request.attemptId,completion,now:now()});return decoded;}
+  const semantic=validateProviderPayload(decoded.payload,request,{...semanticContext,fetchedAt:now()});
+  if(!semantic.ok){completion=safe({...completion,outcome:'SCHEMA_FAILURE'});await completeAttempt(env.TEAMSHEET_DATA_DB,{attemptId:request.attemptId,completion,now:now()});return semantic;}
+  if(typeof persistValidated!=='function')return safe({ok:false,reason:'validated_persistence_unavailable',completion});
+  let persisted;try{persisted=await persistValidated({request,semantic,completion,now:now()});}catch{return safe({ok:false,reason:'persistence_uncertain',completion});}
+  if(!persisted?.ok)return safe({ok:false,reason:'persistence_uncertain',completion});
   await completeAttempt(env.TEAMSHEET_DATA_DB,{attemptId:request.attemptId,completion,now:now()});
-  return decoded.ok?safe({ok:true,payload:decoded.payload}):decoded;
+  return safe({ok:true,fixtures:semantic.fixtures,completion,persistence:persisted.result||'persisted'});
 }
 
-export async function scheduled(controller,env){
+export async function scheduled(controller,env,executionDependencies=null){
   const activation=validateRuntimeActivation(env);
   if(!activation.ok){console.log(JSON.stringify(sanitizedEvent({operationClass:'SCHEDULER',logicalState:'BLOCKED',failureReason:activation.reason,requestCount:0})));return activation;}
   const configuration=validatePlannerConfiguration(env);
@@ -52,6 +59,10 @@ export async function scheduled(controller,env){
   catch{plan=safe({ok:false,reason:'planner_storage_unavailable'});}
   if(!plan.ok){console.log(JSON.stringify(sanitizedEvent({operationClass:'SCHEDULER',logicalState:'BLOCKED',failureReason:plan.reason,requestCount:0})));return plan;}
   console.log(JSON.stringify(sanitizedEvent({operationClass:'SCHEDULER',logicalState:'PLANNED',requestCount:plan.requestCount,mappingCoverageCount:plan.mappingCoverageCount})));
+  if(activation.mode==='attended_one_shot_discovery'){
+    if(!executionDependencies?.repository||typeof executionDependencies.execute!=='function')return safe({ok:false,reason:'execution_composition_unavailable'});
+    return runOneShotDiscoveryGeneration({requests:plan.requests.filter(request=>request.operationClass==='DISCOVERY'),repository:executionDependencies.repository,execute:executionDependencies.execute,now:new Date(scheduledMs).toISOString()});
+  }
   return safe({ok:false,reason:'provider_execution_not_approved',plannerReady:true,requestCount:plan.requestCount,blockedOperationCount:plan.blockedOperations.length,deferredOperationCount:plan.deferredOperations.length});
 }
 

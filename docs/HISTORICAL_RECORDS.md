@@ -157,6 +157,7 @@ Separately tracked live-season evidence gates, D1 implementation, Understat repa
 
 ## Later feature, correction and follow-up records
 
+- [API-Football Collector Activation Foundation](API-FOOTBALL-COLLECTOR-ACTIVATION-FOUNDATION.md).
 - [EIA-1 Expected-Minutes Evidence Activation](EXTERNAL-INTELLIGENCE-EIA1-XMINS-EVIDENCE.md).
 - [EIA-2I1 API-Football Private-Use Shadow Workload Foundation](EIA-2I1-API-FOOTBALL-SHADOW-FOUNDATION.md).
 - [EIA-2I3 Penalty/Duration Contract Remediation and Live Closeout](EIA-2I3-PENALTY-DURATION-REMEDIATION.md).

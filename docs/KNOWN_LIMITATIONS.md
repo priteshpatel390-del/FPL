@@ -1,3 +1,12 @@
+## Dormant collector activation foundation limitations
+
+- No live activation preflight has run; repository classification proves no Cloudflare state.
+- `ATTENDED_ONE_SHOT_DISCOVERY` is not selected by shipped configuration.
+- Attempt 2 and automatic recovery are deliberately unimplemented. Expired, timed-out, or transport-unknown attempt 1 requires deterministic reconciliation.
+- D1 chunking and concurrency remain repository-designed, not live accepted.
+- 2,500-fixture ceiling is evidence-based safety capacity, not proof future provider volume will fit.
+- API-Football remains shadow-only with no proven predictive benefit or model/product/UI path.
+
 ## Current API-Football limitations after Migration 0006 closeout
 
 Migration 0006 schema and the private qualified 20/20 mapping are no longer open limitations: persistence run `35607354636` durably established 20 entity mappings / 1 qualification / 20 members / 1 head, and independent read-only reconciliation `35609344995` accepted `COMPLETE_QUALIFIED_MAPPING_VISIBLE`. The initial reconciliation false negative `35607762989` was caused by repository comparison of two intentionally distinct qualification hashes and was corrected by PR #276; it did not require a production rewrite.

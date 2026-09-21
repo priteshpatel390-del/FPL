@@ -1,3 +1,7 @@
+## Dormant API-Football execution boundary
+
+Future execution state remains unreachable from shipped Wrangler configuration. Blocked mode reads neither D1 nor credential; planner-only mode may read D1 but cannot read API key or execute transport. Provider responses are bounded, semantically admitted, normalized, and discarded; raw bodies, credential material, URLs, private mapping pairs, account IDs, and database IDs are neither persisted nor logged. No public Worker route or generic proxy exists.
+
 ## Migration 0006 final production security closeout
 
 Migration 0006 private mapping persistence is closed. Owner-attended run `35607354636` on exact SHA `051a68841fd04dde8f5f239dadbfb285231646c3` returned `DEFINITELY_APPLIED_SUCCESSFULLY` after HTTP 200 and 43/43 successful D1 statements, with durable 20 entity mappings / 1 qualification / 20 members / 1 head and 0 API-Football requests. Private mapping values remained confined to the protected persistence step and parameter bindings; the retained evidence contains no crosswalk rows, mapping pairs, raw SQL parameters/bodies, credentials or provider payloads.
