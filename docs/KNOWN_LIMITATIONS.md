@@ -1,3 +1,10 @@
+## Collector activation read-only preflight limitations
+
+- Repository tests prove the new bounded read-only contract, not current Cloudflare state.
+- No activation-specific live preflight has yet run.
+- A future PASS may establish only repository/infrastructure-staging readiness; it does not validate inactive Version upload, deployment, production binding, secret provisioning, runtime enablement, Cron or provider egress.
+- The live observation depends on the existing `data-steward-readonly` environment remaining correctly scoped and available; repository code cannot prove its current credential contents before dispatch.
+
 ## Dormant collector activation foundation limitations
 
 - No live activation preflight has run; repository classification proves no Cloudflare state.
