@@ -10,7 +10,8 @@ const plan=apiFootballDiscoveryPlan(API_FOOTBALL_FPL_SEASON);
 
 function envelope(payload,request){
   if(!payload||typeof payload!=='object'||Array.isArray(payload)||payload.get!=='fixtures'||!payload.parameters||typeof payload.parameters!=='object'||Array.isArray(payload.parameters))return fail('provider_schema_invalid');
-  if(!Array.isArray(payload.errors)&&(!payload.errors||typeof payload.errors!=='object'||Array.isArray(payload.errors)))return fail('provider_schema_invalid');
+  const errorsEmpty=Array.isArray(payload.errors)?payload.errors.length===0:payload.errors&&typeof payload.errors==='object'&&!Array.isArray(payload.errors)&&Object.keys(payload.errors).length===0;
+  if(!errorsEmpty)return fail('provider_schema_invalid');
   if(payload.paging?.current!==1||payload.paging?.total!==1)return fail('pagination_unsupported');
   if(!Array.isArray(payload.response)||payload.results!==payload.response.length)return fail('provider_schema_invalid');
   const expected=Object.fromEntries(Object.entries(request.search).map(([key,value])=>[key,String(value)]));
