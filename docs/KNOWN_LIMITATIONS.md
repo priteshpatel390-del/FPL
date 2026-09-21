@@ -1,3 +1,9 @@
+## Current API-Football staging limitations
+
+The collector is **not deployed to traffic**. Cloudflare contains an inert Worker object and one inactive Version only; live run `35645387203` proved Deployment count 0, workers.dev/Preview URLs disabled, no route/domain, no Cron, no secret binding and zero API-Football requests. The Version is production-D1-bound configuration, but it cannot execute through the approved staging state.
+
+The one-shot `Workers Scripts Write` upload credential was owner-created and used through the protected GitHub environment. Repository evidence does not prove that credential has since been revoked or removed; credential cleanup is a separate live security action. The repository must not claim revocation until independently evidenced.
+
 ## Collector inactive-version staging design limitations
 
 - The live preflight now proves repository/infrastructure-staging readiness, not that any Worker upload path has been implemented or exercised.
