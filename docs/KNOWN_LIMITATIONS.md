@@ -1,3 +1,7 @@
+## Inactive collector staging limitations
+
+The proposed first-shell create depends on Cloudflare's Beta Worker-object API because it is the available control-plane surface that can prove both workers.dev and Version Preview URLs disabled before a first Version exists. The required Workers Scripts Write credential is broader than the workflow's two allowed mutations, so safety also depends on the executable's exact request allowlist and dedicated protected environment. An inactive Version with a production D1 binding is still meaningful production connectivity even though it has no Deployment, Cron, secret or traffic. Repository implementation alone does not prove current live Cloudflare state and authorizes no dispatch.
+
 ## Collector inactive-version staging design limitations
 
 - The live preflight now proves repository/infrastructure-staging readiness, not that any Worker upload path has been implemented or exercised.
