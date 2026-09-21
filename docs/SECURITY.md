@@ -1,3 +1,7 @@
+## Proposed inactive collector staging security boundary
+
+The next collector infrastructure stage remains unimplemented. Its design requires a dedicated protected environment containing only a collector Worker-upload token plus account identity/fingerprint; it must contain no `API_FOOTBALL_API_KEY` and no private crosswalk. A separate `data-steward-readonly` job must freshly re-establish `READY_FOR_REPOSITORY_INFRASTRUCTURE_STAGING` before any mutation-capable environment is eligible. The future mutation helper may allow only one inert Worker-shell creation and one inactive Version upload. It must forbid Deployment, Schedules mutation, secret mutation, route/domain mutation, D1 mutation, Access mutation and provider egress. The first Version must not exist until workers.dev and Preview URLs are proven disabled.
+
 ## Activation mapping-provenance remediation security boundary
 
 The provenance correction does not widen live permissions or retained evidence. The D1 batch remains ten fixed read-only statements under `data-steward-readonly`; the mapping aggregate may read canonical FPL team IDs only to compare them in-memory with current Official FPL authority. Provider team IDs and mapping pairs are not returned by that evidence query, and canonical ID lists plus authority hashes are omitted from logs/artifacts. Retained evidence may expose only boolean current-coverage and historical-provenance-presence results. Production mutations, API-Football requests and secret-value reads remain zero.
