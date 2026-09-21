@@ -1,3 +1,7 @@
+## Collector activation read-only gate — 21 September 2026
+
+**Decision:** do not reuse or weaken the historical live-storage preflight after Migration 0006. Add a separate activation-specific manual read-only admission using only the existing steward-read credential, exact-main/Verify gates, fixed repository-owned reads and the merged stage-aware classifier. Repository-stage PASS means only `READY_FOR_REPOSITORY_INFRASTRUCTURE_STAGING`; it is not permission to upload/deploy/bind the collector, provision a secret, enable runtime/Cron or call API-Football. A STOP result permits no repair action.
+
 ## 21 September 2026 — collector activation foundation stays dormant and zero-retry
 
 **Decision:** name `ATTENDED_ONE_SHOT_DISCOVERY` as future execution state, keep shipped configuration `REPOSITORY_ONLY_BLOCKED`, require runtime enablement before any collector mutation, require empty provider errors plus semantic validation and normalized persistence before attempt success, prohibit attempt-2 retries for first acceptance, require pristine collector history at first attended admission, cap one discovery generation at 2,500 fixtures, and pin the successful worst-case path to 50 D1 statements. Cap is twice 1,131-row attended observation rounded upward to 2,500; concrete bulk adapter enforces at most 7,525 D1 rows written, 43 mutation statements and 50 total statements, without relying on unchanged fixtures. Production activation remains separately owner-gated.

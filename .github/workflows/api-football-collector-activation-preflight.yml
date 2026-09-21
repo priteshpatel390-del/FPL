@@ -1,0 +1,153 @@
+# Manual-only, read-only production admission for API-Football collector infrastructure staging.
+# No deployment, secret mutation, D1 write, Cron mutation, runtime enablement or provider request is possible here.
+
+name: API-Football Collector Activation Read-Only Preflight
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  actions: read
+  checks: read
+
+concurrency:
+  group: api-football-collector-activation-readonly-preflight
+  cancel-in-progress: false
+
+jobs:
+  repository-gate:
+    if: github.event_name == 'workflow_dispatch' && github.run_attempt == 1
+    runs-on: ubuntu-latest
+    timeout-minutes: 6
+    outputs:
+      approved_sha: ${{ steps.identity.outputs.approved_sha }}
+    steps:
+      - name: Validate dispatch identity before checkout
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          EVENT_REF: ${{ github.ref }}
+          EVENT_REPOSITORY: ${{ github.repository }}
+          EVENT_SHA: ${{ github.sha }}
+          EVENT_RUN_ATTEMPT: ${{ github.run_attempt }}
+        run: |
+          set -euo pipefail
+          test "$EVENT_NAME" = workflow_dispatch
+          test "$EVENT_RUN_ATTEMPT" = 1
+          test "$EVENT_REF" = refs/heads/main
+          test "$EVENT_REPOSITORY" = priteshpatel390-del/FPL
+          printf '%s' "$EVENT_SHA" | grep -Eq '^[0-9a-f]{40}$'
+
+      - name: Check out exact dispatch revision
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Gate exact current main and clean tree
+        id: identity
+        env:
+          EVENT_SHA: ${{ github.sha }}
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "$EVENT_SHA"
+          remote_main="$(git ls-remote https://github.com/priteshpatel390-del/FPL.git refs/heads/main | cut -f1)"
+          test -n "$remote_main"
+          test "$remote_main" = "$EVENT_SHA"
+          test -z "$(git status --porcelain)"
+          echo "approved_sha=$EVENT_SHA" >> "$GITHUB_OUTPUT"
+
+      - name: Require exact-head Verify Teamsheet success
+        env:
+          GH_TOKEN: ${{ github.token }}
+          APPROVED_SHA: ${{ steps.identity.outputs.approved_sha }}
+        run: |
+          set -euo pipefail
+          response="$RUNNER_TEMP/check-runs.json"
+          http="$(curl --silent --output "$response" --write-out '%{http_code}' --max-time 20             -H "Authorization: Bearer $GH_TOKEN" -H 'Accept: application/vnd.github+json'             "https://api.github.com/repos/priteshpatel390-del/FPL/commits/$APPROVED_SHA/check-runs")"
+          test "$http" = 200
+          node --input-type=module - "$response" <<'EOF'
+          import fs from 'node:fs';
+          const body=JSON.parse(fs.readFileSync(process.argv[2],'utf8'));
+          const matches=(body.check_runs??[]).filter(row=>
+            row.name==='Tests and deterministic build'&&row.status==='completed'&&row.conclusion==='success'&&
+            row.head_sha===process.env.APPROVED_SHA&&row.app?.slug==='github-actions'&&
+            row.details_url?.startsWith('https://github.com/priteshpatel390-del/FPL/actions/runs/')
+          );
+          if(matches.length<1)throw new Error('exact-head Verify Teamsheet success is absent');
+          EOF
+          rm -f "$response"
+          test -z "$(git status --porcelain)"
+
+  preflight:
+    if: github.event_name == 'workflow_dispatch' && github.run_attempt == 1
+    needs: repository-gate
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+    environment:
+      name: data-steward-readonly
+      deployment: false
+    steps:
+      - name: Check out gated exact main
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          ref: ${{ needs.repository-gate.outputs.approved_sha }}
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Reconfirm exact current main after environment admission
+        env:
+          APPROVED_SHA: ${{ needs.repository-gate.outputs.approved_sha }}
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "$APPROVED_SHA"
+          remote_main="$(git ls-remote https://github.com/priteshpatel390-del/FPL.git refs/heads/main | cut -f1)"
+          test -n "$remote_main"
+          test "$remote_main" = "$APPROVED_SHA"
+          test -z "$(git status --porcelain)"
+
+      - name: Set up exact Node
+        uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
+        with:
+          node-version: 24.19.0
+          check-latest: false
+
+      - name: Run focused activation preflight tests before Cloudflare credential introduction
+        run: |
+          set -euo pipefail
+          test "$(node --version)" = v24.19.0
+          node --test tests/api-football-collector-activation-live-preflight.test.mjs
+          test -z "$(git status --porcelain)"
+
+      - name: Reconfirm current main immediately before read-only production observation
+        env:
+          APPROVED_SHA: ${{ needs.repository-gate.outputs.approved_sha }}
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "$APPROVED_SHA"
+          remote_main="$(git ls-remote https://github.com/priteshpatel390-del/FPL.git refs/heads/main | cut -f1)"
+          test -n "$remote_main"
+          test "$remote_main" = "$APPROVED_SHA"
+          test -z "$(git status --porcelain)"
+
+      - name: Execute bounded read-only collector activation preflight
+        env:
+          DATA_STEWARD_CLOUDFLARE_ACCOUNT_ID: ${{ secrets.DATA_STEWARD_CLOUDFLARE_ACCOUNT_ID }}
+          DATA_STEWARD_CLOUDFLARE_ACCOUNT_FINGERPRINT: ${{ vars.DATA_STEWARD_CLOUDFLARE_ACCOUNT_FINGERPRINT }}
+          DATA_STEWARD_CLOUDFLARE_READ_TOKEN: ${{ secrets.DATA_STEWARD_CLOUDFLARE_READ_TOKEN }}
+          API_FOOTBALL_ACTIVATION_PREFLIGHT_REPORT_PATH: ${{ runner.temp }}/api-football-collector-activation-preflight.json
+        run: |
+          set -euo pipefail
+          node workers/api-football-collector/activation-live-preflight.mjs
+
+      - name: Upload sanitized activation preflight evidence
+        if: always()
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6
+        with:
+          name: api-football-collector-activation-readonly-preflight
+          path: ${{ runner.temp }}/api-football-collector-activation-preflight.json
+          if-no-files-found: error
+          retention-days: 7

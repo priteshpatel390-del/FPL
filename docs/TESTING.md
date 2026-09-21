@@ -1,3 +1,7 @@
+## Collector activation live-preflight coverage
+
+`tests/api-football-collector-activation-live-preflight.test.mjs` pins the ten-statement read-only SQL registry, production-account fingerprint fail-before-fetch, exact post-0006 repository-stage PASS shape, current 20/20 mapping and Official FPL authority binding, collector-absence requirement, stale-authority refusal, nonzero D1 `rows_written` refusal, production model/UI isolation and the manual exact-main protected-workflow contract. Tests use synthetic Cloudflare/D1 responses only; they perform no live request, production mutation or API-Football request.
+
 ## Collector activation foundation coverage
 
 Injected transport plus the concrete D1 adapter under a deterministic D1 test double cover exact response identity, non-empty provider errors, wrong league/season/paging, malformed fixtures, exact mapping admission, known-fixture identity, 2,500-row generation ceiling, pre-mutation runtime kill switch and exact 7,525-row/50-statement exposure, first-attempt-only recovery, active and expired leases, complete commit/head advancement, partial/failure head preservation, persistence uncertainty, immutable revision supersession, shipped activation isolation, and pristine first-acceptance preflight. A Node built-in SQLite integration test executes migrations 0001–0006 and the concrete bulk identity/revision/membership SQL with foreign-key checking. Tests make no real API-Football or production D1 request.

@@ -1,3 +1,7 @@
+## API-Football collector activation read-only preflight — repository candidate
+
+The next owner-approved gate is observation only. A new manual exact-main workflow reads the live post-Migration-0006 D1/collector state with the existing `data-steward-readonly` credential and classifies only repository/infrastructure staging readiness. It performs zero production mutations, zero API-Football requests and zero secret-value reads. A PASS would not authorize inactive Version upload, deployment, binding, secret provisioning, runtime enablement or Cron. See [activation read-only preflight](API-FOOTBALL-COLLECTOR-ACTIVATION-READONLY-PREFLIGHT.md).
+
 ## API-Football collector activation foundation — repository candidate
 
 Owner-approved repository work adds a dormant concrete D1-backed attended-one-shot discovery state machine, pre-mutation runtime admission, empty-error and single-owner semantic-before-success ordering, five-query staging/commit/head lifecycle, zero-retry stale-reservation handling, 2,500-fixture total generation ceiling, exact 50-statement worst-case accounting, and stage-aware post-Migration-0006 activation preflight with pristine history required for the first attended acceptance. Shipped configuration remains `REPOSITORY_ONLY_BLOCKED`, empty-Cron, placeholder-bound, and incapable of provider egress. No live/provider/secret/production/model/UI action is approved or performed. See [collector activation foundation](API-FOOTBALL-COLLECTOR-ACTIVATION-FOUNDATION.md).

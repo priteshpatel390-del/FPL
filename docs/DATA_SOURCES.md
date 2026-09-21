@@ -1,3 +1,7 @@
+## API-Football activation preflight source boundary
+
+The collector activation preflight acquires no new football data and makes zero API-Football requests. It observes only existing normalized production D1 authority/mapping/runtime state plus Cloudflare infrastructure metadata under the current read-only steward credential. Official FPL remains the Premier League identity authority, API-Football remains private-use/shadow-only, and a repository-stage PASS does not admit provider evidence to any model or product path.
+
 ## API-Football source status after Migration 0006 final closeout
 
 API-Football remains a private-use, shadow-only source under `owner_risk_accepted_private_use`. Migration 0006 schema and the approved qualified 20/20 team mapping are now durably persisted in canonical `teamsheet-data` D1. Persistence run `35607354636` made 0 API-Football requests and committed the normalized 20 entity mappings / 1 qualification / 20 members / 1 head state; final independent reconciliation `35609344995` made 0 API-Football requests and 0 production mutations and accepted `COMPLETE_QUALIFIED_MAPPING_VISIBLE`. The private crosswalk remains private and is not reproduced in repository content, docs, artifacts or browser code.
