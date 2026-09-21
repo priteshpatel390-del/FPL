@@ -837,3 +837,9 @@ exact receipted repository/workflow/run/ref/event/commit/job and strict observer
 only to its own incident-lifecycle D1. It cannot write production Official FPL data or observer-clock
 receipts and has no repair authority. Repository configuration does not prove live Worker, D1,
 secret, Cron Trigger, or email activation; those remain separately owner-gated.
+
+## API-Football inactive Version staging security boundary
+
+The repository candidate uses a future dedicated protected environment named `api-football-collector-version-upload` with proposed `CLOUDFLARE_COLLECTOR_WORKER_UPLOAD_TOKEN`, `CLOUDFLARE_ACCOUNT_ID` and `CLOUDFLARE_ACCOUNT_FINGERPRINT`. No provider credential belongs in this environment. Before credentials, the workflow requires first-attempt manual dispatch, exact current `main`, clean checkout, exact-head Verify success and focused tests; a fresh `data-steward-readonly` result must then be exactly `READY_FOR_REPOSITORY_INFRASTRUCTURE_STAGING`.
+
+The staging helper admits exactly two Cloudflare mutations and never retries an ambiguous mutation. Sanitized evidence excludes raw Cloudflare responses, tokens, API keys and provider/FPL mapping pairs. Immediate postflight requires workers.dev and Preview URLs disabled, zero Deployment/Cron/routes/custom domains/secrets, one inactive Version, exact D1/plain-text bindings and exact module hashes. A final independent read-only observation must prove migrations, FK state, mapping/runtime state and zero collector history remain unchanged.
