@@ -870,3 +870,7 @@ E2C-A adds inert, fail-closed disposable-D1 experiment plans, an identity-bound 
 ## DATA-S2B E2C-B repository-only preparation
 
 E2C-B hardens the disposable live boundary with mandatory production-account separation, exact returned-value affinity/storage semantics, missing-versus-zero bounded provider metadata, sanitized evidence and a manual exact-main/exact-Verify protected workflow that rejects reruns and never cleans up. No live action occurred; preparation, execution, acceptance and manual cleanup remain separate owner gates. See [E2C-B implementation record](../workers/data-platform/DATA-S2B-E2C-B-DISPOSABLE-LIVE-EXPERIMENT-PREPARATION.md).
+
+## API-Football inactive collector staging boundary
+
+The collector staging path is repository-isolated from production model/UI code. A manual-only workflow gates exact current `main`, exact-head Verify success and fresh `data-steward-readonly` admission before a dedicated future `api-football-collector-version-upload` environment becomes eligible. The helper structurally permits only `POST /accounts/{account}/workers/workers` and `POST /accounts/{account}/workers/scripts/teamsheet-api-football-shadow-collector/versions`; Deployment, schedules, secrets, domains/routes, Access and D1 mutation endpoints are not admitted. The uploaded ES-module graph is resolved transitively from `collector.mjs`, compared against a reviewed repository allowlist and hash-bound with metadata to the approved SHA.
