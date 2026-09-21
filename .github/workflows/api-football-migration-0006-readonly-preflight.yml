@@ -1,0 +1,115 @@
+# Manual-only, read-only production admission for migration 0006.
+# This workflow has no production D1 write credential, private crosswalk, API-Football key,
+# mutation runner, deployment command, secret mutation, schedule mutation, or provider egress.
+name: API-Football Migration 0006 Read-Only Preflight
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  checks: read
+
+concurrency:
+  group: api-football-migration-0006-readonly-preflight
+  cancel-in-progress: false
+
+jobs:
+  repository-gate:
+    if: github.event_name == 'workflow_dispatch' && github.run_attempt == 1
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Validate exact current main
+        env:
+          EVENT_SHA: ${{ github.sha }}
+        run: |
+          set -euo pipefail
+          test "${{ github.event_name }}" = workflow_dispatch
+          test "${{ github.run_attempt }}" = 1
+          test "${{ github.ref }}" = refs/heads/main
+          test "${{ github.repository }}" = priteshpatel390-del/FPL
+          printf '%s' "$EVENT_SHA" | grep -Eq '^[0-9a-f]{40}$'
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Prove exact current protected revision
+        env:
+          EVENT_SHA: ${{ github.sha }}
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "$EVENT_SHA"
+          test "$(git ls-remote https://github.com/priteshpatel390-del/FPL.git refs/heads/main | cut -f1)" = "$EVENT_SHA"
+          test -z "$(git status --porcelain)"
+      - name: Require exact-head Verify Teamsheet success
+        env:
+          GH_TOKEN: ${{ github.token }}
+          EVENT_SHA: ${{ github.sha }}
+        run: |
+          set -euo pipefail
+          curl --fail --silent --show-error -H "Authorization: Bearer $GH_TOKEN" -H 'Accept: application/vnd.github+json' "https://api.github.com/repos/priteshpatel390-del/FPL/commits/$EVENT_SHA/check-runs" > "$RUNNER_TEMP/checks.json"
+          node --input-type=module - "$RUNNER_TEMP/checks.json" <<'NODE'
+          import fs from 'node:fs';
+          const rows=JSON.parse(fs.readFileSync(process.argv[2])).check_runs??[];
+          if(!rows.some(row=>row.name==='Tests and deterministic build'&&row.conclusion==='success'&&row.head_sha===process.env.EVENT_SHA))process.exit(1);
+          NODE
+
+  preflight:
+    needs: repository-gate
+    if: github.event_name == 'workflow_dispatch' && github.run_attempt == 1
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    environment:
+      name: data-steward-readonly
+      deployment: false
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Reconfirm current main after environment admission
+        env:
+          EVENT_SHA: ${{ github.sha }}
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "$EVENT_SHA"
+          test "$(git ls-remote https://github.com/priteshpatel390-del/FPL.git refs/heads/main | cut -f1)" = "$EVENT_SHA"
+          test -z "$(git status --porcelain)"
+      - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
+        with:
+          node-version: 24.19.0
+          check-latest: false
+      - name: Run focused read-only contract tests before credentials
+        run: |
+          set -euo pipefail
+          test "$(node --version)" = v24.19.0
+          node --test tests/api-football-migration-0006-foundation.test.mjs tests/api-football-live-storage-preflight.test.mjs
+      - name: Reconfirm current main immediately before production reads
+        env:
+          EVENT_SHA: ${{ github.sha }}
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "$EVENT_SHA"
+          test "$(git ls-remote https://github.com/priteshpatel390-del/FPL.git refs/heads/main | cut -f1)" = "$EVENT_SHA"
+          test -z "$(git status --porcelain)"
+      - name: Execute migration 0006 schema admission read-only
+        env:
+          DATA_STEWARD_CLOUDFLARE_ACCOUNT_ID: ${{ secrets.DATA_STEWARD_CLOUDFLARE_ACCOUNT_ID }}
+          DATA_STEWARD_CLOUDFLARE_ACCOUNT_FINGERPRINT: ${{ vars.DATA_STEWARD_CLOUDFLARE_ACCOUNT_FINGERPRINT }}
+          DATA_STEWARD_CLOUDFLARE_READ_TOKEN: ${{ secrets.DATA_STEWARD_CLOUDFLARE_READ_TOKEN }}
+          DATA_STEWARD_CLOUDFLARE_ANALYTICS_TOKEN: ${{ secrets.DATA_STEWARD_CLOUDFLARE_ANALYTICS_TOKEN }}
+          MIGRATION_0006_PREFLIGHT_MODE: schema_pre
+          MIGRATION_0006_PREFLIGHT_REPORT_PATH: ${{ runner.temp }}/migration-0006-readonly-preflight.json
+        run: |
+          set -euo pipefail
+          node workers/data-platform/migration6/preflight.mjs
+      - name: Upload sanitized read-only evidence
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6
+        with:
+          name: api-football-migration-0006-readonly-preflight
+          path: ${{ runner.temp }}/migration-0006-readonly-preflight.json
+          if-no-files-found: error
+          retention-days: 7
