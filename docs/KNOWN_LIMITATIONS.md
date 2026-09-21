@@ -1031,3 +1031,9 @@ E2C-A adds inert, fail-closed disposable-D1 experiment plans, an identity-bound 
 ## DATA-S2B E2C-B repository-only preparation
 
 E2C-B hardens the disposable live boundary with mandatory production-account separation, exact returned-value affinity/storage semantics, missing-versus-zero bounded provider metadata, sanitized evidence and a manual exact-main/exact-Verify protected workflow that rejects reruns and never cleans up. No live action occurred; preparation, execution, acceptance and manual cleanup remain separate owner gates. See [E2C-B implementation record](../workers/data-platform/DATA-S2B-E2C-B-DISPOSABLE-LIVE-EXPERIMENT-PREPARATION.md).
+
+## Inactive collector staging limitations
+
+- The only currently documented API that guarantees pre-Version control of both Worker subdomain and Version Preview URL state is Cloudflare's Workers **Beta** Create Worker API; the helper therefore fails closed on response-shape/state drift.
+- `Workers Scripts Write` is broader than the two intended mutations. The repository adds a closed executable method/path allowlist and proposes a dedicated protected environment, but least-privilege token/resource scoping cannot be claimed until that environment is separately configured and reviewed.
+- Repository implementation proves contracts and deterministic machinery only. It does not prove the live Worker can be created, the Version can be uploaded, or that live Cloudflare account state matches postflight until a separately approved attended run occurs.
