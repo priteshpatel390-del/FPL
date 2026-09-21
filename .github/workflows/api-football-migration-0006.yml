@@ -76,10 +76,10 @@ jobs:
           node-version: 24.19.0
           check-latest: false
       - env:
-          DATA_STEWARD_CLOUDFLARE_ACCOUNT_ID: "${{ secrets.DATA_STEWARD_CLOUDFLARE_ACCOUNT_ID }}"
-          DATA_STEWARD_CLOUDFLARE_ACCOUNT_FINGERPRINT: "${{ vars.DATA_STEWARD_CLOUDFLARE_ACCOUNT_FINGERPRINT }}"
-          DATA_STEWARD_CLOUDFLARE_READ_TOKEN: "${{ secrets.DATA_STEWARD_CLOUDFLARE_READ_TOKEN }}"
-          DATA_STEWARD_CLOUDFLARE_ANALYTICS_TOKEN: "${{ secrets.DATA_STEWARD_CLOUDFLARE_ANALYTICS_TOKEN }}"
+          DATA_STEWARD_CLOUDFLARE_ACCOUNT_ID: ${{ secrets.DATA_STEWARD_CLOUDFLARE_ACCOUNT_ID }}
+          DATA_STEWARD_CLOUDFLARE_ACCOUNT_FINGERPRINT: ${{ vars.DATA_STEWARD_CLOUDFLARE_ACCOUNT_FINGERPRINT }}
+          DATA_STEWARD_CLOUDFLARE_READ_TOKEN: ${{ secrets.DATA_STEWARD_CLOUDFLARE_READ_TOKEN }}
+          DATA_STEWARD_CLOUDFLARE_ANALYTICS_TOKEN: ${{ secrets.DATA_STEWARD_CLOUDFLARE_ANALYTICS_TOKEN }}
           MIGRATION_0006_PREFLIGHT_MODE: schema_pre
         run: node workers/data-platform/migration6/preflight.mjs
 
@@ -89,13 +89,13 @@ jobs:
       name: data-s2-production-collection
     runs-on: ubuntu-latest
     env:
-      APPROVED_SHA: "${{ needs.repository-gate.outputs.approved_sha }}"
-      CLOUDFLARE_ACCOUNT_ID: "${{ secrets.CLOUDFLARE_ACCOUNT_ID }}"
-      CLOUDFLARE_D1_TOKEN: "${{ secrets.CLOUDFLARE_D1_TOKEN }}"
-      CLOUDFLARE_PRODUCTION_ACCOUNT_FINGERPRINT: "${{ vars.CLOUDFLARE_PRODUCTION_ACCOUNT_FINGERPRINT }}"
-      GITHUB_RUN_ATTEMPT: "${{ github.run_attempt }}"
+      APPROVED_SHA: ${{ needs.repository-gate.outputs.approved_sha }}
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+      CLOUDFLARE_D1_TOKEN: ${{ secrets.CLOUDFLARE_D1_TOKEN }}
+      CLOUDFLARE_PRODUCTION_ACCOUNT_FINGERPRINT: ${{ vars.CLOUDFLARE_PRODUCTION_ACCOUNT_FINGERPRINT }}
+      GITHUB_RUN_ATTEMPT: ${{ github.run_attempt }}
       MIGRATION_0006_PHASE: schema
-      MIGRATION_0006_REPORT_PATH: "${{ runner.temp }}/migration-0006-schema.json"
+      MIGRATION_0006_REPORT_PATH: ${{ runner.temp }}/migration-0006-schema.json
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09
         with:
@@ -133,9 +133,9 @@ jobs:
           node-version: 24.19.0
           check-latest: false
       - env:
-          DATA_STEWARD_CLOUDFLARE_ACCOUNT_ID: "${{ secrets.DATA_STEWARD_CLOUDFLARE_ACCOUNT_ID }}"
-          DATA_STEWARD_CLOUDFLARE_ACCOUNT_FINGERPRINT: "${{ vars.DATA_STEWARD_CLOUDFLARE_ACCOUNT_FINGERPRINT }}"
-          DATA_STEWARD_CLOUDFLARE_READ_TOKEN: "${{ secrets.DATA_STEWARD_CLOUDFLARE_READ_TOKEN }}"
+          DATA_STEWARD_CLOUDFLARE_ACCOUNT_ID: ${{ secrets.DATA_STEWARD_CLOUDFLARE_ACCOUNT_ID }}
+          DATA_STEWARD_CLOUDFLARE_ACCOUNT_FINGERPRINT: ${{ vars.DATA_STEWARD_CLOUDFLARE_ACCOUNT_FINGERPRINT }}
+          DATA_STEWARD_CLOUDFLARE_READ_TOKEN: ${{ secrets.DATA_STEWARD_CLOUDFLARE_READ_TOKEN }}
           MIGRATION_0006_PREFLIGHT_MODE: schema_post
         run: node workers/data-platform/migration6/preflight.mjs
 
@@ -155,10 +155,10 @@ jobs:
           node-version: 24.19.0
           check-latest: false
       - env:
-          DATA_STEWARD_CLOUDFLARE_ACCOUNT_ID: "${{ secrets.DATA_STEWARD_CLOUDFLARE_ACCOUNT_ID }}"
-          DATA_STEWARD_CLOUDFLARE_ACCOUNT_FINGERPRINT: "${{ vars.DATA_STEWARD_CLOUDFLARE_ACCOUNT_FINGERPRINT }}"
-          DATA_STEWARD_CLOUDFLARE_READ_TOKEN: "${{ secrets.DATA_STEWARD_CLOUDFLARE_READ_TOKEN }}"
-          DATA_STEWARD_CLOUDFLARE_ANALYTICS_TOKEN: "${{ secrets.DATA_STEWARD_CLOUDFLARE_ANALYTICS_TOKEN }}"
+          DATA_STEWARD_CLOUDFLARE_ACCOUNT_ID: ${{ secrets.DATA_STEWARD_CLOUDFLARE_ACCOUNT_ID }}
+          DATA_STEWARD_CLOUDFLARE_ACCOUNT_FINGERPRINT: ${{ vars.DATA_STEWARD_CLOUDFLARE_ACCOUNT_FINGERPRINT }}
+          DATA_STEWARD_CLOUDFLARE_READ_TOKEN: ${{ secrets.DATA_STEWARD_CLOUDFLARE_READ_TOKEN }}
+          DATA_STEWARD_CLOUDFLARE_ANALYTICS_TOKEN: ${{ secrets.DATA_STEWARD_CLOUDFLARE_ANALYTICS_TOKEN }}
           MIGRATION_0006_PREFLIGHT_MODE: mapping_pre
         run: node workers/data-platform/migration6/preflight.mjs
 
@@ -167,14 +167,14 @@ jobs:
     environment: data-s2-production-collection
     runs-on: ubuntu-latest
     env:
-      APPROVED_SHA: "${{ needs.repository-gate.outputs.approved_sha }}"
-      CLOUDFLARE_ACCOUNT_ID: "${{ secrets.CLOUDFLARE_ACCOUNT_ID }}"
-      CLOUDFLARE_D1_TOKEN: "${{ secrets.CLOUDFLARE_D1_TOKEN }}"
-      CLOUDFLARE_PRODUCTION_ACCOUNT_FINGERPRINT: "${{ vars.CLOUDFLARE_PRODUCTION_ACCOUNT_FINGERPRINT }}"
-      GITHUB_RUN_ATTEMPT: "${{ github.run_attempt }}"
+      APPROVED_SHA: ${{ needs.repository-gate.outputs.approved_sha }}
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+      CLOUDFLARE_D1_TOKEN: ${{ secrets.CLOUDFLARE_D1_TOKEN }}
+      CLOUDFLARE_PRODUCTION_ACCOUNT_FINGERPRINT: ${{ vars.CLOUDFLARE_PRODUCTION_ACCOUNT_FINGERPRINT }}
+      GITHUB_RUN_ATTEMPT: ${{ github.run_attempt }}
       MIGRATION_0006_PHASE: mapping
-      API_FOOTBALL_PROVIDER_UNIVERSE_PATH: "${{ runner.temp }}/provider-universe.json"
-      MAPPING_0006_REPORT_PATH: "${{ runner.temp }}/mapping-0006.json"
+      API_FOOTBALL_PROVIDER_UNIVERSE_PATH: ${{ runner.temp }}/provider-universe.json
+      MAPPING_0006_REPORT_PATH: ${{ runner.temp }}/mapping-0006.json
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09
         with:
@@ -224,8 +224,8 @@ jobs:
           node-version: 24.19.0
           check-latest: false
       - env:
-          DATA_STEWARD_CLOUDFLARE_ACCOUNT_ID: "${{ secrets.DATA_STEWARD_CLOUDFLARE_ACCOUNT_ID }}"
-          DATA_STEWARD_CLOUDFLARE_ACCOUNT_FINGERPRINT: "${{ vars.DATA_STEWARD_CLOUDFLARE_ACCOUNT_FINGERPRINT }}"
-          DATA_STEWARD_CLOUDFLARE_READ_TOKEN: "${{ secrets.DATA_STEWARD_CLOUDFLARE_READ_TOKEN }}"
+          DATA_STEWARD_CLOUDFLARE_ACCOUNT_ID: ${{ secrets.DATA_STEWARD_CLOUDFLARE_ACCOUNT_ID }}
+          DATA_STEWARD_CLOUDFLARE_ACCOUNT_FINGERPRINT: ${{ vars.DATA_STEWARD_CLOUDFLARE_ACCOUNT_FINGERPRINT }}
+          DATA_STEWARD_CLOUDFLARE_READ_TOKEN: ${{ secrets.DATA_STEWARD_CLOUDFLARE_READ_TOKEN }}
           MIGRATION_0006_PREFLIGHT_MODE: mapping_post
         run: node workers/data-platform/migration6/preflight.mjs
