@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import {createHash} from 'node:crypto';
+import fs from 'node:fs';
 import test from 'node:test';
 import {ACTIVATION_QUERIES,buildAuthority} from '../workers/api-football-collector/activation-live-preflight.mjs';
 import {EXPECTED_D1_DATABASE_ID} from '../workers/data-platform/phase4b/live-contract.mjs';
@@ -145,7 +146,7 @@ test('D1 classifier independently rejects runtime, mapping and history drift',()
 });
 
 test('postflight executable has no general mutation surface or provider origin',()=>{
-  const source=await import('node:fs').then(fs=>fs.readFileSync('workers/api-football-collector/inactive-version-postflight.mjs','utf8'));
+  const source=fs.readFileSync('workers/api-football-collector/inactive-version-postflight.mjs','utf8');
   assert.doesNotMatch(source,/v3\.football\.api-sports\.io/);
   assert.doesNotMatch(source,/\b(?:PUT|PATCH|DELETE)\b/);
   assert.match(source,/rows_written/);
