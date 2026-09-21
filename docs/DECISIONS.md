@@ -1,3 +1,9 @@
+## Decision — distinguish Worker presence from Deployment state
+
+**21 September 2026.** After successful inactive staging run `35645387203`, the repository records Worker presence and Cloudflare Deployment state as separate facts. The generic activation preflight must use `workerPresent` for existence of the collector control-plane object and `deploymentCount` for actual Deployment inventory. A present Worker with one inactive Version and `deploymentCount=0` is not “deployed” and must not be described as serving traffic.
+
+The accepted live state remains: one inert shell, one inactive Version `e49ac8f2-4289-46bc-9f0b-87a20cd7be62`, workers.dev/previews disabled, no routes/domains/Cron/secrets, `REPOSITORY_ONLY_BLOCKED`, zero D1 writes and zero API-Football requests. Any real Deployment or later activation remains a separate owner decision.
+
 ## 21 September 2026 — admit collector repository/infrastructure staging, design inert first Version only
 
 **Decision:** accept read-only activation run `35634186433`, attempt 1, on exact main `d88312eb6263a3ef0e5de1be3e79b647a797b830` as live evidence for `READY_FOR_REPOSITORY_INFRASTRUCTURE_STAGING`. Artifact `10655278906` / SHA-256 `5da299cc5b0bec4064ad7d839e40e05e2b2ad9dde41f7eed785534dfa9bb501b` proves the fixed read-only predicates and zero mutation/provider/secret-value counters. The next gate is design only: because the collector Worker is absent, any future first-Version implementation must first prove an inert Worker shell with workers.dev and Preview URLs disabled, then upload at most one inactive Version with explicit production D1 binding, exact blocked activation, no API-Football secret, no Cron and no Deployment. Upload success would not authorize Deployment. Implementation and live mutation require separate owner approvals.
