@@ -100,8 +100,8 @@ test('module resolver rejects remote, npm, node, node_modules, non-relative and 
 
 test('graph resolver fails closed on unresolved or unreviewed transitive imports',()=>{
   const unresolved=file=>{
-    if(file==='workers/api-football-collector/collector.mjs')return "import './missing.mjs';";
-    throw new Error('missing');
+    if(file==='workers/api-football-collector/collector.mjs')return "import './runtime-contracts.mjs';";
+    throw new Error('missing reviewed module');
   };
   assert.throws(()=>buildUploadGraph(unresolved),/unresolved_module/);
   const unreviewed=file=>file==='workers/api-football-collector/collector.mjs'?"import './extra.mjs';":'';
