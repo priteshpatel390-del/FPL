@@ -1,3 +1,7 @@
+## 20 September 2026 — migration 0006 production foundation decision
+
+Use one dormant manual workflow with separately admitted schema and private-persistence stages. Preserve the 0005 shared writer lock, 50,000-row daily admission ceiling, Time Travel checkpoint and no-automatic-restore policy. Reuse strict mapping persistence rather than duplicate validation; adapt D1 REST to its prepared/bound interface. Never serialize private rows or dynamic errors. Production execution remains a later owner decision. See [migration 0006 production foundation](API-FOOTBALL-MIGRATION-0006-PRODUCTION-FOUNDATION.md).
+
 ## 20 September 2026 — accept migration 0005 live; keep migration 0006 separate
 
 **Decision:** accept owner-attended production run `35497565060` as the live closeout for migration 0005. Exact-main remediation baseline was `f07c8acee8aecacfd55ae0e7f015e7799d190294`, already verified by 2,225/2,225 tests and deterministic builds. The live preflight admitted `READY_FOR_MIGRATION_0005`; application reconciled exact pre→post state as `DEFINITELY_APPLIED_SUCCESSFULLY` with one mutation and no recovery; independent postflight returned `READY_FOR_MIGRATION_0006`. Observed application accounting was 6 D1 API calls, 417,635 rows read, 41 rows written and 24,014 request bytes. Official FPL authority digest was unchanged. Migration 0006 is **not** implicitly approved by this success: private mapping persistence, collector deployment/binding, API key provisioning, Cron, provider requests and all model/product influence require new explicit approval.

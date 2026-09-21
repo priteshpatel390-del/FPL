@@ -1,0 +1,181 @@
+# Dormant, attended two-phase production foundation. Dispatch requires separate owner approval.
+name: API-Football Migration 0006 and Private Mapping
+
+on:
+  workflow_dispatch:
+    inputs:
+      approved_sha:
+        description: Exact protected current main approved for one migration-0006 and mapping attempt
+        required: true
+        type: string
+
+permissions:
+  contents: read
+  checks: read
+
+concurrency:
+  group: data-s2-production-collection
+  cancel-in-progress: false
+
+jobs:
+  repository-gate:
+    if: github.event_name == 'workflow_dispatch' && github.run_attempt == 1
+    runs-on: ubuntu-latest
+    outputs:
+      approved_sha: ${{ steps.identity.outputs.approved_sha }}
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with: {ref: "${{ inputs.approved_sha }}", fetch-depth: 0, persist-credentials: false}
+      - id: identity
+        env: {APPROVED_SHA: "${{ inputs.approved_sha }}"}
+        run: |
+          set -euo pipefail
+          test "${{ github.event_name }}" = workflow_dispatch
+          test "${{ github.run_attempt }}" = 1
+          test "${{ github.ref }}" = refs/heads/main
+          test "${{ github.repository }}" = priteshpatel390-del/FPL
+          test "$(git rev-parse HEAD)" = "$APPROVED_SHA"
+          test "$(git ls-remote https://github.com/priteshpatel390-del/FPL.git refs/heads/main | cut -f1)" = "$APPROVED_SHA"
+          test -z "$(git status --porcelain)"
+          echo "approved_sha=$APPROVED_SHA" >> "$GITHUB_OUTPUT"
+      - env: {GH_TOKEN: "${{ github.token }}", APPROVED_SHA: "${{ inputs.approved_sha }}"}
+        run: |
+          set -euo pipefail
+          curl --fail --silent --show-error -H "Authorization: Bearer $GH_TOKEN" -H 'Accept: application/vnd.github+json' "https://api.github.com/repos/priteshpatel390-del/FPL/commits/$APPROVED_SHA/check-runs" > "$RUNNER_TEMP/checks.json"
+          node --input-type=module - "$RUNNER_TEMP/checks.json" <<'NODE'
+          import fs from 'node:fs';const rows=JSON.parse(fs.readFileSync(process.argv[2])).check_runs??[];
+          if(!rows.some(row=>row.name==='Tests and deterministic build'&&row.conclusion==='success'&&row.head_sha===process.env.APPROVED_SHA))process.exit(1);
+          NODE
+      - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
+        with: {node-version: 24.19.0, check-latest: false}
+      - run: node --test tests/api-football-migration-0006-foundation.test.mjs tests/eia2i5d-migration.test.mjs tests/api-football-live-storage-preflight.test.mjs
+
+  schema-preflight:
+    needs: repository-gate
+    environment: {name: data-steward-readonly, deployment: false}
+    runs-on: ubuntu-latest
+    env: {APPROVED_SHA: "${{ needs.repository-gate.outputs.approved_sha }}"}
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09
+        with: {ref: "${{ needs.repository-gate.outputs.approved_sha }}", persist-credentials: false}
+      - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444
+        with: {node-version: 24.19.0, check-latest: false}
+      - env:
+          DATA_STEWARD_CLOUDFLARE_ACCOUNT_ID: "${{ secrets.DATA_STEWARD_CLOUDFLARE_ACCOUNT_ID }}"
+          DATA_STEWARD_CLOUDFLARE_ACCOUNT_FINGERPRINT: "${{ vars.DATA_STEWARD_CLOUDFLARE_ACCOUNT_FINGERPRINT }}"
+          DATA_STEWARD_CLOUDFLARE_READ_TOKEN: "${{ secrets.DATA_STEWARD_CLOUDFLARE_READ_TOKEN }}"
+          DATA_STEWARD_CLOUDFLARE_ANALYTICS_TOKEN: "${{ secrets.DATA_STEWARD_CLOUDFLARE_ANALYTICS_TOKEN }}"
+          MIGRATION_0006_PREFLIGHT_MODE: schema_pre
+        run: node workers/data-platform/migration6/preflight.mjs
+
+  schema:
+    needs: [repository-gate, schema-preflight]
+    environment: data-s2-production-collection
+    runs-on: ubuntu-latest
+    env:
+      APPROVED_SHA: "${{ needs.repository-gate.outputs.approved_sha }}"
+      CLOUDFLARE_ACCOUNT_ID: "${{ secrets.CLOUDFLARE_ACCOUNT_ID }}"
+      CLOUDFLARE_D1_TOKEN: "${{ secrets.CLOUDFLARE_D1_TOKEN }}"
+      CLOUDFLARE_PRODUCTION_ACCOUNT_FINGERPRINT: "${{ vars.CLOUDFLARE_PRODUCTION_ACCOUNT_FINGERPRINT }}"
+      GITHUB_RUN_ATTEMPT: "${{ github.run_attempt }}"
+      MIGRATION_0006_PHASE: schema
+      MIGRATION_0006_REPORT_PATH: "${{ runner.temp }}/migration-0006-schema.json"
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09
+        with: {ref: "${{ needs.repository-gate.outputs.approved_sha }}", persist-credentials: false}
+      - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444
+        with: {node-version: 24.19.0, check-latest: false}
+      - run: |
+          set -euo pipefail
+          test "$(git ls-remote https://github.com/priteshpatel390-del/FPL.git refs/heads/main | cut -f1)" = "$APPROVED_SHA"
+          node workers/data-platform/run-migration-0006.mjs
+      - if: always()
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f
+        with: {name: api-football-migration-0006-schema, path: "${{ runner.temp }}/migration-0006-schema.json", retention-days: 7}
+
+  schema-postflight:
+    needs: [repository-gate, schema]
+    if: always() && needs.schema.result != 'skipped'
+    environment: {name: data-steward-readonly, deployment: false}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09
+        with: {ref: "${{ needs.repository-gate.outputs.approved_sha }}", persist-credentials: false}
+      - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444
+        with: {node-version: 24.19.0, check-latest: false}
+      - env:
+          DATA_STEWARD_CLOUDFLARE_ACCOUNT_ID: "${{ secrets.DATA_STEWARD_CLOUDFLARE_ACCOUNT_ID }}"
+          DATA_STEWARD_CLOUDFLARE_ACCOUNT_FINGERPRINT: "${{ vars.DATA_STEWARD_CLOUDFLARE_ACCOUNT_FINGERPRINT }}"
+          DATA_STEWARD_CLOUDFLARE_READ_TOKEN: "${{ secrets.DATA_STEWARD_CLOUDFLARE_READ_TOKEN }}"
+          MIGRATION_0006_PREFLIGHT_MODE: schema_post
+        run: node workers/data-platform/migration6/preflight.mjs
+
+  mapping-preflight:
+    needs: [repository-gate, schema-postflight]
+    environment: {name: data-steward-readonly, deployment: false}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09
+        with: {ref: "${{ needs.repository-gate.outputs.approved_sha }}", persist-credentials: false}
+      - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444
+        with: {node-version: 24.19.0, check-latest: false}
+      - env:
+          DATA_STEWARD_CLOUDFLARE_ACCOUNT_ID: "${{ secrets.DATA_STEWARD_CLOUDFLARE_ACCOUNT_ID }}"
+          DATA_STEWARD_CLOUDFLARE_ACCOUNT_FINGERPRINT: "${{ vars.DATA_STEWARD_CLOUDFLARE_ACCOUNT_FINGERPRINT }}"
+          DATA_STEWARD_CLOUDFLARE_READ_TOKEN: "${{ secrets.DATA_STEWARD_CLOUDFLARE_READ_TOKEN }}"
+          DATA_STEWARD_CLOUDFLARE_ANALYTICS_TOKEN: "${{ secrets.DATA_STEWARD_CLOUDFLARE_ANALYTICS_TOKEN }}"
+          MIGRATION_0006_PREFLIGHT_MODE: mapping_pre
+        run: node workers/data-platform/migration6/preflight.mjs
+
+  private-mapping:
+    needs: [repository-gate, mapping-preflight]
+    environment: data-s2-production-collection
+    runs-on: ubuntu-latest
+    env:
+      APPROVED_SHA: "${{ needs.repository-gate.outputs.approved_sha }}"
+      CLOUDFLARE_ACCOUNT_ID: "${{ secrets.CLOUDFLARE_ACCOUNT_ID }}"
+      CLOUDFLARE_D1_TOKEN: "${{ secrets.CLOUDFLARE_D1_TOKEN }}"
+      CLOUDFLARE_PRODUCTION_ACCOUNT_FINGERPRINT: "${{ vars.CLOUDFLARE_PRODUCTION_ACCOUNT_FINGERPRINT }}"
+      GITHUB_RUN_ATTEMPT: "${{ github.run_attempt }}"
+      MIGRATION_0006_PHASE: mapping
+      API_FOOTBALL_PROVIDER_UNIVERSE_PATH: "${{ runner.temp }}/provider-universe.json"
+      MAPPING_0006_REPORT_PATH: "${{ runner.temp }}/mapping-0006.json"
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09
+        with: {ref: "${{ needs.repository-gate.outputs.approved_sha }}", persist-credentials: false}
+      - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444
+        with: {node-version: 24.19.0, check-latest: false}
+      - name: Download pinned sanitized provider universe
+        env: {GH_TOKEN: "${{ github.token }}"}
+        run: |
+          set -euo pipefail
+          curl --fail --silent --show-error --location -H "Authorization: Bearer $GH_TOKEN" https://api.github.com/repos/priteshpatel390-del/FPL/actions/artifacts/10540321648/zip -o "$RUNNER_TEMP/provider.zip"
+          printf '%s  %s\n' 4a69b38d20857767007b23f6259efe5894aab35202ad8e10ee8cdc62bdafce97 "$RUNNER_TEMP/provider.zip" | sha256sum --check -
+          unzip -p "$RUNNER_TEMP/provider.zip" api-football-team-universe-qualification-result.json > "$API_FOOTBALL_PROVIDER_UNIVERSE_PATH"
+          rm "$RUNNER_TEMP/provider.zip"
+      - name: Persist private mapping with parameterized D1 bindings
+        env: {API_FOOTBALL_OWNER_CROSSWALK_JSON: "${{ secrets.API_FOOTBALL_OWNER_CROSSWALK_JSON }}"}
+        run: |
+          set -euo pipefail
+          test "$(git ls-remote https://github.com/priteshpatel390-del/FPL.git refs/heads/main | cut -f1)" = "$APPROVED_SHA"
+          node workers/data-platform/run-migration-0006.mjs
+      - if: always()
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f
+        with: {name: api-football-private-mapping-0006, path: "${{ runner.temp }}/mapping-0006.json", retention-days: 7}
+
+  mapping-postflight:
+    needs: [repository-gate, private-mapping]
+    if: always() && needs.private-mapping.result != 'skipped'
+    environment: {name: data-steward-readonly, deployment: false}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09
+        with: {ref: "${{ needs.repository-gate.outputs.approved_sha }}", persist-credentials: false}
+      - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444
+        with: {node-version: 24.19.0, check-latest: false}
+      - env:
+          DATA_STEWARD_CLOUDFLARE_ACCOUNT_ID: "${{ secrets.DATA_STEWARD_CLOUDFLARE_ACCOUNT_ID }}"
+          DATA_STEWARD_CLOUDFLARE_ACCOUNT_FINGERPRINT: "${{ vars.DATA_STEWARD_CLOUDFLARE_ACCOUNT_FINGERPRINT }}"
+          DATA_STEWARD_CLOUDFLARE_READ_TOKEN: "${{ secrets.DATA_STEWARD_CLOUDFLARE_READ_TOKEN }}"
+          MIGRATION_0006_PREFLIGHT_MODE: mapping_post
+        run: node workers/data-platform/migration6/preflight.mjs

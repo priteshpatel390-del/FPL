@@ -1161,7 +1161,7 @@ test('every member of the shared production group stays non-cancelling with no q
     .filter(name=>/^\s{2}group: data-s2-production-collection$/m.test(read(`.github/workflows/${name}`)))
     .sort();
   // Membership drift detection: this exact set, no more and no fewer.
-  assert.deepEqual(members,['api-football-migration-0004.yml','api-football-migration-0005.yml',
+  assert.deepEqual(members,['api-football-migration-0004.yml','api-football-migration-0005.yml','api-football-migration-0006.yml',
     'data-s2-first-run-reconciliation.yml','data-s2-production-collection.yml',
     'data-s2-production-external.yml','data-s2-production-resume.yml',
     'data-s2b-committed-run-integrity.yml','data-s2b-explain-acceptance.yml',

@@ -1,3 +1,7 @@
+## Migration 0006 foundation limitations
+
+Repository tests do not prove protected secrets exist, live Cloudflare permissions, current D1 state, D1 Time Travel availability or current Official FPL authority. No production workflow was dispatched, migration 0006 is not proven applied, and private mapping is not proven durable. Those facts require fresh attended evidence after merge and explicit owner approval.
+
 ## Migration 0005 live closeout — remaining limitations
 
 Migration 0005 is live, but the API-Football path remains intentionally non-operational. Postflight for run `35497565060` proves the runtime row exists with collection disabled; request attempts, fixture revisions, mappings and mapping qualifications are all zero; the collector Worker/deployment/Cron/API-key binding are absent. Migration 0006 is unapplied. Therefore no live API-Football workload evidence exists yet, no provider reliability can be inferred from the migration success, and no model/calculation/UI benefit or accuracy change is established. Application accounting (41 D1 rows written) is specific to this migration run and must not be generalized to later migrations or workload ingestion.

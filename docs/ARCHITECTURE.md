@@ -1,3 +1,7 @@
+## Migration 0006 production boundary
+
+The dormant migration-0006 path reuses live-storage preflight, production identity, D1 write-budget and mapping-persistence contracts. Schema application and private mapping persistence are separate ordered stages. The REST adapter preserves Worker-style prepared-statement semantics: mapping values are carried only in `params`, never SQL text. Read-only reconciliation owns one-shot/unknown-transport classification; retained evidence contains no mapping rows. See [migration 0006 production foundation](API-FOOTBALL-MIGRATION-0006-PRODUCTION-FOUNDATION.md).
+
 ## Live API-Football storage boundary after migration 0005
 
 Production D1 now contains migration ledger 0001–0005. Migration 0005 adds only the reviewed dormant API-Football runtime/provenance schema and disabled runtime seed; it does **not** add the private 20/20 mapping, collector deployment, production D1 binding, Worker secret, Cron, provider egress or model/product path. Live postflight run `35497565060` proved runtime present with `collection_enabled=0`, zero request attempts, zero fixture revisions, zero mappings and zero mapping qualifications; the collector Worker remained absent. Migration 0006 is the next separate schema gate and may not be applied or populated without explicit owner approval.
