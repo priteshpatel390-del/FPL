@@ -238,7 +238,7 @@ export async function performShellCreate({request,readWorker,accountId}={}){
   try{
     const response=await request(mutationPaths(accountId).createShell,{method:'POST',body:buildWorkerShellBody()});
     returnedWorker=response.result;
-    try{validateWorkerShell(returnedWorker);}catch{throw new MutationAmbiguousError();}
+    try{validateWorkerShell(returnedWorker);}catch{returnedWorker=null;throw new MutationAmbiguousError();}
   }catch(error){
     if(error instanceof MutationRejectedError)throw error;
     if(!(error instanceof MutationAmbiguousError))throw error;
