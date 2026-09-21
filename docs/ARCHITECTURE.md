@@ -874,3 +874,7 @@ E2C-B hardens the disposable live boundary with mandatory production-account sep
 ## API-Football inactive collector staging boundary
 
 The collector staging path is repository-isolated from production model/UI code. A manual-only workflow gates exact current `main`, exact-head Verify success and fresh `data-steward-readonly` admission before a dedicated future `api-football-collector-version-upload` environment becomes eligible. The helper structurally permits only `POST /accounts/{account}/workers/workers` and `POST /accounts/{account}/workers/scripts/teamsheet-api-football-shadow-collector/versions`; Deployment, schedules, secrets, domains/routes, Access and D1 mutation endpoints are not admitted. The uploaded ES-module graph is resolved transitively from `collector.mjs`, compared against a reviewed repository allowlist and hash-bound with metadata to the approved SHA.
+
+### Collector mapping read split
+
+Infrastructure staging introduces a runtime-only mapping reader for the collector. Mapping creation/persistence remains owned by `mapping-persistence.mjs`; runtime planning imports `mapping-runtime.mjs` instead. Both operate against the same durable qualification schema, but the runtime upload graph excludes owner crosswalk/qualification issuance modules and validates the persisted state from its immutable hashes and member records.
