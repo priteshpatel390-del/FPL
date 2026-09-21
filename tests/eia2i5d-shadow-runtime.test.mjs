@@ -136,10 +136,11 @@ test('fixture planner bounds pre-match, finality, enrichment and corrections',()
 });
 test('duplicate logical scheduler opportunities are filtered before work',()=>{const row=discoveryOpportunity('2026-09-16T15:15:00Z');assert.equal(dueOpportunities([row],{now:'2026-09-16T16:00:00Z',claimedLogicalIds:[row.logicalId]}).length,0);});
 test('sanitized observability drops credentials, URLs, names, raw errors and D1 identifiers',()=>{assert.deepEqual(sanitizedEvent({operationClass:'DISCOVERY',failureReason:'quota_uncertain',apiKey:'secret',url:'https://x?q=y',name:'player',stack:'raw',generationId:'private'}),{operationClass:'DISCOVERY',failureReason:'quota_uncertain'});});
-test('worker is scheduled-only with dormant configuration and no public route',()=>{
+test('worker has only scheduled plus narrow attended fetch with dormant shipped configuration and no public route',()=>{
   const source=fs.readFileSync(path.join(root,'workers/api-football-collector/collector.mjs'),'utf8');
   const config=fs.readFileSync(path.join(root,'workers/api-football-collector/wrangler.jsonc'),'utf8');
-  assert.doesNotMatch(source,/export default\s*\{[^}]*fetch/);assert.match(source,/export default \{scheduled\}/);
+  assert.match(source,/export default \{scheduled,fetch\}/);assert.match(source,/ATTENDED_ACCEPTANCE_PATH='\/__teamsheet\/api-football\/attended-one-shot'/);
+  assert.match(source,/request\?\.method!==['"]POST['"]/);assert.match(source,/ATTENDED_ONE_SHOT_DISCOVERY|attended_one_shot_discovery/);
   assert.match(config,/"workers_dev": false/);assert.match(config,/"preview_urls": false/);assert.match(config,/"crons": \[\]/);assert.doesNotMatch(config,/routes?|custom_domains?/i);
 });
 test('credential appears only as future Worker secret name and never as a value',()=>{

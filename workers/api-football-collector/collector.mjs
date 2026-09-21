@@ -6,6 +6,9 @@ import {validateProviderPayload} from './semantic-validation.mjs';
 import {runOneShotDiscoveryGeneration} from './activation-orchestrator.mjs';
 
 const safe=result=>Object.freeze(result);
+export const ATTENDED_ACCEPTANCE_PATH='/__teamsheet/api-football/attended-one-shot';
+export const ATTENDED_TRIGGER_BINDING='API_FOOTBALL_ATTENDED_TRIGGER_SECRET';
+const GENERIC_REJECTION=Object.freeze({status:404,body:'Not found'});
 export function sanitizedEvent(event={}){
   const allowed=['operationClass','logicalState','failureReason','requestCount','timeout','httpClass','quotaState','mappingCoverageCount','admittedCount','conflictedCount'];
   return Object.freeze(Object.fromEntries(allowed.filter(key=>event[key]!==undefined).map(key=>[key,event[key]])));
@@ -64,4 +67,29 @@ export async function runScheduledCollector({controller,env,dependencyFactory=cr
 
 export async function scheduled(controller,env){return runScheduledCollector({controller,env});}
 
-export default {scheduled};
+async function constantTimeSecretMatch(provided,expected,cryptoImpl=globalThis.crypto){
+  if(typeof provided!=='string'||typeof expected!=='string'||provided.length<32||expected.length<32||!cryptoImpl?.subtle)return false;
+  const encode=value=>new TextEncoder().encode(value);
+  const [left,right]=await Promise.all([cryptoImpl.subtle.digest('SHA-256',encode(provided)),cryptoImpl.subtle.digest('SHA-256',encode(expected))]);
+  const a=new Uint8Array(left),b=new Uint8Array(right);let difference=a.length^b.length;
+  for(let index=0;index<Math.max(a.length,b.length);index++)difference|=(a[index%a.length]??0)^(b[index%b.length]??0);
+  return difference===0;
+}
+
+export async function runAttendedHttpRequest(request,env,{run=runScheduledCollector,cryptoImpl=globalThis.crypto,now=()=>Date.now()}={}){
+  let url;try{url=new URL(request?.url);}catch{return GENERIC_REJECTION;}
+  if(request?.method!=='POST'||url.pathname!==ATTENDED_ACCEPTANCE_PATH||url.search!=='')return GENERIC_REJECTION;
+  const activation=validateRuntimeActivation(env);
+  if(!activation.ok||activation.mode!=='attended_one_shot_discovery')return GENERIC_REJECTION;
+  const provided=request.headers?.get?.('x-teamsheet-attended-trigger');
+  if(!await constantTimeSecretMatch(provided,env?.[ATTENDED_TRIGGER_BINDING],cryptoImpl))return GENERIC_REJECTION;
+  let result;try{result=await run({controller:{scheduledTime:now()},env});}catch{result=safe({ok:false});}
+  return result?.ok?safe({status:202,body:'Accepted'}):safe({status:409,body:'Not accepted'});
+}
+
+export async function fetch(request,env){
+  const result=await runAttendedHttpRequest(request,env);
+  return new Response(result.body,{status:result.status,headers:{'content-type':'text/plain; charset=utf-8','cache-control':'no-store'}});
+}
+
+export default {scheduled,fetch};

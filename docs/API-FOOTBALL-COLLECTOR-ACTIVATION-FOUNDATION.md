@@ -1,3 +1,7 @@
+## Attended acceptance implementation amendment
+
+The repository candidate tightens `ATTENDED_ACCEPTANCE` to Deployment count exactly zero and adds exact Version identity, two-secret binding metadata, route/domain absence, temporary Versioned Preview invocation, cleanup-always and no-retry reconciliation contracts. Repository-stage admission is unchanged. See [attended acceptance foundation](API-FOOTBALL-ATTENDED-ACCEPTANCE-FOUNDATION.md).
+
 # API-Football Collector Activation Foundation
 
 ## Approval and outcome

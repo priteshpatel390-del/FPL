@@ -1,3 +1,7 @@
+## API-Football attended acceptance candidate — 21 September 2026
+
+Repository-only foundation now models a future zero-Deployment, temporary Versioned Preview one-shot acceptance. Shipped configuration stays inert; live execution remains separately owner-gated. See [attended acceptance foundation](API-FOOTBALL-ATTENDED-ACCEPTANCE-FOUNDATION.md).
+
 ## API-Football inactive collector staging — LIVE CLOSEOUT
 
 **Supersedes the inactive-staging candidate wording below; historical design sections remain for audit.** Owner-attended workflow run `35645387203`, attempt 1, completed successfully on exact `main` `302dc21cc4b821ac8b224d176765a29c0724a244`. Fresh admission again returned `READY_FOR_REPOSITORY_INFRASTRUCTURE_STAGING`; the protected stage then created the inert `teamsheet-api-football-shadow-collector` shell and uploaded exactly one inactive Version, `e49ac8f2-4289-46bc-9f0b-87a20cd7be62`. Both approved Cloudflare mutations were definite successes.

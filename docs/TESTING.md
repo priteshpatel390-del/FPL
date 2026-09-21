@@ -1,3 +1,7 @@
+## API-Football attended acceptance regression coverage
+
+Permanent tests cover blocked/wrong activation, exact method/path, missing/wrong trigger, generic output, shared collector composition, zero-Deployment attended admission, exact Version/bindings, pristine disabled runtime, one invocation, cleanup-always behavior, no automatic retry, inert Wrangler, fixed provider/D1 envelopes and model isolation. See [attended acceptance foundation](API-FOOTBALL-ATTENDED-ACCEPTANCE-FOUNDATION.md).
+
 ## API-Football inactive-staging live acceptance and terminology regression
 
 Live workflow `35645387203`, attempt 1, succeeded on exact `main` `302dc21cc4b821ac8b224d176765a29c0724a244`. Fresh admission, protected inactive staging and final read-only closeout all passed. Candidate Version: `e49ac8f2-4289-46bc-9f0b-87a20cd7be62`; Deployment/Cron/route/domain/secret counts remained zero; D1 mutations and API-Football requests remained zero.

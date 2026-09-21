@@ -1,3 +1,7 @@
+## Attended collector trigger security
+
+Future attended execution requires a distinct high-entropy trigger secret plus attended activation on an exact inactive Version. Both trigger and provider key remain server-side, absent from logs/responses/artifacts/D1/docs, and preflight checks binding names only. Checked-in config contains neither secret. See [attended acceptance foundation](API-FOOTBALL-ATTENDED-ACCEPTANCE-FOUNDATION.md).
+
 ## API-Football inactive-staging security closeout
 
 Owner-attended run `35645387203` used the dedicated protected environment `api-football-collector-version-upload` and a narrowly scoped `Workers Scripts Write` token for exactly two allowlisted Cloudflare mutations: inert Worker-shell creation and one inactive Version upload. Postflight proved workers.dev and Preview URLs disabled, Deployment count 0, Cron/routes/domains 0, secret bindings 0, D1 writes 0 and API-Football requests 0. Final independent read-only closeout preserved disabled runtime and `UNPROVISIONED` provider credential state.

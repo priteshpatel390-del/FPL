@@ -1,3 +1,7 @@
+## Attended-stage extension
+
+Live preflight can now select `ATTENDED_ACCEPTANCE` and an exact reviewed Version ID. It reads binding metadata without secret values and requires zero Deployments, Cron, routes and custom domains, disabled workers.dev/Preview URLs, exact production D1 and pristine disabled runtime before admission. See [attended acceptance foundation](API-FOOTBALL-ATTENDED-ACCEPTANCE-FOUNDATION.md).
+
 ## Post-staging terminology correction — 21 September 2026
 
 Live inactive staging run `35645387203` demonstrated that the preflight's historical `inventory.deployed` label actually meant only “collector Worker/script inventory is present”: the run had a present Worker and inactive Version while the dedicated postflight proved **Deployment count 0**. The sanitized live-preflight report contract therefore moves to `workerPresent` plus explicit `deploymentCount`. This is a semantics/evidence correction, not a live infrastructure change.

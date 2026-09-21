@@ -1,3 +1,7 @@
+## Current checkpoint — attended API-Football acceptance foundation candidate
+
+Owner approval covers repository implementation only of a zero-Deployment attended one-shot discovery acceptance foundation. Candidate adds one exact secret-gated HTTP path, exact inactive attended-Version metadata, attended read-only admission, cleanup-always one-invocation orchestration, reconciliation classification, permanent tests and a dormant protected workflow. Checked-in Wrangler remains blocked and inert. No live Cloudflare/D1/secret/Preview/provider action occurred or is authorized. See [attended acceptance foundation](docs/API-FOOTBALL-ATTENDED-ACCEPTANCE-FOUNDATION.md).
+
 ## API-Football inactive collector staging — LIVE CLOSEOUT
 
 **Supersedes the inactive-staging candidate wording below; historical design sections remain for audit.** Owner-attended workflow run `35645387203`, attempt 1, completed successfully on exact `main` `302dc21cc4b821ac8b224d176765a29c0724a244`. Fresh admission again returned `READY_FOR_REPOSITORY_INFRASTRUCTURE_STAGING`; the protected stage then created the inert `teamsheet-api-football-shadow-collector` shell and uploaded exactly one inactive Version, `e49ac8f2-4289-46bc-9f0b-87a20cd7be62`. Both approved Cloudflare mutations were definite successes.

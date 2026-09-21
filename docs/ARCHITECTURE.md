@@ -1,3 +1,7 @@
+## Attended API-Football execution boundary
+
+A future attended inactive Version may expose one exact authenticated POST path through a temporary Versioned Preview URL. It reuses collector planning/execution, permits no general API, creates no Deployment or Cron, and must disable collection and Preview URLs after one invocation. See [attended acceptance foundation](API-FOOTBALL-ATTENDED-ACCEPTANCE-FOUNDATION.md).
+
 ## Current API-Football collector infrastructure state
 
 The collector now has a live Cloudflare Worker **object** plus one inactive Version, but still has **zero Deployments**. Run `35645387203` on exact `main` `302dc21cc4b821ac8b224d176765a29c0724a244` created the inert shell and inactive Version `e49ac8f2-4289-46bc-9f0b-87a20cd7be62`, with workers.dev/Preview URLs disabled, no routes/domains, no Cron, no secret binding, blocked activation and zero provider/D1 mutations.

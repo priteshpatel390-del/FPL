@@ -1,3 +1,7 @@
+## Decision — zero-Deployment attended API-Football acceptance
+
+Use a separately reviewed inactive Version and temporary Versioned Preview URL; do not create a first Cloudflare Deployment. Require fresh disabled-runtime admission, invoke once, clean up regardless of outcome, and never retry automatically. Repository implementation grants no live authority. See [attended acceptance foundation](API-FOOTBALL-ATTENDED-ACCEPTANCE-FOUNDATION.md).
+
 ## Decision — distinguish Worker presence from Deployment state
 
 **21 September 2026.** After successful inactive staging run `35645387203`, the repository records Worker presence and Cloudflare Deployment state as separate facts. The generic activation preflight must use `workerPresent` for existence of the collector control-plane object and `deploymentCount` for actual Deployment inventory. A present Worker with one inactive Version and `deploymentCount=0` is not “deployed” and must not be described as serving traffic.
