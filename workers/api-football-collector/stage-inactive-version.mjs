@@ -139,4 +139,83 @@ export function buildVersionMetadata(approvedSha){
   if(typeof approvedSha!=='string'||!HEX40.test(approvedSha))fail('collector_staging_approved_sha_invalid');
   return {
     main_module:ENTRY_MODULE,
-    compatibility_date:EXPECTED_COMPATIBILITY_DATE
+    compatibility_date:EXPECTED_COMPATIBILITY_DATEe_dependency');
+    const resolved=path.posix.normalize(path.posix.join(path.posix.dirname(repoPath),specifier));
+    const target=canonicalModuleName(resolved);
+    const from=path.posix.dirname(canonicalModuleName(repoPath));
+    let relative=path.posix.relative(from,target);if(!relative.startsWith('.'))relative=`./${relative}`;
+    return whole.replace(specifier,relative);
+  });
+  if(DYNAMIC_IMPORT.test(rewritten))fail('collector_staging_dynamic_import_forbidden');
+  return rewritten;
+}
+
+export function buildUploadModules(sources){
+  if(!(sources instanceof Map))fail('collector_staging_module_graph_invalid');
+  const modules=new Map();
+  for(const repoPath of REVIEWED_MODULE_PATHS){
+    const source=sources.get(repoPath);if(typeof source!=='string')fail('collector_staging_module_graph_invalid');
+    const name=canonicalModuleName(repoPath);if(!SAFE_MODULE_NAME.test(name)||name.includes('../'))fail('collector_staging_upload_module_name_invalid');
+    modules.set(name,rewriteModule(repoPath,source));
+  }
+  if(!modules.has(ENTRY_MODULE)||modules.size!==REVIEWED_MODULE_PATHS.length)fail('collector_staging_module_graph_invalid');
+  return modules;
+}
+
+export function buildWorkerShellBody(){
+  return Object.freeze({name:WORKER_NAME,observability:Object.freeze({enabled:true}),subdomain:Object.freeze({enabled:false,previews_enabled:false})});
+}
+
+export function buildVersionMetadata(approvedSha){
+  if(typeof approvedSha!=='string'||!HEX40.test(approvedSha))fail('collector_staging_approved_sha_invalid');
+  return {
+    main_module:ENTRY_MODULE,
+    compatibility_date:EXPECTED_COMPATIBILITY_DATE,
+    bindings:[
+      {name:EXPECTED_BINDING_NAME,type:'d1',database_id:EXPECTED_D1_DATABASE_ID},
+      {name:'API_FOOTBALL_FPL_SEASON',type:'plain_text',text:EXPECTED_PLAIN_TEXT_VARS.API_FOOTBALL_FPL_SEASON},
+      {name:'API_FOOTBALL_PROVIDER_SEASON',type:'plain_text',text:EXPECTED_PLAIN_TEXT_VARS.API_FOOTBALL_PROVIDER_SEASON},
+      {name:'EIA_2I5D_ACTIVATION',type:'plain_text',text:EXPECTED_ACTIVATION}
+    ],
+    annotations:{
+      'workers/commit_sha':approvedSha,
+      'workers/message':`API-Football collector inactive staging from ${approvedSha}`,
+      'workers/tag':`api-football-collector-inactive-${approvedSha.slice(0,12)}`
+    }
+  };
+}
+
+export function deterministicIdentity(metadata,modules,approvedSha){
+  if(!metadata||!(modules instanceof Map)||!HEX40.test(String(approvedSha||'')))fail('collector_staging_identity_input_invalid');
+  const moduleHashes=Object.fromEntries([...modules.entries()].sort(([a],[b])=>a.localeCompare(b)).map(([name,source])=>[name,sha256(source)]));
+  const metadataSha256=sha256(JSON.stringify(metadata));
+  const graphSha256=sha256(JSON.stringify({approvedSha,entry:ENTRY_MODULE,metadataSha256,modules:moduleHashes}));
+  return Object.freeze({approved_sha:approvedSha,entry_module:ENTRY_MODULE,metadata_sha256:metadataSha256,module_sha256:Object.freeze(moduleHashes),graph_sha256:graphSha256});
+}
+
+export function buildVersionUploadForm(metadata,modules){
+  const form=new FormData();form.set('metadata',JSON.stringify(metadata));
+  for(const [name,source] of [...modules.entries()].sort(([a],[b])=>a.localeCompare(b)))form.set(name,new File([source],name,{type:'application/javascript+module'}));
+  return form;
+}
+
+export function mutationPaths(accountId){
+  const account=encodeURIComponent(accountId),script=encodeURIComponent(WORKER_NAME);
+  return Object.freeze({
+    createShell:`/accounts/${account}/workers/workers`,
+    uploadVersion:`/accounts/${account}/workers/scripts/${script}/versions`
+  });
+}
+
+export function assertMutationAllowed(method,requestPath,{accountId}={}){
+  const paths=mutationPaths(accountId),allowed=new Set([`POST ${paths.createShell}`,`POST ${paths.uploadVersion}`]);
+  if(!allowed.has(`${String(method).toUpperCase()} ${requestPath}`))fail('collector_staging_mutation_endpoint_forbidden');
+  return true;
+}
+
+export function validateWorkerShell(worker){
+  if(!worker||worker.name!==WORKER_NAME||typeof worker.id!=='string'||!worker.id||worker.deployed_on!=null||
+    worker.subdomain?.enabled!==false||worker.subdomain?.previews_enabled!==false||worker.observability?.enabled!==true)fail('collector_staging_worker_shell_invalid');
+  const refs=worker.references;
+  if(!refs||!Array.isArray(refs.domains)||refs.domains.length!==0||Object.values(refs).some(value=>!Array.isArray(value)||value.length!==0))fail('collector_staging_worker_reference_present');
+  return Object.freeze({workerId:worker.id});
