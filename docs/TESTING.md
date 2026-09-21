@@ -1,5 +1,12 @@
 ## Proposed inactive collector staging verification
 
+## API-Football inactive collector staging permanent coverage
+
+Draft PR #283 adds a dedicated permanent suite for the dormant infrastructure-staging boundary. It pins the exact Worker name and inert shell body; workers.dev and Preview URL disablement; exact compatibility date, production D1 identity, three plain-text bindings and zero secrets; deterministic closed transitive module resolution and per-module/metadata/SHA-bound hashes; rejection of remote/npm/node/node_modules/unresolved/unreviewed imports; the two-path mutation allowlist; exact-main/exact-head-Verify/first-attempt workflow gates; fresh read-only admission before the protected environment; definite-rejection no-retry semantics; ambiguous shell/create and Version/upload reconciliation without retry; postflight absence of Deployment, Cron, routes/domains, secrets and extra Versions; independent read-only D1/runtime closeout; production model/UI isolation; and isolation from the other API-Football workflows.
+
+The existing API-Football discovery workflow allowlist is extended explicitly for the new dormant staging workflow and applies staging-specific assertions; it is not loosened into a wildcard. Full `./run-tests.sh`, deterministic dual production builds, root/deployable equality and manifest identity remain mandatory on the exact PR head before merge. Repository verification does not constitute live Cloudflare execution.
+
+
 Future repository implementation must permanently test exact Worker-shell identity, workers.dev/Preview URLs disabled before first Version creation, exact first-Version D1/plain-text binding set, absence of secret bindings, blocked activation, zero Deployment/Cron paths, closed mutation request allowlist, deterministic transitive ES-module graph and hashes, exact-main/Verify gates, fresh `READY_FOR_REPOSITORY_INFRASTRUCTURE_STAGING` admission, no-retry reconciliation for ambiguous shell/version mutations, and postflight proof that production D1 logical state plus collector attempt/generation/revision counts remain unchanged. Full repository tests and deterministic production builds remain required before any live execution approval.
 
 ## Collector activation mapping-provenance regression coverage

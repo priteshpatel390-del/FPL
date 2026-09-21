@@ -1,5 +1,14 @@
 ## Collector inactive-version staging design limitations
 
+## API-Football inactive staging limitations — current candidate
+
+- The only first-party Cloudflare API found that can create the Worker object before its first Version while explicitly setting both workers.dev and Version Preview URL state is the Workers **Beta** create-Worker API. The repository pins and fails closed on the expected contract, but live behaviour remains unproven until a separately approved attended execution.
+- The proposed `api-football-collector-version-upload` GitHub environment and its dedicated least-privilege token are referenced by the dormant workflow but are not created or configured by repository code. Repository tests cannot prove live GitHub environment protection or Cloudflare token scoping.
+- An inactive Version bound to production D1 is still meaningful production infrastructure connectivity even when it has no Deployment, Cron, secret or traffic. No such Version exists from this repository candidate.
+- Mutation ambiguity cannot be made transactional across the Cloudflare control plane. The helper therefore never retries an uncertain create/upload and requires read-only reconciliation or owner review.
+- The current repository candidate proves code contracts only. It does not prove that the Beta Worker API, Version upload API or returned module-detail shapes will remain unchanged at a later live execution; fresh admission and fail-closed response validation remain mandatory.
+
+
 - The live preflight now proves repository/infrastructure-staging readiness, not that any Worker upload path has been implemented or exercised.
 - The collector Worker does not yet exist in Cloudflare.
 - The proposed shell-create primitive uses Cloudflare's current Workers Beta API because it exposes pre-Version subdomain/preview controls; repository implementation must re-verify that API before merge and fail closed on response drift.

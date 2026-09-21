@@ -1,5 +1,19 @@
 ## Immediate API-Football gate — inactive Worker Version staging design
 
+## Current gate — API-Football inactive collector infrastructure staging
+
+Repository implementation is in draft PR #283. The candidate adds dormant staging machinery, permanent tests and documentation only; it has not been dispatched and creates no live Worker, Version, Deployment, Cron, route/domain, secret or D1/provider mutation.
+
+The gate sequence is:
+1. complete PR #283 repository verification and review;
+2. owner approval to merge;
+3. merge and exact-main verification;
+4. **new separate owner approval** for any live inactive-staging execution;
+5. only after a successful read-only closeout may a later Deployment proposal be prepared.
+
+Upload success would not authorize Deployment. Deployment would not authorize API-Football credentials, runtime enablement, Cron or provider egress.
+
+
 Repository/infrastructure staging admission is now live-PASS via run `35634186433` on exact main `d88312eb6263a3ef0e5de1be3e79b647a797b830`. Current approved work is documentation/design only for the next mutation-capable stage: create an inert non-routable collector Worker shell and upload one inactive Version with explicit production D1 binding, `REPOSITORY_ONLY_BLOCKED`, no secret, no Cron and no Deployment. Next approval after this docs/design PR is repository implementation only; live execution remains a later separate gate.
 
 ## Immediate API-Football gate — remediate activation provenance false negative

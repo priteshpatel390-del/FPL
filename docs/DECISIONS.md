@@ -1,5 +1,16 @@
 ## 21 September 2026 — admit collector repository/infrastructure staging, design inert first Version only
 
+## D-EIA2I5D-STAGING · 21 September 2026 · Repository implementation candidate · Keep first collector Version inert and exclude qualification construction from its runtime graph
+
+**Decision:** implement the approved inactive collector staging machinery as a dormant manual-only workflow. Future execution may perform exactly two mutation primitives: create one inert `teamsheet-api-football-shadow-collector` Worker object with workers.dev and Version Preview URLs disabled, then upload one inactive Version with the canonical production D1 binding, the three reviewed plain-text variables and zero secrets. Deployment, Cron, route/domain, secret, Access, D1 and provider mutations are structurally forbidden.
+
+**Runtime graph decision:** collector planning now reads the already-persisted qualified mapping through `mapping-runtime.mjs`. The runtime reader preserves exact durable qualification/provenance hashes, member cardinality, mapping identity validation, persistence-integrity reconstruction and current Official FPL authority coverage. It deliberately does not import the owner crosswalk issuance or pre-live qualification construction path. This reduces the future Worker bundle's sensitive/non-runtime surface without changing the durable mapping or its accepted semantics.
+
+**Mutation ambiguity:** definite 4xx rejection stops with no retry. Timeout, connection loss, malformed mutation response or 5xx is ambiguous; the same mutation is never repeated. Only read-only reconciliation may establish an exact state, otherwise owner review is required. No automatic destructive cleanup exists.
+
+**Boundary:** draft PR #283 is repository-only. It does not authorize dispatch or any live Cloudflare/D1/provider action. Live inactive staging remains a separate owner approval after merge and exact-main verification.
+
+
 **Decision:** accept read-only activation run `35634186433`, attempt 1, on exact main `d88312eb6263a3ef0e5de1be3e79b647a797b830` as live evidence for `READY_FOR_REPOSITORY_INFRASTRUCTURE_STAGING`. Artifact `10655278906` / SHA-256 `5da299cc5b0bec4064ad7d839e40e05e2b2ad9dde41f7eed785534dfa9bb501b` proves the fixed read-only predicates and zero mutation/provider/secret-value counters. The next gate is design only: because the collector Worker is absent, any future first-Version implementation must first prove an inert Worker shell with workers.dev and Preview URLs disabled, then upload at most one inactive Version with explicit production D1 binding, exact blocked activation, no API-Football secret, no Cron and no Deployment. Upload success would not authorize Deployment. Implementation and live mutation require separate owner approvals.
 
 ## 21 September 2026 — activation mapping provenance is historical, current team coverage is live

@@ -1,5 +1,18 @@
 # API-Football Collector — Inactive Worker Version / Production D1 Binding Staging Proposal
 
+## Implementation status — repository candidate
+
+**Status: REPOSITORY IMPLEMENTATION CANDIDATE IN DRAFT PR #283 — NO LIVE EXECUTION AUTHORIZED.**
+
+The approved design is now represented by dormant repository machinery. The candidate keeps the merged two-primitive design: one inert Worker-shell create followed, only after exact inert readback, by one inactive Version upload. The workflow is manual-only, first-attempt-only, exact-current-main gated, requires exact-head Verify Teamsheet success, re-runs the accepted activation read-only admission immediately before the protected mutation-capable job, and performs an independent read-only closeout afterward.
+
+The implementation additionally narrows the upload graph: `planner-orchestrator.mjs` reads persisted qualified mappings through `mapping-runtime.mjs`, which validates the same durable qualification, provenance, member identity and persistence-integrity evidence without importing owner crosswalk/qualification construction modules. This is a bundle-surface reduction, not a mapping change.
+
+Cloudflare first-party documentation was rechecked before implementation. No stable non-Beta API was found that provides the same pre-Version Worker-object creation with explicit subdomain and preview controls, so the design's Beta Create Worker primitive is retained rather than silently changed. The stable Worker Version Upload API remains the second primitive.
+
+Repository presence, PR verification or merge does **not** authorize dispatch. The future `api-football-collector-version-upload` environment, token and any live Worker/Version remain separately owner-controlled.
+
+
 Status: **DESIGN / APPROVAL PROPOSAL ONLY — NO INFRASTRUCTURE MUTATION AUTHORIZED**
 
 Prepared: **21 September 2026**
