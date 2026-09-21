@@ -1,3 +1,7 @@
+## Dormant API-Football collector activation composition
+
+Collector now has one repository-only execution owner for `plan -> reserve -> bounded transport -> semantic validation -> generation ceiling -> concrete normalized D1 persistence -> attempt completion -> generation/head commit`. Transport owns no D1 state; the D1 adapter owns no provider egress. Discovery creates `STAGING` and keeps previous head authoritative until all five attempt-1 requests persist and complete. Concrete 1,250-row bulk chunks enforce a 2,500-fixture, 7,525-row-write and 50-total-statement ceiling. Shipped Wrangler does not select execution state. See [collector activation foundation](API-FOOTBALL-COLLECTOR-ACTIVATION-FOUNDATION.md).
+
 ## Current API-Football storage/runtime architecture after Migration 0006 closeout
 
 Migration ledger 0001–0006 is now live, and the private qualified 20/20 team mapping is durably present in canonical `teamsheet-data` D1. Owner-attended persistence run `35607354636` committed the exact 20 entity mappings / 1 qualification / 20 members / 1 head state through a 43-statement D1 batch; final independent read-only reconciliation `35609344995` on main `8c5c7fbf80b70961f2e39d8acc73c806d8c95659` accepted `COMPLETE_QUALIFIED_MAPPING_VISIBLE` with zero reconciliation mutations and zero API-Football requests. The private crosswalk remains absent from public source/artifacts and is represented publicly only by approved provenance/hashes.

@@ -119,5 +119,6 @@ export async function planScheduledCollection(db,{now}={}){
   const mappings=await readQualifiedTeamMappings(db,{season:API_FOOTBALL_FPL_SEASON,authority});if(!mappings.ok)return mappings;
   const fixtures=await readPlannerFixtures(db);if(!fixtures.ok)return fixtures;
   const completed=await readCompletedPlannerLogicalIds(db);if(!completed.ok)return completed;
-  return buildScheduledCollectionPlan({now:at,authority,mappingAuthority:mappings,fixtures:fixtures.fixtures,completedLogicalIds:completed.logicalIds});
+  const plan=buildScheduledCollectionPlan({now:at,authority,mappingAuthority:mappings,fixtures:fixtures.fixtures,completedLogicalIds:completed.logicalIds});
+  return plan.ok?safe({...plan,executionContext:safe({authority,mappings:mappings.mappings})}):plan;
 }

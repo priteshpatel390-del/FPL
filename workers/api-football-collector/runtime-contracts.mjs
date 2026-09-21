@@ -9,9 +9,11 @@ export const API_FOOTBALL_MIN_GAP_MS=1_000;
 export const API_FOOTBALL_AUTHORITY_MAX_AGE_MS=48*60*60*1000;
 export const API_FOOTBALL_MAX_RESPONSE_BYTES=720_896;
 export const API_FOOTBALL_MAX_ROWS=2_000;
+export const API_FOOTBALL_MAX_DISCOVERY_GENERATION_ROWS=2_500;
 export const API_FOOTBALL_ATTEMPT_RETENTION_DAYS=35;
 export const API_FOOTBALL_SCHEDULE='15 * * * *';
 export const API_FOOTBALL_PRELIVE_PLANNER_ACTIVATION='PRELIVE_PLANNER_ONLY';
+export const API_FOOTBALL_ATTENDED_DISCOVERY_ACTIVATION='ATTENDED_ONE_SHOT_DISCOVERY';
 export const API_FOOTBALL_OPERATION_CLASSES=Object.freeze(['DISCOVERY','PRE_MATCH','FINALITY','FINAL_ENRICHMENT','CORRECTION','MANUAL_BACKFILL']);
 const DISCOVERY_LEAGUES=new Set(['2','3','848','45','48']);
 
@@ -40,8 +42,9 @@ export function validateCollectorRequest(request){
 }
 
 export function validateRuntimeActivation(env){
-  if(env?.EIA_2I5D_ACTIVATION!==API_FOOTBALL_PRELIVE_PLANNER_ACTIVATION)return fail('runtime_activation_not_approved');
-  return Object.freeze({ok:true,mode:'prelive_planner_only'});
+  if(env?.EIA_2I5D_ACTIVATION===API_FOOTBALL_PRELIVE_PLANNER_ACTIVATION)return Object.freeze({ok:true,mode:'prelive_planner_only'});
+  if(env?.EIA_2I5D_ACTIVATION===API_FOOTBALL_ATTENDED_DISCOVERY_ACTIVATION)return Object.freeze({ok:true,mode:'attended_one_shot_discovery'});
+  return fail('runtime_activation_not_approved');
 }
 export function validatePlannerConfiguration(env){
   if(!env?.TEAMSHEET_DATA_DB)return fail('storage_unavailable');
