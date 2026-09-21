@@ -1,3 +1,7 @@
+## API-Football inactive staging credential boundary
+
+The repository candidate references a dedicated protected environment, `api-football-collector-version-upload`, with only `CLOUDFLARE_COLLECTOR_WORKER_UPLOAD_TOKEN`, `CLOUDFLARE_ACCOUNT_ID` and an independent account fingerprint pin. It deliberately excludes `API_FOOTBALL_API_KEY`, the private crosswalk, D1 write credentials and unrelated provider/application secrets. The executable structurally admits only one Worker-shell POST and one inactive Version POST; Deployment, schedules, secret, route/domain, D1 and Access mutations are forbidden. Mutation ambiguity is reconciled read-only with no blind retry or destructive cleanup.
+
 ## Proposed inactive collector staging security boundary
 
 The next collector infrastructure stage remains unimplemented. Its design requires a dedicated protected environment containing only a collector Worker-upload token plus account identity/fingerprint; it must contain no `API_FOOTBALL_API_KEY` and no private crosswalk. A separate `data-steward-readonly` job must freshly re-establish `READY_FOR_REPOSITORY_INFRASTRUCTURE_STAGING` before any mutation-capable environment is eligible. The future mutation helper may allow only one inert Worker-shell creation and one inactive Version upload. It must forbid Deployment, Schedules mutation, secret mutation, route/domain mutation, D1 mutation, Access mutation and provider egress. The first Version must not exist until workers.dev and Preview URLs are proven disabled.
