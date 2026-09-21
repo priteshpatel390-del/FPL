@@ -1,0 +1,173 @@
+# Dormant attended private-mapping persistence only. Production dispatch requires separate owner approval.
+name: API-Football Private Mapping 0006 Persistence
+
+on:
+  workflow_dispatch:
+    inputs:
+      approved_sha:
+        description: Exact protected current main approved for one private-mapping persistence attempt
+        required: true
+        type: string
+
+permissions:
+  contents: read
+  checks: read
+
+concurrency:
+  group: data-s2-production-collection
+  cancel-in-progress: false
+
+jobs:
+  repository-gate:
+    if: github.event_name == 'workflow_dispatch' && github.run_attempt == 1
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    outputs:
+      approved_sha: ${{ steps.identity.outputs.approved_sha }}
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with: {ref: "${{ inputs.approved_sha }}", fetch-depth: 0, persist-credentials: false}
+      - id: identity
+        env: {APPROVED_SHA: "${{ inputs.approved_sha }}"}
+        run: |
+          set -euo pipefail
+          test "${{ github.event_name }}" = workflow_dispatch
+          test "${{ github.run_attempt }}" = 1
+          test "${{ github.ref }}" = refs/heads/main
+          test "${{ github.repository }}" = priteshpatel390-del/FPL
+          test "$(git rev-parse HEAD)" = "$APPROVED_SHA"
+          test "$(git ls-remote https://github.com/priteshpatel390-del/FPL.git refs/heads/main | cut -f1)" = "$APPROVED_SHA"
+          test -z "$(git status --porcelain)"
+          echo "approved_sha=$APPROVED_SHA" >> "$GITHUB_OUTPUT"
+      - name: Require exact-head Verify Teamsheet success
+        env: {GH_TOKEN: "${{ github.token }}", APPROVED_SHA: "${{ inputs.approved_sha }}"}
+        run: |
+          set -euo pipefail
+          curl --fail --silent --show-error -H "Authorization: Bearer $GH_TOKEN" -H 'Accept: application/vnd.github+json' "https://api.github.com/repos/priteshpatel390-del/FPL/commits/$APPROVED_SHA/check-runs" > "$RUNNER_TEMP/checks.json"
+          node --input-type=module - "$RUNNER_TEMP/checks.json" <<'NODE'
+          import fs from 'node:fs';const rows=JSON.parse(fs.readFileSync(process.argv[2])).check_runs??[];
+          if(!rows.some(row=>row.name==='Tests and deterministic build'&&row.conclusion==='success'&&row.head_sha===process.env.APPROVED_SHA))process.exit(1);
+          NODE
+      - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
+        with: {node-version: 24.19.0, check-latest: false}
+      - name: Run focused persistence tests before credentials
+        run: node --test tests/api-football-mapping-0006-persistence.test.mjs tests/api-football-migration-0006-foundation.test.mjs tests/api-football-live-storage-preflight.test.mjs
+
+  approved-evidence-gate:
+    needs: repository-gate
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Verify approved reconciliation artifact and classification
+        env: {GH_TOKEN: "${{ github.token }}"}
+        run: |
+          set -euo pipefail
+          curl --fail --silent --show-error -H "Authorization: Bearer $GH_TOKEN" -H 'Accept: application/vnd.github+json' https://api.github.com/repos/priteshpatel390-del/FPL/actions/artifacts/10631743543 > "$RUNNER_TEMP/reconciliation-metadata.json"
+          node --input-type=module - "$RUNNER_TEMP/reconciliation-metadata.json" <<'NODE'
+          import fs from 'node:fs';const a=JSON.parse(fs.readFileSync(process.argv[2]));
+          if(a.id!==10631743543||a.name!=='api-football-mapping-0006-readonly-reconciliation'||a.expired!==false||a.digest!=='sha256:d0bd4c795a561f5dc3fe8c68c3ed28e256ec31cbff598bb0ea42130e6f02b014'||a.workflow_run?.id!==35584694866||a.workflow_run?.head_sha!=='93cfbe47f8c4c17783dc7126026d1a9d9b9da645')process.exit(1);
+          NODE
+          curl --fail --silent --show-error --location -H "Authorization: Bearer $GH_TOKEN" https://api.github.com/repos/priteshpatel390-del/FPL/actions/artifacts/10631743543/zip -o "$RUNNER_TEMP/reconciliation.zip"
+          printf '%s  %s\n' d0bd4c795a561f5dc3fe8c68c3ed28e256ec31cbff598bb0ea42130e6f02b014 "$RUNNER_TEMP/reconciliation.zip" | sha256sum --check -
+          test "$(unzip -Z1 "$RUNNER_TEMP/reconciliation.zip")" = mapping-0006-reconciliation.json
+          unzip -p "$RUNNER_TEMP/reconciliation.zip" mapping-0006-reconciliation.json > "$RUNNER_TEMP/reconciliation.json"
+          node --input-type=module - "$RUNNER_TEMP/reconciliation.json" <<'NODE'
+          import fs from 'node:fs';const r=JSON.parse(fs.readFileSync(process.argv[2]));
+          const keys=Object.keys(r).sort().join(',');
+          if(keys!=='apiFootballRequests,classification,ok,productionMutations,rowsRead'||r.ok!==true||r.classification!=='NO_SUBMITTED_MAPPING_STATE_VISIBLE'||!Number.isSafeInteger(r.rowsRead)||r.rowsRead<0||r.productionMutations!==0||r.apiFootballRequests!==0)process.exit(1);
+          NODE
+      - name: Verify pinned qualified provider-universe artifact
+        env: {GH_TOKEN: "${{ github.token }}"}
+        run: |
+          set -euo pipefail
+          curl --fail --silent --show-error --location -H "Authorization: Bearer $GH_TOKEN" https://api.github.com/repos/priteshpatel390-del/FPL/actions/artifacts/10540321648/zip -o "$RUNNER_TEMP/provider.zip"
+          printf '%s  %s\n' 4a69b38d20857767007b23f6259efe5894aab35202ad8e10ee8cdc62bdafce97 "$RUNNER_TEMP/provider.zip" | sha256sum --check -
+          test "$(unzip -Z1 "$RUNNER_TEMP/provider.zip")" = api-football-team-universe-qualification-result.json
+          unzip -p "$RUNNER_TEMP/provider.zip" api-football-team-universe-qualification-result.json > "$RUNNER_TEMP/provider-universe.json"
+          printf '%s  %s\n' 065a3057d6b9cb1543f942fdc6882ab29850beca95533549e5cbfb7c96efaad8 "$RUNNER_TEMP/provider-universe.json" | sha256sum --check -
+
+  mapping-preflight:
+    needs: [repository-gate, approved-evidence-gate]
+    environment: {name: data-steward-readonly, deployment: false}
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with: {ref: "${{ needs.repository-gate.outputs.approved_sha }}", persist-credentials: false}
+      - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
+        with: {node-version: 24.19.0, check-latest: false}
+      - name: Fresh independent mapping_pre admission
+        env:
+          DATA_STEWARD_CLOUDFLARE_ACCOUNT_ID: "${{ secrets.DATA_STEWARD_CLOUDFLARE_ACCOUNT_ID }}"
+          DATA_STEWARD_CLOUDFLARE_ACCOUNT_FINGERPRINT: "${{ vars.DATA_STEWARD_CLOUDFLARE_ACCOUNT_FINGERPRINT }}"
+          DATA_STEWARD_CLOUDFLARE_READ_TOKEN: "${{ secrets.DATA_STEWARD_CLOUDFLARE_READ_TOKEN }}"
+          DATA_STEWARD_CLOUDFLARE_ANALYTICS_TOKEN: "${{ secrets.DATA_STEWARD_CLOUDFLARE_ANALYTICS_TOKEN }}"
+          MIGRATION_0006_PREFLIGHT_MODE: mapping_pre
+          MIGRATION_0006_PREFLIGHT_REPORT_PATH: "${{ runner.temp }}/mapping-pre.json"
+        run: node workers/data-platform/migration6/preflight.mjs
+      - name: Upload sanitized mapping_pre evidence
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6
+        with: {name: api-football-mapping-0006-persistence-preflight, path: "${{ runner.temp }}/mapping-pre.json", if-no-files-found: error, retention-days: 7}
+
+  private-mapping:
+    needs: [repository-gate, approved-evidence-gate, mapping-preflight]
+    environment: data-s2-production-collection
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      APPROVED_SHA: "${{ needs.repository-gate.outputs.approved_sha }}"
+      CLOUDFLARE_ACCOUNT_ID: "${{ secrets.CLOUDFLARE_ACCOUNT_ID }}"
+      CLOUDFLARE_D1_TOKEN: "${{ secrets.CLOUDFLARE_D1_TOKEN }}"
+      CLOUDFLARE_PRODUCTION_ACCOUNT_FINGERPRINT: "${{ vars.CLOUDFLARE_PRODUCTION_ACCOUNT_FINGERPRINT }}"
+      GITHUB_RUN_ATTEMPT: "${{ github.run_attempt }}"
+      MIGRATION_0006_PHASE: mapping
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with: {ref: "${{ needs.repository-gate.outputs.approved_sha }}", persist-credentials: false}
+      - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
+        with: {node-version: 24.19.0, check-latest: false}
+      - name: Persist private mapping through existing Migration 0006 runner
+        env:
+          GH_TOKEN: "${{ github.token }}"
+          API_FOOTBALL_OWNER_CROSSWALK_JSON: "${{ secrets.API_FOOTBALL_OWNER_CROSSWALK_JSON }}"
+          API_FOOTBALL_PROVIDER_UNIVERSE_PATH: "${{ runner.temp }}/provider-universe.json"
+          MAPPING_0006_REPORT_PATH: "${{ runner.temp }}/mapping-0006.json"
+        run: |
+          set -euo pipefail
+          test -n "$API_FOOTBALL_OWNER_CROSSWALK_JSON"
+          test "${{ github.run_attempt }}" = 1
+          test "$(git ls-remote https://github.com/priteshpatel390-del/FPL.git refs/heads/main | cut -f1)" = "$APPROVED_SHA"
+          curl --fail --silent --show-error --location -H "Authorization: Bearer $GH_TOKEN" https://api.github.com/repos/priteshpatel390-del/FPL/actions/artifacts/10540321648/zip -o "$RUNNER_TEMP/provider.zip"
+          printf '%s  %s\n' 4a69b38d20857767007b23f6259efe5894aab35202ad8e10ee8cdc62bdafce97 "$RUNNER_TEMP/provider.zip" | sha256sum --check -
+          test "$(unzip -Z1 "$RUNNER_TEMP/provider.zip")" = api-football-team-universe-qualification-result.json
+          unzip -p "$RUNNER_TEMP/provider.zip" api-football-team-universe-qualification-result.json > "$API_FOOTBALL_PROVIDER_UNIVERSE_PATH"
+          printf '%s  %s\n' 065a3057d6b9cb1543f942fdc6882ab29850beca95533549e5cbfb7c96efaad8 "$API_FOOTBALL_PROVIDER_UNIVERSE_PATH" | sha256sum --check -
+          rm "$RUNNER_TEMP/provider.zip"
+          node workers/data-platform/run-migration-0006.mjs
+      - if: always()
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6
+        with: {name: api-football-private-mapping-0006-persistence, path: "${{ runner.temp }}/mapping-0006.json", if-no-files-found: ignore, retention-days: 7}
+
+  mapping-postflight:
+    needs: [repository-gate, private-mapping]
+    if: always() && needs.private-mapping.result != 'skipped'
+    environment: {name: data-steward-readonly, deployment: false}
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with: {ref: "${{ needs.repository-gate.outputs.approved_sha }}", persist-credentials: false}
+      - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
+        with: {node-version: 24.19.0, check-latest: false}
+      - name: Independent mapping_post verification
+        env:
+          DATA_STEWARD_CLOUDFLARE_ACCOUNT_ID: "${{ secrets.DATA_STEWARD_CLOUDFLARE_ACCOUNT_ID }}"
+          DATA_STEWARD_CLOUDFLARE_ACCOUNT_FINGERPRINT: "${{ vars.DATA_STEWARD_CLOUDFLARE_ACCOUNT_FINGERPRINT }}"
+          DATA_STEWARD_CLOUDFLARE_READ_TOKEN: "${{ secrets.DATA_STEWARD_CLOUDFLARE_READ_TOKEN }}"
+          MIGRATION_0006_PREFLIGHT_MODE: mapping_post
+          MIGRATION_0006_PREFLIGHT_REPORT_PATH: "${{ runner.temp }}/mapping-post.json"
+        run: node workers/data-platform/migration6/preflight.mjs
+      - name: Upload sanitized mapping_post evidence
+        if: always()
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6
+        with: {name: api-football-mapping-0006-persistence-postflight, path: "${{ runner.temp }}/mapping-post.json", if-no-files-found: ignore, retention-days: 7}

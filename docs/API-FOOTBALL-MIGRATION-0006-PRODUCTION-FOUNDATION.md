@@ -2,7 +2,9 @@
 
 ## Status
 
-Repository implementation only. Production migration 0006 has **not** been executed, and the private 20/20 mapping has **not** been persisted by this checkpoint. The workflow is dormant and manual-only. A future dispatch needs separate explicit owner approval after merge, exact-current-main verification, exact-head Verify Teamsheet success and fresh production admission evidence.
+Migration 0006 schema is live. Private mapping persistence is not accepted as complete. The earlier recovery run `35575463178` submitted a mutation, ended `AMBIGUOUS_REQUIRES_OWNER_ATTENTION`, remains consumed and must never be rerun. Approved read-only reconciliation run `35584694866`, attempt 1, succeeded with `NO_SUBMITTED_MAPPING_STATE_VISIBLE`, 0 production mutations and 0 API-Football requests; artifact `10631743543` has SHA-256 `d0bd4c795a561f5dc3fe8c68c3ed28e256ec31cbff598bb0ea42130e6f02b014`. This proves only that the fixed aggregate diagnostic saw no submitted mapping state, not facts it did not inspect.
+
+Repository implementation now includes a separate dormant, manual mapping-persistence-only workflow. A future dispatch needs separate explicit owner approval after merge, exact-current-main verification, exact-head Verify Teamsheet success, validation of that approved reconciliation artifact and fresh production admission evidence.
 
 No API-Football request occurred. The collector remains disabled, unconfigured and undeployed; `API_FOOTBALL_API_KEY`, Cron and `PRELIVE_PLANNER_ONLY` remain outside scope. No model, calculation or product path changed.
 
@@ -30,3 +32,10 @@ A dedicated manual-only workflow, `.github/workflows/api-football-migration-0006
 The workflow has no production D1 write token, private crosswalk secret, `API_FOOTBALL_API_KEY`, migration runner, deployment command, schedule/secret mutation or API-Football egress. Its successful result can establish fresh `READY_FOR_MIGRATION_0006` admission evidence, but it cannot apply migration 0006 or persist the private mapping.
 
 D1 Time Travel checkpoint availability is intentionally not probed by this read-only workflow. The existing production runner obtains the checkpoint immediately before mutation using the separately gated production identity. Therefore Time Travel availability remains a distinct attended execution precondition and must not be inferred from read-only preflight success.
+
+
+## Attended mapping-persistence-only gate
+
+`.github/workflows/api-football-mapping-0006-persistence.yml` is distinct from the consumed recovery execution. Before protected writer credentials become eligible, it requires first workflow attempt, exact protected current `main`, exact-head `Tests and deterministic build` success, exact reconciliation run/artifact identity and archive hash, exact `NO_SUBMITTED_MAPPING_STATE_VISIBLE` classification with zero reported mutations/provider requests, pinned provider-universe archive and payload integrity, and fresh independent `mapping_pre`. The protected crosswalk must be nonempty and enters only the persistence step. That step invokes the unchanged `workers/data-platform/run-migration-0006.mjs` with `MIGRATION_0006_PHASE: mapping`; no schema phase exists. Independent read-only `mapping_post` runs after any non-skipped persistence attempt and retains sanitized evidence.
+
+The workflow contains no `API_FOOTBALL_API_KEY`, provider endpoint, schema execution, automatic restore, deployment, secret/Cron mutation, collector activation or product/model path. Creating or merging it does not authorize dispatch.
