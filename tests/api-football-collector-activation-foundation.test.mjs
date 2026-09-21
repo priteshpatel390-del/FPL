@@ -194,7 +194,7 @@ test('failure after persistence before completion leaves consumed reservation an
 
 test('failure after five completions before generation commit prevents head and duplicate egress',async()=>{
   const db=new DeterministicD1({failCommit:true}),first=await runConcrete({db});assert.equal(first.result.reason,'generation_commit_failed');assert.equal(first.fetches(),5);assert.equal(db.head,null);assert.equal([...db.attempts.values()].every(row=>row.outcome==='SUCCEEDED'),true);
-  db.failCommit=false;const second=await runConcrete({db,at:'2026-09-21T12:00:10.000Z'});assert.equal(second.fetches(),0);assert.equal(second.result.reason,'succeeded_attempt_requires_reconciliation');assert.equal(db.head,null);
+  db.failCommit=false;const second=await runConcrete({db,at:'2026-09-21T23:00:00.000Z'});assert.equal(second.fetches(),0);assert.equal(second.result.reason,'succeeded_attempt_requires_reconciliation');assert.equal(db.head,null);
 });
 
 test('active and expired durable reservations both block egress',async()=>{
