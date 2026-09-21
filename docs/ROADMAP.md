@@ -1,3 +1,9 @@
+## Current checkpoint — inactive collector staging complete
+
+Live inactive staging is complete and accepted from run `35645387203` on exact `main` `302dc21cc4b821ac8b224d176765a29c0724a244`: inert Worker shell present, exactly one inactive Version `e49ac8f2-4289-46bc-9f0b-87a20cd7be62`, Deployment count 0, Cron 0, secret bindings 0 and provider requests 0.
+
+Current work is repository closeout only: preserve the evidence in canonical docs and remove the misleading Worker-presence-as-“deployed” terminology. **Not started / not authorized:** Worker Deployment, API-Football key provisioning, D1 runtime enablement, Cron, provider egress, workload ingestion or model/product influence.
+
 ## Immediate API-Football gate — inactive Worker Version staging design
 
 Repository/infrastructure staging admission is now live-PASS via run `35634186433` on exact main `d88312eb6263a3ef0e5de1be3e79b647a797b830`. Current approved work is documentation/design only for the next mutation-capable stage: create an inert non-routable collector Worker shell and upload one inactive Version with explicit production D1 binding, `REPOSITORY_ONLY_BLOCKED`, no secret, no Cron and no Deployment. Next approval after this docs/design PR is repository implementation only; live execution remains a later separate gate.
