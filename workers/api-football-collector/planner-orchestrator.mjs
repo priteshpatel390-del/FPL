@@ -1,7 +1,7 @@
 import {apiFootballDiscoveryPlan} from '../../src/decision-intelligence/api-football-discovery.mjs';
 import {validateProviderMapping} from '../../src/decision-intelligence/api-football-shadow-contracts.mjs';
 import {readOfficialFplAuthority} from './d1-persistence.mjs';
-import {readQualifiedTeamMappings} from './mapping-persistence.mjs';
+import {readQualifiedTeamMappings} from './mapping-runtime.mjs';
 import {discoveryOpportunity,dueOpportunities,fixtureOpportunities} from './scheduler.mjs';
 import {
   API_FOOTBALL_FPL_SEASON,API_FOOTBALL_PROVIDER_SEASON,requestAttemptIdentity,validateAuthority,validateCollectorRequest
