@@ -110,8 +110,7 @@ jobs:
           set -euo pipefail
           test "$(git ls-remote https://github.com/priteshpatel390-del/FPL.git refs/heads/main | cut -f1)" = "$APPROVED_SHA"
           node workers/data-platform/run-migration-0006.mjs
-      - if: always()
-        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f
+      - uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f
         with:
           name: api-football-migration-0006-schema
           path: ${{ runner.temp }}/migration-0006-schema.json
@@ -205,8 +204,7 @@ jobs:
           set -euo pipefail
           test "$(git ls-remote https://github.com/priteshpatel390-del/FPL.git refs/heads/main | cut -f1)" = "$APPROVED_SHA"
           node workers/data-platform/run-migration-0006.mjs
-      - if: always()
-        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f
+      - uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f
         with:
           name: api-football-private-mapping-0006
           path: ${{ runner.temp }}/mapping-0006.json
