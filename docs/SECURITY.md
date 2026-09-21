@@ -1,6 +1,6 @@
 ## Dormant API-Football execution boundary
 
-Future execution state remains unreachable from shipped Wrangler configuration. Blocked mode reads neither D1 nor credential; planner-only mode may read D1 but cannot read API key or execute transport. Provider responses are bounded by transport, semantically admitted before concrete D1 persistence, normalized to an allowlisted durable fixture contract, and discarded; raw bodies, credential material, URLs, private mapping pairs, account IDs, and database IDs are neither persisted nor logged. No public Worker route or generic proxy exists.
+Future execution state remains unreachable from shipped Wrangler configuration. Blocked mode reads neither D1 nor credential; planner-only mode may read D1 but cannot read API key or execute transport. Attended execution, if separately configured later, must prove runtime collection enabled in a read gate before creating any run, staging generation or attempt mutation. Provider responses are bounded by transport, semantically admitted before concrete D1 persistence, normalized to an allowlisted durable fixture contract, and discarded; raw bodies, credential material, URLs, private mapping pairs, account IDs, and database IDs are neither persisted nor logged. No public Worker route or generic proxy exists.
 
 ## Migration 0006 final production security closeout
 
