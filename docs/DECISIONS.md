@@ -1,6 +1,6 @@
 ## 21 September 2026 — collector activation foundation stays dormant and zero-retry
 
-**Decision:** name `ATTENDED_ONE_SHOT_DISCOVERY` as future execution state, keep shipped configuration `REPOSITORY_ONLY_BLOCKED`, require semantic validation and normalized persistence before attempt success, prohibit attempt-2 retries for first acceptance, and cap one discovery generation at 2,500 fixtures. Cap is twice 1,131-row attended observation rounded upward to 2,500; worst-case exposure is 7,524 D1 rows written and does not rely on unchanged fixtures. Production activation remains separately owner-gated.
+**Decision:** name `ATTENDED_ONE_SHOT_DISCOVERY` as future execution state, keep shipped configuration `REPOSITORY_ONLY_BLOCKED`, require semantic validation and normalized persistence before attempt success, prohibit attempt-2 retries for first acceptance, and cap one discovery generation at 2,500 fixtures. Cap is twice 1,131-row attended observation rounded upward to 2,500; concrete bulk adapter enforces at most 7,525 D1 rows written, 43 mutation statements and 49 total statements, without relying on unchanged fixtures. Production activation remains separately owner-gated.
 
 ## 21 September 2026 — accept Migration 0006 private-mapping production closeout
 

@@ -8,7 +8,7 @@ import {
   classifyCompletion,effectiveRequestGapMs,normalizeQuotaTelemetry,readBoundedJson,requestAttemptIdentity,reservationDecision,utcDay,validateAuthority,validateCollectorRequest,validatePlannerConfiguration,validateRuntimeActivation,validateRuntimeConfiguration
 } from '../workers/api-football-collector/runtime-contracts.mjs';
 import {discoveryOpportunity,dueOpportunities,fixtureOpportunities} from '../workers/api-football-collector/scheduler.mjs';
-import {executeReservedRequest,sanitizedEvent,scheduled} from '../workers/api-football-collector/collector.mjs';
+import {executeProviderTransport,sanitizedEvent,scheduled} from '../workers/api-football-collector/collector.mjs';
 import {reserveAttempt} from '../workers/api-football-collector/d1-persistence.mjs';
 
 const root=path.resolve(import.meta.dirname,'..');
@@ -21,14 +21,16 @@ test('runtime constants pin operational ceiling, lease, freshness, retention and
   assert.equal(API_FOOTBALL_MAX_ROWS,2000);assert.equal(API_FOOTBALL_MAX_RESPONSE_BYTES,720_896);assert.equal(API_FOOTBALL_SCHEDULE,'15 * * * *');
 });
 test('UTC accounting resets only on UTC date',()=>{assert.equal(utcDay('2026-09-16T23:59:59Z'),'2026-09-16');assert.equal(utcDay('2026-09-17T00:00:00Z'),'2026-09-17');});
-test('kill switch and missing D1 fail before egress',async()=>{
+test('kill switch fails reservation before egress while transport has no D1 authority',async()=>{
   assert.equal(reservationDecision(state({collection_enabled:0}),{now:'2026-09-16T01:00:00Z',authority:authority()}).reason,'collection_disabled');
-  let calls=0;const result=await executeReservedRequest({env:{API_FOOTBALL_API_KEY:'synthetic'},request:{logicalRequestId:'known:1',attemptId:'known:1:attempt:1',attemptNumber:1,operationClass:'FINALITY',endpoint:'fixtures',endpointClass:'fixture',search:{id:1}},fetchImpl:async()=>{calls++;}});
-  assert.equal(result.reason,'storage_unavailable');assert.equal(calls,0);
+  let d1Reads=0;const env={API_FOOTBALL_API_KEY:'synthetic',TEAMSHEET_DATA_DB:{prepare(){d1Reads++;}}};
+  const request={logicalRequestId:'known:1',attemptId:'known:1:attempt:1',attemptNumber:1,operationClass:'FINALITY',endpoint:'fixtures',endpointClass:'fixture',search:{id:1}};
+  const result=await executeProviderTransport({env,request,fetchImpl:async()=>new Response('',{status:500}),now:()=> '2026-09-16T01:00:00Z',maxResponseBytes:100,timeoutSignal:()=>new AbortController().signal});
+  assert.equal(result.reason,'provider_unavailable');assert.equal(d1Reads,0);
 });
 test('invalid endpoint and query fail before storage or quota',async()=>{
   let prepared=0,calls=0;const db={prepare(){prepared++;throw new Error('must not read');}};
-  const result=await executeReservedRequest({env:{TEAMSHEET_DATA_DB:db,API_FOOTBALL_API_KEY:'synthetic'},request:{endpoint:'https://evil.test',search:{id:1}},fetchImpl:async()=>{calls++;}});
+  const result=await executeProviderTransport({env:{TEAMSHEET_DATA_DB:db,API_FOOTBALL_API_KEY:'synthetic'},request:{endpoint:'https://evil.test',search:{id:1}},fetchImpl:async()=>{calls++;}});
   assert.equal(result.reason,'request_contract_invalid');assert.equal(prepared,0);assert.equal(calls,0);
 });
 test('request contract allows only exact discovery and known-ID query shapes',()=>{
@@ -108,7 +110,7 @@ test('timeout and transport-unknown remain consumed completion outcomes',()=>{
   assert.equal(classifyCompletion({transportUnknown:true,now:'2026-09-16T00:00:00Z'}).outcome,'TRANSPORT_UNKNOWN');
 });
 test('429 is non-inferential durable block',()=>{const row=classifyCompletion({status:429,headers:new Headers(),now:'2026-09-16T00:00:00Z'});assert.equal(row.quotaState,'BLOCKED_429');assert.equal(row.outcome,'QUOTA_BLOCKED');assert.equal('window' in row,false);});
-for(const status of [401,403])test(`${status} persists authentication block regardless of valid quota telemetry`,async()=>{const db=new AtomicDb(),request={...reservationInput(`auth-${status}`),operationClass:'FINALITY',endpoint:'fixtures',endpointClass:'fixture',search:{id:10}};let calls=0,bodyReads=0;const response={status,ok:false,headers:new Headers({'x-ratelimit-requests-limit':'7500','x-ratelimit-requests-remaining':'7499'}),get body(){bodyReads++;return null;}};const options={env:{TEAMSHEET_DATA_DB:db,API_FOOTBALL_API_KEY:'synthetic-secret'},request,fetchImpl:async()=>{calls++;return response;},now:()=>status===401?'2026-09-16T01:00:00Z':'2026-09-16T02:00:00Z',maxResponseBytes:100,timeoutSignal:()=>new AbortController().signal};const result=await executeReservedRequest(options);assert.equal(result.reason,'provider_authentication_failed');assert.equal(calls,1);assert.equal(bodyReads,0);assert.equal(db.shared.collection_enabled,0);assert.equal(db.shared.credential_state,'INVALID');assert.equal(db.shared.quota_state,'AUTH_BLOCKED');assert.equal(db.shared.daily_attempt_count,1);assert.equal([...db.attempts.values()][0].outcome,'AUTH_FAILURE');const blocked=await executeReservedRequest(options);assert.equal(blocked.reason,'collection_disabled');assert.equal(calls,1);assert.doesNotMatch(JSON.stringify({result,shared:db.shared,attempts:[...db.attempts.values()]}),/synthetic-secret|response body/i);});
+for(const status of [401,403])test(`${status} transport returns durable authentication completion without reading body or D1`,async()=>{const request={...reservationInput(`auth-${status}`),operationClass:'FINALITY',endpoint:'fixtures',endpointClass:'fixture',search:{id:10}};let calls=0,bodyReads=0,d1Reads=0;const response={status,ok:false,headers:new Headers({'x-ratelimit-requests-limit':'7500','x-ratelimit-requests-remaining':'7499'}),get body(){bodyReads++;return null;}};const result=await executeProviderTransport({env:{TEAMSHEET_DATA_DB:{prepare(){d1Reads++;}},API_FOOTBALL_API_KEY:'synthetic-secret'},request,fetchImpl:async()=>{calls++;return response;},now:()=>status===401?'2026-09-16T01:00:00Z':'2026-09-16T02:00:00Z',maxResponseBytes:100,timeoutSignal:()=>new AbortController().signal});assert.equal(result.reason,'provider_authentication_failed');assert.equal(result.completion.outcome,'AUTH_FAILURE');assert.equal(result.completion.quotaState,'AUTH_BLOCKED');assert.equal(calls,1);assert.equal(bodyReads,0);assert.equal(d1Reads,0);assert.doesNotMatch(JSON.stringify(result),/synthetic-secret|response body/i);});
 test('missing quota headers after success enter quota uncertain',()=>{assert.equal(classifyCompletion({status:200,headers:new Headers(),now:'2026-09-16T00:00:00Z'}).quotaState,'QUOTA_UNCERTAIN');});
 test('authority requires successful DATA-S2A identity, exact 20-team bijection and freshness',()=>{
   assert.equal(validateAuthority(authority(),{now:'2026-09-17T23:59:59Z'}).ok,true);
@@ -150,4 +152,4 @@ test('production/browser/model graph does not import collector or API-Football p
   for(const file of production)assert.doesNotMatch(fs.readFileSync(file,'utf8'),/api-football-collector|api_football_(?:runtime|request|discovery|fixture|generation)/,file);
   for(const file of [path.join(root,'index.html'),path.join(root,'dist/index.html'),path.join(root,'dist/app.bundle.js')])assert.doesNotMatch(fs.readFileSync(file,'utf8'),/API_FOOTBALL_API_KEY|api_football_request_attempts/,file);
 });
-test('manual/backfill remains inside same closed operation and reservation contract',()=>{const source=fs.readFileSync(path.join(root,'workers/api-football-collector/runtime-contracts.mjs'),'utf8');assert.match(source,/MANUAL_BACKFILL/);assert.equal((fs.readFileSync(path.join(root,'workers/api-football-collector/collector.mjs'),'utf8').match(/reserveAttempt\(/g)||[]).length,1);});
+test('manual/backfill remains inside same closed operation and one repository reservation call',()=>{const source=fs.readFileSync(path.join(root,'workers/api-football-collector/runtime-contracts.mjs'),'utf8');assert.match(source,/MANUAL_BACKFILL/);assert.equal((fs.readFileSync(path.join(root,'workers/api-football-collector/d1-persistence.mjs'),'utf8').match(/await reserveAttempt\(db,/g)||[]).length,1);assert.doesNotMatch(fs.readFileSync(path.join(root,'workers/api-football-collector/collector.mjs'),'utf8'),/reserveAttempt\(/);});

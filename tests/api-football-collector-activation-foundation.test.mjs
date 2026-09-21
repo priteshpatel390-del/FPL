@@ -2,151 +2,181 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
 import test from 'node:test';
-import {classifyCollectorActivationPreflight,COLLECTOR_ACTIVATION_PREFLIGHT_READY,COLLECTOR_ACTIVATION_PREFLIGHT_VERSION} from '../workers/api-football-collector/activation-preflight.mjs';
-import {classifyPriorAttempt,DISCOVERY_MAX_D1_ROWS_WRITTEN,DISCOVERY_MAX_D1_STATEMENTS,DISCOVERY_MAX_FIXTURE_ROWS_WRITTEN,DISCOVERY_MAX_FIXTURE_STATEMENTS,enforceGenerationCeiling,runOneShotDiscoveryGeneration} from '../workers/api-football-collector/activation-orchestrator.mjs';
-import {validateDiscoveryPayload,validateKnownFixturePayload} from '../workers/api-football-collector/semantic-validation.mjs';
+import {
+  classifyCollectorActivationPreflight,COLLECTOR_ACTIVATION_PREFLIGHT_VERSION,COLLECTOR_ATTENDED_STAGE_READY,
+  COLLECTOR_PREFLIGHT_ATTENDED_STAGE,COLLECTOR_PREFLIGHT_REPOSITORY_STAGE,COLLECTOR_REPOSITORY_STAGE_READY
+} from '../workers/api-football-collector/activation-preflight.mjs';
+import {
+  classifyPriorAttempt,DISCOVERY_MAX_CHUNK_JSON_BYTES,DISCOVERY_MAX_CONTROL_ROWS_WRITTEN,
+  DISCOVERY_MAX_D1_ROWS_WRITTEN,DISCOVERY_MAX_D1_STATEMENTS,DISCOVERY_MAX_FIXTURE_ROWS_WRITTEN,
+  DISCOVERY_MAX_FIXTURE_STATEMENTS,DISCOVERY_MAX_MUTATION_STATEMENTS,DISCOVERY_PERSISTENCE_CHUNK_ROWS,
+  enforceGenerationCeiling,runOneShotDiscoveryGeneration
+} from '../workers/api-football-collector/activation-orchestrator.mjs';
+import {createD1CollectorRepository} from '../workers/api-football-collector/d1-persistence.mjs';
+import {executeProviderTransport,runScheduledCollector} from '../workers/api-football-collector/collector.mjs';
+import {validateDiscoveryPayload,validateKnownFixturePayload,validateProviderPayload} from '../workers/api-football-collector/semantic-validation.mjs';
 import {API_FOOTBALL_ATTENDED_DISCOVERY_ACTIVATION,API_FOOTBALL_MAX_DISCOVERY_GENERATION_ROWS,requestAttemptIdentity,validateRuntimeActivation} from '../workers/api-football-collector/runtime-contracts.mjs';
 import {requestPlanForOpportunity} from '../workers/api-football-collector/planner-orchestrator.mjs';
 import {discoveryOpportunity} from '../workers/api-football-collector/scheduler.mjs';
-import {executeReservedRequest} from '../workers/api-football-collector/collector.mjs';
 
 const root=path.resolve(import.meta.dirname,'..');
 const NOW='2026-09-21T12:00:00.000Z';
 const providerIds=Array.from({length:20},(_,index)=>String(500+index));
 const mappings=providerIds.map((providerEntityId,index)=>({provider:'api-football',entityType:'team',providerEntityId,canonicalFplId:`2026-27:fpl:team:${index+1}`,mappingRevision:'qualified',revision:1,status:'VERIFIED',season:'2026-27',method:'manually_verified',provenance:'synthetic-owner-qualified'}));
+const authority={season:'2026-27',sourceKey:'official-fpl',sourceRevisionId:'official-fpl-r1',runId:'official-run',runStatus:'completed',fetchedAt:NOW,digest:'a'.repeat(64),teamIds:Array.from({length:20},(_,index)=>`2026-27:fpl:team:${index+1}`)};
 
-function requests(){return requestPlanForOpportunity(discoveryOpportunity(NOW)).requests;}
-function payload(request,{league=request.search.league,season=request.search.season,paging={current:1,total:1},fixtureId=9000+Number(request.search.league),home=providerIds[0],away=providerIds[1]}={}){
-  return {get:'fixtures',parameters:{league:String(league),season:String(season)},errors:[],results:1,paging,response:[{fixture:{id:fixtureId,date:'2026-10-01T19:00:00Z',status:{short:'NS'}},league:{id:Number(request.search.league),season:2026},teams:{home:{id:Number(home)},away:{id:Number(away)}}}]};
+function requests(at=NOW){return requestPlanForOpportunity(discoveryOpportunity(at)).requests;}
+function payload(request,{league=request.search.league,season=request.search.season,paging={current:1,total:1},count=1,status='NS',invalid={}}={}){
+  const leagueNumber=Number(request.search.league);
+  const response=Array.from({length:count},(_,index)=>({
+    fixture:{id:leagueNumber*100_000+index+1,date:'2026-10-01T19:00:00Z',status:{short:status}},
+    league:{id:leagueNumber,season:2026},teams:{home:{id:500},away:{id:501}},...structuredClone(invalid)
+  }));
+  return {get:'fixtures',parameters:{league:String(league),season:String(season)},errors:[],results:response.length,paging,response};
 }
 function knownRequest(){const logicalRequestId='FINALITY:9001:2026-09-21T12:00:00.000Z';return {logicalRequestId,attemptId:requestAttemptIdentity(logicalRequestId,1),attemptNumber:1,operationClass:'FINALITY',endpoint:'fixtures',endpointClass:'fixture',search:{id:'9001'},requiresAuthority:true};}
-function knownPayload(overrides={}){return {get:'fixtures',parameters:{id:'9001'},errors:[],results:1,paging:{current:1,total:1},response:[{fixture:{id:9001,date:'2026-10-01T19:00:00Z',status:{short:'NS'}},league:{id:39,season:2026},teams:{home:{id:500},away:{id:501}},...overrides}]};}
-function responseFor(body){const text=JSON.stringify(body);return new Response(text,{status:200,headers:{'content-length':String(Buffer.byteLength(text)),'x-ratelimit-requests-limit':'7500','x-ratelimit-requests-remaining':'7499','x-ratelimit-limit':'300','x-ratelimit-remaining':'299'}});}
+function knownPayload({league=2,season=2026,fixtureId=9001,status='NS',date='2026-10-01T19:00:00Z',teams={home:{id:500},away:{id:501}}}={}){return {get:'fixtures',parameters:{id:'9001'},errors:[],results:1,paging:{current:1,total:1},response:[{fixture:{id:fixtureId,date,status:{short:status}},league:{id:league,season},teams}]};}
+function responseFor(body,status=200){const text=JSON.stringify(body);return new Response(text,{status,headers:{'content-length':String(Buffer.byteLength(text)),'x-ratelimit-requests-limit':'7500','x-ratelimit-requests-remaining':'7499','x-ratelimit-limit':'300','x-ratelimit-remaining':'299'}});}
+function statement(sql){return {sql,args:[],bind(...args){this.args=args;return this;},first(){return null;},all(){return {results:[]};}};}
 
-class ExecutionDb{
-  constructor(){this.completions=[];}
-  prepare(sql){const statement={sql,args:[],bind(...args){this.args=args;return this;},first:async()=>{
-    if(sql.includes('FROM ingestion_runs'))return {run_id:'official-run',completed_at:NOW,status:'completed'};
-    if(sql.includes('api_football_runtime_state'))return {provider:'api-football',collection_enabled:1,credential_state:'AVAILABLE',quota_state:'KNOWN',quota_utc_day:'2026-09-21',daily_attempt_count:0,in_flight_attempt_id:null,in_flight_lease_expires_at:null,earliest_next_request_at:null};
+class DeterministicD1{
+  constructor({failCompletionAt=0,failCommit=false}={}){
+    this.failCompletionAt=failCompletionAt;this.failCommit=failCommit;this.completionCalls=0;
+    this.runtime={provider:'api-football',collection_enabled:1,credential_state:'AVAILABLE',quota_state:'KNOWN',quota_utc_day:'2026-09-21',daily_attempt_count:0,in_flight_attempt_id:null,in_flight_lease_expires_at:null,earliest_next_request_at:null};
+    this.runs=new Map();this.generations=new Map();this.attempts=new Map();this.identities=new Map();this.revisions=new Map();this.memberships=new Map();this.head=null;this.batches=[];
+  }
+  prepare(sql){const row=statement(sql);row.first=async()=>{
+    if(sql==='SELECT * FROM api_football_runtime_state WHERE provider=?')return {...this.runtime};
+    if(sql.startsWith('SELECT g.generation_id,g.state')){const generation=this.generations.get(row.args[0]),run=this.runs.get(generation?.ingestion_run_id);return generation?{...generation,fpl_season:'2026-27',provider_season:2026,source_revision_id:'api-football:eia-2i5a:1',official_fpl_authority_digest:authority.digest,official_fpl_authority_run_id:authority.runId,run_status:run?.status,run_source_revision_id:'api-football:eia-2i5a:1'}:null;}
+    if(sql.startsWith('SELECT attempt_id,attempt_number'))return this.attempts.get(row.args[0])||null;
     return null;
-  },all:async()=>({results:Array.from({length:20},(_,index)=>({subject_entity_id:`2026-27:fpl:team:${index+1}`,observation_id:`observation-${index}`,input_revision:`revision-${index}`,logical_key:`official-fpl|2026-27|team|${index+1}|present`}))})};return statement;}
+  };return row;}
   async batch(statements){
-    const completion=statements.find(statement=>statement.sql.startsWith('UPDATE api_football_request_attempts SET completed_at='));
-    if(completion)this.completions.push(completion.args[1]);
-    return statements.map(()=>({meta:{changes:1}}));
+    if(this.failCommit&&statements.some(item=>item.sql.startsWith("UPDATE api_football_discovery_generations SET state='COMMITTED'")))throw new Error('synthetic commit failure');
+    if(statements.some(item=>item.sql.startsWith('UPDATE api_football_request_attempts SET completed_at='))){this.completionCalls+=1;if(this.completionCalls===this.failCompletionAt)throw new Error('synthetic completion failure');}
+    this.batches.push(statements.map(item=>item.sql));const results=[];
+    for(const item of statements){let changes=0;const {sql,args}=item;
+      if(sql.startsWith('INSERT INTO ingestion_runs')){if(!this.runs.has(args[0])){this.runs.set(args[0],{run_id:args[0],status:'started'});changes=1;}}
+      else if(sql.startsWith('INSERT INTO api_football_discovery_generations')){if(!this.generations.has(args[0])){this.generations.set(args[0],{generation_id:args[0],logical_opportunity:args[1],state:'STAGING',ingestion_run_id:args[3]});changes=1;}}
+      else if(sql.startsWith('UPDATE api_football_runtime_state SET quota_utc_day=')){if(!this.runtime.in_flight_attempt_id){this.runtime.quota_utc_day=args[0];this.runtime.daily_attempt_count=args[1];this.runtime.in_flight_attempt_id=args[8];this.runtime.in_flight_lease_expires_at=args[9];changes=1;}}
+      else if(sql.startsWith('INSERT INTO api_football_request_attempts')){if(this.runtime.in_flight_attempt_id===args[0]&&!this.attempts.has(args[0])){this.attempts.set(args[0],{attempt_id:args[0],logical_request_id:args[1],attempt_number:args[2],operation_class:args[3],endpoint_class:args[4],generation_id:args[5],lease_expires_at:args[10],outcome:'RESERVED'});changes=1;}}
+      else if(sql.startsWith('INSERT INTO provider_fixture_identities')){for(const value of JSON.parse(args[0])){const prior=this.identities.get(value.providerFixtureIdentity);if(!prior||['providerFixtureId','fplSeason','canonicalCompetitionId','providerLeagueId','providerHomeTeamId','providerAwayTeamId'].every(key=>prior[key]===value[key])){this.identities.set(value.providerFixtureIdentity,value);changes+=1;}}}
+      else if(sql.startsWith('INSERT INTO api_football_fixture_revisions')){for(const value of JSON.parse(args[2])){const key=`${value.providerFixtureIdentity}|${value.inputHash}`;if(!this.revisions.has(key)){const previous=[...this.revisions.values()].filter(row=>row.providerFixtureIdentity===value.providerFixtureIdentity).at(-1);this.revisions.set(key,{...value,supersedesRevisionId:previous?.fixtureRevisionId||null});changes+=1;}}}
+      else if(sql.startsWith('INSERT INTO api_football_generation_fixtures')){for(const value of JSON.parse(args[1])){const revision=this.revisions.get(`${value.providerFixtureIdentity}|${value.inputHash}`);if(!revision)throw new Error('missing revision');this.memberships.set(`${args[0]}|${value.providerFixtureIdentity}`,revision.fixtureRevisionId);changes+=1;}}
+      else if(sql.startsWith('UPDATE api_football_request_attempts SET completed_at=')){const attempt=this.attempts.get(args[9]);if(attempt&&attempt.outcome==='RESERVED'){attempt.outcome=args[1];attempt.completed_at=args[0];changes=1;}}
+      else if(sql.startsWith("UPDATE api_football_runtime_state SET collection_enabled=")){const attemptId=args.at(-1);if(this.runtime.in_flight_attempt_id===attemptId){this.runtime.in_flight_attempt_id=null;this.runtime.in_flight_lease_expires_at=null;this.runtime.quota_state=args[3];this.runtime.earliest_next_request_at=args[9];if(args[0]==='AUTH_FAILURE'){this.runtime.collection_enabled=0;this.runtime.credential_state='INVALID';}changes=1;}}
+      else if(sql.startsWith("UPDATE api_football_discovery_generations SET state='FAILED'")){const generation=this.generations.get(args[2]);if(generation?.state==='STAGING'){generation.state='FAILED';generation.failure_class=args[0];changes=1;}}
+      else if(sql.startsWith("UPDATE ingestion_runs SET status='failed'")){const run=this.runs.get(args[2]);if(run?.status==='started'){run.status='failed';changes=1;}}
+      else if(sql.startsWith("UPDATE api_football_discovery_generations SET state='COMMITTED'")){const generation=this.generations.get(args[4]);const succeeded=[...this.attempts.values()].filter(row=>row.generation_id===args[4]&&row.outcome==='SUCCEEDED').length;const memberCount=[...this.memberships.keys()].filter(key=>key.startsWith(`${args[4]}|`)).length;if(generation?.state==='STAGING'&&succeeded===5&&memberCount===args.at(-1)){generation.state='COMMITTED';generation.fixture_count=memberCount;changes=1;}}
+      else if(sql.startsWith("UPDATE ingestion_runs SET status='completed'")){const run=this.runs.get(args[3]),generation=this.generations.get(args[4]);if(run?.status==='started'&&generation?.state==='COMMITTED'){run.status='completed';changes=1;}}
+      else if(sql.startsWith('INSERT INTO api_football_discovery_heads')){if(this.generations.get(args[1])?.state==='COMMITTED'){this.head=args[1];changes=1;}}
+      results.push({success:true,meta:{changes}});
+    }
+    return results;
   }
 }
 
-test('future execution activation is named but shipped Wrangler cannot reach it',()=>{
+function clock(start=NOW){let tick=0;return()=>new Date(Date.parse(start)+tick++*1_000).toISOString();}
+function concreteComposition({db=new DeterministicD1(),rows=1,failureAt=0,at=NOW,status='NS'}={}){
+  const planRequests=requests(at);let fetches=0;
+  const repository=createD1CollectorRepository(db,{authority});
+  const transport=request=>executeProviderTransport({env:{API_FOOTBALL_API_KEY:'synthetic-only'},request,fetchImpl:async()=>{fetches+=1;const index=planRequests.indexOf(request)+1,count=Array.isArray(rows)?rows[index-1]:rows;return responseFor(index===failureAt?{bad:true}:payload(request,{count,status}));},now:clock(at),timeoutSignal:()=>new AbortController().signal});
+  const validate=(body,request,fetchedAt)=>validateProviderPayload(body,request,{fetchedAt,teamMappings:mappings});
+  return {db,repository,transport,validate,requests:planRequests,fetches:()=>fetches};
+}
+
+async function runConcrete(options={}){const composition=concreteComposition(options),at=options.at||NOW;const result=await runOneShotDiscoveryGeneration({...composition,now:at,clock:clock(at),sleep:async()=>{}});return {...composition,result};}
+
+test('future execution activation remains named but shipped Wrangler cannot reach it',()=>{
   assert.equal(validateRuntimeActivation({EIA_2I5D_ACTIVATION:API_FOOTBALL_ATTENDED_DISCOVERY_ACTIVATION}).mode,'attended_one_shot_discovery');
   const config=JSON.parse(fs.readFileSync(path.join(root,'workers/api-football-collector/wrangler.jsonc'),'utf8'));
-  assert.equal(config.vars.EIA_2I5D_ACTIVATION,'REPOSITORY_ONLY_BLOCKED');assert.deepEqual(config.triggers.crons,[]);
-  assert.equal(config.d1_databases[0].database_id,'00000000-0000-0000-0000-000000000000');assert.notEqual(config.vars.EIA_2I5D_ACTIVATION,API_FOOTBALL_ATTENDED_DISCOVERY_ACTIVATION);
+  assert.equal(config.vars.EIA_2I5D_ACTIVATION,'REPOSITORY_ONLY_BLOCKED');assert.deepEqual(config.triggers.crons,[]);assert.equal(config.d1_databases[0].database_id,'00000000-0000-0000-0000-000000000000');
+});
+
+test('blocked scheduled mode touches neither D1, dependency factory nor credential',async()=>{
+  let reads=0,factoryCalls=0,keyReads=0;const env={EIA_2I5D_ACTIVATION:'REPOSITORY_ONLY_BLOCKED',TEAMSHEET_DATA_DB:{prepare(){reads+=1;}},get API_FOOTBALL_API_KEY(){keyReads+=1;return 'never';}};
+  const result=await runScheduledCollector({controller:{scheduledTime:Date.parse(NOW)},env,dependencyFactory:()=>{factoryCalls+=1;}});
+  assert.equal(result.reason,'runtime_activation_not_approved');assert.deepEqual({reads,factoryCalls,keyReads},{reads:0,factoryCalls:0,keyReads:0});
+});
+
+test('planner-only scheduled mode reads planner storage but never dependency factory or credential',async()=>{
+  let plannerReads=0,factoryCalls=0,keyReads=0;const env={EIA_2I5D_ACTIVATION:'PRELIVE_PLANNER_ONLY',TEAMSHEET_DATA_DB:{},get API_FOOTBALL_API_KEY(){keyReads+=1;return 'never';}};
+  const planner=async db=>{assert.equal(db,env.TEAMSHEET_DATA_DB);plannerReads+=1;return {ok:true,requestCount:5,mappingCoverageCount:20,requests:requests(),blockedOperations:[],deferredOperations:[]};};
+  const result=await runScheduledCollector({controller:{scheduledTime:Date.parse(NOW)},env,planner,dependencyFactory:()=>{factoryCalls+=1;}});
+  assert.equal(result.reason,'provider_execution_not_approved');assert.deepEqual({plannerReads,factoryCalls,keyReads},{plannerReads:1,factoryCalls:0,keyReads:0});
 });
 
 for(const [name,change,reason] of [
-  ['wrong echoed league',request=>({league:'999'}),'response_parameters_mismatch'],
-  ['wrong season',request=>({season:2025}),'response_parameters_mismatch'],
-  ['paging greater than one',request=>({paging:{current:1,total:2}}),'pagination_unsupported'],
-  ['malformed fixture identity',request=>({home:'0'}),'fixture_identity_invalid']
-])test(`HTTP 200 semantic validation rejects ${name} before success`,()=>{
-  const request=requests()[0],result=validateDiscoveryPayload(payload(request,change(request)),request,{fetchedAt:NOW,teamMappings:mappings});
-  assert.equal(result.ok,false);assert.equal(result.reason,reason);
+  ['wrong echoed league',request=>({league:'999'}),'response_parameters_mismatch'],['wrong season',request=>({season:2025}),'response_parameters_mismatch'],
+  ['paging greater than one',request=>({paging:{current:1,total:2}}),'pagination_unsupported'],['malformed fixture identity',request=>({invalid:{teams:{home:{id:0},away:{id:501}}}}),'fixture_identity_invalid']
+])test(`HTTP 200 discovery validation rejects ${name}`,()=>{const request=requests()[0],result=validateDiscoveryPayload(payload(request,change(request)),request,{fetchedAt:NOW,teamMappings:mappings});assert.equal(result.reason,reason);});
+
+test('known fixture validation requires approved competition and returns durable normalized shape only',()=>{
+  const request=knownRequest(),context={fetchedAt:NOW,teamMappings:mappings};
+  assert.equal(validateKnownFixturePayload(knownPayload({league:39}),request,context).reason,'competition_identity_invalid');
+  assert.equal(validateKnownFixturePayload(knownPayload({season:2025}),request,context).reason,'competition_identity_invalid');
+  assert.equal(validateKnownFixturePayload(knownPayload({teams:{home:{id:500},away:{id:501},third:{id:502}}}),request,context).reason,'fixture_identity_invalid');
+  assert.equal(validateKnownFixturePayload(knownPayload({status:'BAD'}),request,context).reason,'fixture_schema_invalid');
+  assert.equal(validateKnownFixturePayload(knownPayload({date:'bad'}),request,context).reason,'fixture_schema_invalid');
+  const result=validateKnownFixturePayload(knownPayload(),request,context);assert.equal(result.ok,true);assert.equal(result.fixtures.length,1);
+  assert.deepEqual(Object.keys(result.fixtures[0]).sort(),['canonicalCompetitionId','extraTimeState','fetchedAt','fplSeason','mappingProvenance','providerFixtureId','providerFixtureIdentity','providerHomeTeamId','providerKickoff','providerLeagueId','providerAwayTeamId','providerStatus','qualificationState','sourceRevisionId'].sort());
+  assert.equal(JSON.stringify(result).includes('"teams"'),false);assert.equal(JSON.stringify(result).includes('"league"'),false);assert.equal(JSON.stringify(result).includes('winner'),false);
 });
 
-test('discovery semantic validation requires current qualified mapping',()=>{
-  const request=requests()[0];assert.equal(validateDiscoveryPayload(payload(request),request,{fetchedAt:NOW,teamMappings:[]}).reason,'qualified_mapping_unavailable');
-  assert.equal(validateDiscoveryPayload(payload(request),request,{fetchedAt:NOW,teamMappings:mappings}).ok,true);
+test('generation ceiling and concrete D1 exposure are pinned to bulk implementation',()=>{
+  assert.equal(API_FOOTBALL_MAX_DISCOVERY_GENERATION_ROWS,2500);assert.equal(enforceGenerationCeiling(2499,1).ok,true);assert.equal(enforceGenerationCeiling(2500,1).reason,'generation_row_ceiling_exceeded');
+  assert.equal(DISCOVERY_PERSISTENCE_CHUNK_ROWS,1250);assert.equal(DISCOVERY_MAX_CHUNK_JSON_BYTES,1_500_000);assert.equal(DISCOVERY_MAX_FIXTURE_STATEMENTS,18);
+  assert.equal(DISCOVERY_MAX_MUTATION_STATEMENTS,43);assert.equal(DISCOVERY_MAX_D1_STATEMENTS,49);assert.equal(DISCOVERY_MAX_FIXTURE_ROWS_WRITTEN,7500);assert.equal(DISCOVERY_MAX_CONTROL_ROWS_WRITTEN,25);assert.equal(DISCOVERY_MAX_D1_ROWS_WRITTEN,7525);
 });
 
-test('known fixture validation pins exact requested fixture identity',()=>{
-  const request=knownRequest();assert.equal(validateKnownFixturePayload(knownPayload(),request).ok,true);
-  const wrong=knownPayload();wrong.response[0].fixture.id=9002;assert.equal(validateKnownFixturePayload(wrong,request).reason,'fixture_identity_invalid');
-});
-
-test('attempt success becomes durable only after semantic validation and persistence',async()=>{
-  const request=knownRequest();
-  for(const [persistValidated,expectedReason,expectedCompletion] of [
-    [async()=>({ok:false}),'persistence_uncertain',undefined],
-    [async()=>({ok:true,result:'normalized'}),undefined,'SUCCEEDED']
-  ]){
-    const db=new ExecutionDb(),order=[];
-    const result=await executeReservedRequest({env:{TEAMSHEET_DATA_DB:db,API_FOOTBALL_API_KEY:'synthetic-only'},request,fetchImpl:async()=>responseFor(knownPayload()),now:()=>NOW,maxResponseBytes:720896,timeoutSignal:()=>new AbortController().signal,persistValidated:async input=>{order.push('persist');const persisted=await persistValidated(input);return persisted;}});
-    if(expectedReason)assert.equal(result.reason,expectedReason);else assert.equal(result.ok,true);
-    if(db.completions.length)order.push('complete');assert.equal(db.completions[0],expectedCompletion);assert.deepEqual(order,expectedCompletion?['persist','complete']:['persist']);
-  }
-  const db=new ExecutionDb(),wrong=knownPayload();wrong.response[0].fixture.id=9002;
-  let persistenceCalls=0;const result=await executeReservedRequest({env:{TEAMSHEET_DATA_DB:db,API_FOOTBALL_API_KEY:'synthetic-only'},request,fetchImpl:async()=>responseFor(wrong),now:()=>NOW,maxResponseBytes:720896,timeoutSignal:()=>new AbortController().signal,persistValidated:async()=>{persistenceCalls++;return {ok:true};}});
-  assert.equal(result.reason,'fixture_identity_invalid');assert.equal(persistenceCalls,0);assert.deepEqual(db.completions,['SCHEMA_FAILURE']);
-});
-
-test('generation ceiling and worst-case write exposure are deterministic',()=>{
-  assert.equal(API_FOOTBALL_MAX_DISCOVERY_GENERATION_ROWS,2500);assert.equal(enforceGenerationCeiling(2499,1).ok,true);
-  assert.equal(enforceGenerationCeiling(2500,1).reason,'generation_row_ceiling_exceeded');
-  assert.equal(DISCOVERY_MAX_FIXTURE_STATEMENTS,10000);assert.equal(DISCOVERY_MAX_D1_STATEMENTS,10024);
-  assert.equal(DISCOVERY_MAX_FIXTURE_ROWS_WRITTEN,7500);assert.equal(DISCOVERY_MAX_D1_ROWS_WRITTEN,7524);
-});
-
-test('prior-attempt state is zero-retry and expired reservation remains consumed',()=>{
-  assert.equal(classifyPriorAttempt(null,{now:NOW}).action,'RESERVE_FIRST_ATTEMPT');
-  assert.equal(classifyPriorAttempt({attempt_number:1,outcome:'SUCCEEDED'},{now:NOW}).reason,'succeeded_attempt_requires_reconciliation');
-  assert.equal(classifyPriorAttempt({attempt_number:1,outcome:'RESERVED',lease_expires_at:'2026-09-21T12:00:30Z'},{now:NOW}).reason,'request_lease_busy');
-  assert.equal(classifyPriorAttempt({attempt_number:1,outcome:'RESERVED',lease_expires_at:'2026-09-21T11:59:59Z'},{now:NOW}).reason,'expired_reservation_consumed');
+test('prior attempts remain first-attempt-only and conservative',()=>{
+  assert.equal(classifyPriorAttempt(null,{now:NOW}).action,'RESERVE_FIRST_ATTEMPT');assert.equal(classifyPriorAttempt({attempt_number:1,outcome:'SUCCEEDED'},{now:NOW}).reason,'succeeded_attempt_requires_reconciliation');
+  assert.equal(classifyPriorAttempt({attempt_number:1,outcome:'RESERVED',lease_expires_at:'2026-09-21T12:00:30Z'},{now:NOW}).reason,'request_lease_busy');assert.equal(classifyPriorAttempt({attempt_number:1,outcome:'RESERVED',lease_expires_at:'2026-09-21T11:00:00Z'},{now:NOW}).reason,'expired_reservation_consumed');
   for(const outcome of ['TIMEOUT','TRANSPORT_UNKNOWN','AUTH_FAILURE','QUOTA_BLOCKED','SCHEMA_FAILURE','HTTP_FAILURE'])assert.equal(classifyPriorAttempt({attempt_number:1,outcome},{now:NOW}).reason,'prior_attempt_consumed');
 });
 
-class MemoryRepository{
-  constructor({prior=new Map(),failPersistenceAt=null}={}){this.prior=prior;this.failPersistenceAt=failPersistenceAt;this.generations=[];this.head='previous';this.revisions=new Map();this.attempts=[];}
-  async createStaging(){this.generations.push({id:'generation:new',state:'STAGING',links:[]});return {ok:true,generationId:'generation:new'};}
-  async readAttempt(id){return this.prior.get(id)||null;}
-  async reserve(request){this.attempts.push({id:request.attemptId,outcome:'RESERVED'});return {ok:true};}
-  async completeFailure(request,completion){const row=this.attempts.find(item=>item.id===request.attemptId);if(row)row.outcome=completion.outcome;}
-  async persistValidated(request,generationId,fixtures){
-    if(String(request.search.league)===String(this.failPersistenceAt))return {ok:false};
-    const generation=this.generations.at(-1);
-    for(const fixture of fixtures){const hash=JSON.stringify([fixture.providerFixtureId,fixture.canonicalKickoff,fixture.statusObservation.value]);const prior=this.revisions.get(fixture.identity);if(prior?.hash!==hash)this.revisions.set(fixture.identity,{hash,revision:(prior?.revision||0)+1,supersedes:prior?.revision||null});generation.links.push(fixture.identity);}
-    this.attempts.find(item=>item.id===request.attemptId).outcome='SUCCEEDED';return {ok:true};
-  }
-  async failGeneration(id,reason){const row=this.generations.find(item=>item.id===id);row.state='FAILED';row.reason=reason;return {ok:true};}
-  async commitGeneration(id){const row=this.generations.find(item=>item.id===id);row.state='COMMITTED';this.head=id;return {ok:true};}
-}
-function successfulExecute(request){const valid=validateDiscoveryPayload(payload(request),request,{fetchedAt:NOW,teamMappings:mappings});return Promise.resolve(valid.ok?{...valid,completion:{outcome:'SUCCEEDED'}}:valid);}
-
-test('five exact successes commit one generation and advance head',async()=>{
-  const repository=new MemoryRepository(),result=await runOneShotDiscoveryGeneration({requests:requests(),repository,execute:successfulExecute,now:NOW});
-  assert.equal(result.ok,true);assert.equal(result.attempts,5);assert.equal(repository.generations.length,1);assert.equal(repository.generations[0].state,'COMMITTED');assert.equal(repository.head,'generation:new');assert.equal(repository.attempts.every(row=>row.outcome==='SUCCEEDED'),true);
+test('actual D1 composition stages once, reserves attempt 1 five times, persists, completes and advances one head',async()=>{
+  const {result,db,fetches}=await runConcrete({rows:500});assert.equal(result.ok,true);assert.equal(fetches(),5);assert.equal(db.generations.size,1);assert.equal([...db.generations.values()][0].state,'COMMITTED');assert.equal(db.head,result.generationId);
+  assert.equal(db.attempts.size,5);assert.equal([...db.attempts.values()].every(row=>row.attempt_number===1&&row.outcome==='SUCCEEDED'),true);assert.equal(db.memberships.size,2500);
+  assert.deepEqual(result.operations,{statements:46,mutationStatements:40,rowsWritten:7525,batches:17});
 });
 
-test('one semantic failure leaves partial generation non-current and preserves previous head',async()=>{
-  const repository=new MemoryRepository();let calls=0;
-  const result=await runOneShotDiscoveryGeneration({requests:requests(),repository,now:NOW,execute:async request=>{calls++;return calls===3?{ok:false,reason:'provider_schema_invalid',completion:{outcome:'SCHEMA_FAILURE'}}:successfulExecute(request);}});
-  assert.equal(result.ok,false);assert.equal(repository.generations[0].state,'FAILED');assert.equal(repository.head,'previous');assert.equal(calls,3);assert.equal(repository.attempts.at(-1).outcome,'SCHEMA_FAILURE');
+test('worst admitted response fragmentation reaches but never exceeds pinned D1 exposure',async()=>{
+  const {result,db}=await runConcrete({rows:[1,1,1,497,2000]});assert.equal(result.ok,true);assert.equal(db.memberships.size,2500);
+  assert.deepEqual(result.operations,{statements:49,mutationStatements:43,rowsWritten:7525,batches:18});
 });
 
-test('persistence failure is never mislabeled successful and leaves head unchanged',async()=>{
-  const repository=new MemoryRepository({failPersistenceAt:'848'}),result=await runOneShotDiscoveryGeneration({requests:requests(),repository,execute:successfulExecute,now:NOW});
-  assert.equal(result.reason,'persistence_uncertain');assert.equal(repository.generations[0].state,'FAILED');assert.equal(repository.head,'previous');assert.equal(repository.attempts.at(-1).outcome,'RESERVED');
+test('concrete D1 adapter reuses unchanged revisions and appends immutable superseding changes',async()=>{
+  const db=new DeterministicD1();assert.equal((await runConcrete({db,at:'2026-09-21T12:00:00.000Z'})).result.ok,true);const first=[...db.revisions.values()];assert.equal(first.length,5);
+  assert.equal((await runConcrete({db,at:'2026-09-22T12:00:00.000Z'})).result.ok,true);assert.equal(db.revisions.size,5);
+  assert.equal((await runConcrete({db,at:'2026-09-23T11:00:00.000Z',status:'FT'})).result.ok,true);assert.equal(db.revisions.size,10);
+  const changed=[...db.revisions.values()].filter(row=>row.providerStatus==='FT');assert.equal(changed.length,5);assert.equal(changed.every(row=>first.some(previous=>previous.fixtureRevisionId===row.supersedesRevisionId)),true);
 });
 
-test('duplicate logical request is not reissued and active or stale reservation prevents egress',async()=>{
-  for(const [attempt,reason] of [[{attempt_number:1,outcome:'RESERVED',lease_expires_at:'2026-09-21T12:00:30Z'},'request_lease_busy'],[{attempt_number:1,outcome:'RESERVED',lease_expires_at:'2026-09-21T11:00:00Z'},'expired_reservation_consumed']]){
-    const first=requests()[0],repository=new MemoryRepository({prior:new Map([[first.attemptId,attempt]])});let calls=0;
-    const result=await runOneShotDiscoveryGeneration({requests:requests(),repository,execute:async()=>{calls++;return {ok:true,fixtures:[]};},now:NOW});
-    assert.equal(result.reason,reason);assert.equal(calls,0);assert.equal(repository.head,'previous');
-  }
+for(let failureAt=1;failureAt<=5;failureAt++)test(`semantic failure at discovery request ${failureAt} never advances head`,async()=>{const {result,db,fetches}=await runConcrete({failureAt});assert.equal(result.ok,false);assert.equal(fetches(),failureAt);assert.equal(db.head,null);assert.equal([...db.generations.values()][0].state,'FAILED');});
+
+test('generation ceiling rejects request five before its persistence batch',async()=>{
+  const {result,db}=await runConcrete({rows:501});assert.equal(result.reason,'generation_row_ceiling_exceeded');assert.equal(db.memberships.size,2004);assert.equal(db.head,null);
 });
 
-test('unchanged fixture does not add history; changed fixture immutably supersedes',async()=>{
-  const repository=new MemoryRepository(),request=requests()[0],first=await successfulExecute(request);
-  await repository.createStaging();await repository.reserve(request);await repository.persistValidated(request,'generation:new',first.fixtures);
-  const identity=first.fixtures[0].identity;assert.equal(repository.revisions.get(identity).revision,1);
-  await repository.persistValidated(request,'generation:new',first.fixtures);assert.equal(repository.revisions.get(identity).revision,1);
-  const changed=structuredClone(first.fixtures);changed[0].statusObservation.value='FT';await repository.persistValidated(request,'generation:new',changed);
-  assert.deepEqual(repository.revisions.get(identity),{hash:JSON.stringify([changed[0].providerFixtureId,changed[0].canonicalKickoff,'FT']),revision:2,supersedes:1});
+test('failure after persistence before completion leaves consumed reservation and duplicate invocation issues no egress',async()=>{
+  const db=new DeterministicD1({failCompletionAt:3}),first=await runConcrete({db});assert.equal(first.result.reason,'attempt_completion_uncertain');assert.equal(first.fetches(),3);assert.equal([...db.attempts.values()].at(-1).outcome,'RESERVED');
+  const second=await runConcrete({db});assert.equal(second.fetches(),0);assert.equal(second.result.ok,false);assert.equal(db.head,null);
 });
 
-function preflightEvidence(){return {version:COLLECTOR_ACTIVATION_PREFLIGHT_VERSION,migrations:[[1,'shadow_data_foundation'],[2,'official_fpl_structured_history'],[3,'production_query_plan_indexes'],[4,'api_football_shadow_identity'],[5,'api_football_shadow_runtime'],[6,'api_football_mapping_qualification']],foreignKeyViolations:0,authority:{season:'2026-27',sourceKey:'official-fpl',sourceRevisionId:'official-fpl-r1',runStatus:'completed',fetchedAt:NOW,digest:'a'.repeat(64),teamIds:Array.from({length:20},(_,index)=>`2026-27:fpl:team:${index+1}`)},mapping:{state:'COMMITTED',isCurrentHead:true,mappingCount:20,memberCount:20,distinctProviderIds:20,distinctFplIds:20,authorityDigest:'a'.repeat(64)},runtime:{provider:'api-football',collectionEnabled:0,credentialState:'UNPROVISIONED',inFlightAttemptId:null,inFlightLeaseExpiresAt:null},inventory:{activation:'REPOSITORY_ONLY_BLOCKED',cronCount:0,workersDev:false,previewUrls:false,databaseIdPlaceholder:true,secretBindingPresent:false},counts:{requestAttempts:0,generations:0,fixtureRevisions:0},modelUiImportCount:0};}
-test('collector activation preflight admits only exact post-0006 disabled state',()=>{
-  assert.equal(classifyCollectorActivationPreflight(preflightEvidence(),{now:NOW}).classification,COLLECTOR_ACTIVATION_PREFLIGHT_READY);
-  for(const mutate of [e=>e.migrations.pop(),e=>e.foreignKeyViolations=1,e=>e.mapping.memberCount=19,e=>e.runtime.collectionEnabled=1,e=>e.runtime.inFlightAttemptId='active',e=>e.inventory.cronCount=1,e=>e.modelUiImportCount=1]){const evidence=preflightEvidence();mutate(evidence);assert.equal(classifyCollectorActivationPreflight(evidence,{now:NOW}).classification,'STOP_REVIEW_REQUIRED');}
+test('failure after five completions before generation commit prevents head and duplicate egress',async()=>{
+  const db=new DeterministicD1({failCommit:true}),first=await runConcrete({db});assert.equal(first.result.reason,'generation_commit_failed');assert.equal(first.fetches(),5);assert.equal(db.head,null);assert.equal([...db.attempts.values()].every(row=>row.outcome==='SUCCEEDED'),true);
+  db.failCommit=false;const second=await runConcrete({db});assert.equal(second.fetches(),0);assert.equal(second.result.reason,'succeeded_attempt_requires_reconciliation');assert.equal(db.head,null);
+});
+
+test('active and expired durable reservations both block egress',async()=>{
+  for(const [lease,reason] of [['2026-09-21T12:30:00.000Z','request_lease_busy'],['2026-09-21T11:00:00.000Z','expired_reservation_consumed']]){const db=new DeterministicD1(),request=requests()[0];db.attempts.set(request.attemptId,{attempt_id:request.attemptId,attempt_number:1,outcome:'RESERVED',lease_expires_at:lease});const run=await runConcrete({db});assert.equal(run.fetches(),0);assert.equal(run.result.reason,reason);}
+});
+
+function preflightEvidence(stage){const attended=stage===COLLECTOR_PREFLIGHT_ATTENDED_STAGE;return {version:COLLECTOR_ACTIVATION_PREFLIGHT_VERSION,stage,migrations:[[1,'shadow_data_foundation'],[2,'official_fpl_structured_history'],[3,'production_query_plan_indexes'],[4,'api_football_shadow_identity'],[5,'api_football_shadow_runtime'],[6,'api_football_mapping_qualification']],foreignKeyViolations:0,authority,mapping:{state:'COMMITTED',isCurrentHead:true,mappingCount:20,memberCount:20,distinctProviderIds:20,distinctFplIds:20,authorityDigest:authority.digest},runtime:{provider:'api-football',collectionEnabled:0,credentialState:attended?'AVAILABLE':'UNPROVISIONED',inFlightAttemptId:null,inFlightLeaseExpiresAt:null},inventory:{activation:attended?API_FOOTBALL_ATTENDED_DISCOVERY_ACTIVATION:'REPOSITORY_ONLY_BLOCKED',cronCount:0,workersDev:false,previewUrls:false,databaseIdPlaceholder:!attended,productionBindingProven:attended,deployed:attended,configurationExact:attended,secretBindingPresent:attended},counts:{requestAttempts:0,generations:0,fixtureRevisions:0},priorState:{attempt2Count:0,reservedAttemptCount:0,stagingGenerationCount:0},modelUiImportCount:0};}
+
+test('activation preflight has closed repository and attended acceptance stages',()=>{
+  assert.equal(classifyCollectorActivationPreflight(preflightEvidence(COLLECTOR_PREFLIGHT_REPOSITORY_STAGE),{now:NOW}).classification,COLLECTOR_REPOSITORY_STAGE_READY);
+  assert.equal(classifyCollectorActivationPreflight(preflightEvidence(COLLECTOR_PREFLIGHT_ATTENDED_STAGE),{now:NOW}).classification,COLLECTOR_ATTENDED_STAGE_READY);
+  for(const mutate of [e=>e.inventory.cronCount=1,e=>e.runtime.collectionEnabled=1,e=>e.inventory.secretBindingPresent=false,e=>e.priorState.reservedAttemptCount=1,e=>e.modelUiImportCount=1]){const evidence=preflightEvidence(COLLECTOR_PREFLIGHT_ATTENDED_STAGE);mutate(evidence);assert.match(classifyCollectorActivationPreflight(evidence,{now:NOW}).classification,/^STOP_ATTENDED_ACCEPTANCE_/);}
 });

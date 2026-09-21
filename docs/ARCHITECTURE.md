@@ -1,6 +1,6 @@
 ## Dormant API-Football collector activation composition
 
-Collector now has isolated repository-only composition for `plan -> reserve -> transport -> semantic validation -> normalized persistence -> attempt completion`. Discovery creates a `STAGING` generation and keeps previous committed head authoritative until all five canonical competitions persist successfully. HTTP 200 alone cannot produce `SUCCEEDED`. Attempt 1 is only admitted attempt for proposed first acceptance; stale or uncertain reservations are consumed and reconciled instead of retried. Shipped Wrangler does not select execution state. See [collector activation foundation](API-FOOTBALL-COLLECTOR-ACTIVATION-FOUNDATION.md).
+Collector now has one repository-only execution owner for `plan -> reserve -> bounded transport -> semantic validation -> generation ceiling -> concrete normalized D1 persistence -> attempt completion -> generation/head commit`. Transport owns no D1 state; the D1 adapter owns no provider egress. Discovery creates `STAGING` and keeps previous head authoritative until all five attempt-1 requests persist and complete. Concrete 1,250-row bulk chunks enforce a 2,500-fixture, 7,525-row-write and 49-total-statement ceiling. Shipped Wrangler does not select execution state. See [collector activation foundation](API-FOOTBALL-COLLECTOR-ACTIVATION-FOUNDATION.md).
 
 ## Current API-Football storage/runtime architecture after Migration 0006 closeout
 

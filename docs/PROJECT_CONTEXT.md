@@ -1,6 +1,6 @@
 ## API-Football collector activation foundation — repository candidate
 
-Owner-approved repository work adds a dormant attended-one-shot discovery state machine, semantic-before-success ordering, five-query staging/commit/head lifecycle, zero-retry stale-reservation handling, 2,500-fixture total generation ceiling, and separate post-Migration-0006 activation preflight. Shipped configuration remains `REPOSITORY_ONLY_BLOCKED`, empty-Cron, placeholder-bound, and incapable of provider egress. No live/provider/secret/production/model/UI action is approved or performed. See [collector activation foundation](API-FOOTBALL-COLLECTOR-ACTIVATION-FOUNDATION.md).
+Owner-approved repository work adds a dormant concrete D1-backed attended-one-shot discovery state machine, single-owner semantic-before-success ordering, five-query staging/commit/head lifecycle, zero-retry stale-reservation handling, 2,500-fixture total generation ceiling, and separate post-Migration-0006 activation preflight. Shipped configuration remains `REPOSITORY_ONLY_BLOCKED`, empty-Cron, placeholder-bound, and incapable of provider egress. No live/provider/secret/production/model/UI action is approved or performed. See [collector activation foundation](API-FOOTBALL-COLLECTOR-ACTIVATION-FOUNDATION.md).
 
 ## API-Football Migration 0006 — FINAL CLOSEOUT; collector activation investigation next
 
