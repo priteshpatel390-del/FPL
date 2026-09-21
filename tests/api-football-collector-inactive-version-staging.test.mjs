@@ -108,7 +108,7 @@ test('collector upload graph is closed, deterministic and exactly nineteen repos
   assert.deepEqual(deterministicIdentity(buildMetadata(SHA),first),deterministicIdentity(buildMetadata(SHA),second));
   for(const source of first.values()){
     assert.doesNotMatch(source,/\bimport\s*\(/);
-    assert.doesNotMatch(source,/(?:https?:|npm:|node_modules\/)/);
+    assert.doesNotMatch(source,/\b(?:import|export)\s+(?:[^'";]*?\s+from\s+)?['"](?:https?:|npm:|node:|[^./][^'"]*)['"]/);
   }
 });
 
