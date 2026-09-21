@@ -803,3 +803,6 @@ exact receipted repository/workflow/run/ref/event/commit/job and strict observer
 only to its own incident-lifecycle D1. It cannot write production Official FPL data or observer-clock
 receipts and has no repair authority. Repository configuration does not prove live Worker, D1,
 secret, Cron Trigger, or email activation; those remain separately owner-gated.
+## Migration 0006 read-only reconciliation boundary
+
+The reconciliation candidate addresses ambiguous mapping-only run `35575463178` without mutation authority. Its manual workflow uses protected `data-steward-readonly` credentials and fixed repository-owned aggregate SQL only. It has no D1 writer token, private crosswalk secret, API-Football key or provider egress, caller-controlled SQL, raw mapping-row output, restore path, deployment, Cron or secret mutation. D1 responses must contain exactly the expected successful reads and report zero written rows; malformed, failed, foreign-key-violating or write-reporting evidence fails closed. The 0/0/0 qualification/member/head observation and `READY_FOR_PRIVATE_MAPPING_PERSISTENCE` postflight do not prove mapping-row absence. Blind retry and automatic restore remain forbidden, and merge does not authorize production execution.

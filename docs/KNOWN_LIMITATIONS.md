@@ -995,3 +995,6 @@ E2C-A adds inert, fail-closed disposable-D1 experiment plans, an identity-bound 
 ## DATA-S2B E2C-B repository-only preparation
 
 E2C-B hardens the disposable live boundary with mandatory production-account separation, exact returned-value affinity/storage semantics, missing-versus-zero bounded provider metadata, sanitized evidence and a manual exact-main/exact-Verify protected workflow that rejects reruns and never cleans up. No live action occurred; preparation, execution, acceptance and manual cleanup remain separate owner gates. See [E2C-B implementation record](../workers/data-platform/DATA-S2B-E2C-B-DISPOSABLE-LIVE-EXPERIMENT-PREPARATION.md).
+## Migration 0006 mapping state is unresolved
+
+Migration 0006 schema is live, but mapping-only run `35575463178` submitted a D1 mutation and returned `AMBIGUOUS_REQUIRES_OWNER_ATTENTION`. Later qualification/member/head counts were all zero and independent postflight remained `READY_FOR_PRIVATE_MAPPING_PERSISTENCE`; those facts do not prove that mapping-specific `entity_mappings` rows or partial persistence are absent. Until the protected read-only diagnostic is separately approved and executed, reconciliation remains pending. Blind retry and automatic restore are forbidden. Repository implementation or merge is not production execution authority.
