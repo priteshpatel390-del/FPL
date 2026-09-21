@@ -1,4 +1,16 @@
-# API-Football migration 0006 and private mapping production foundation
+# API-Football Migration 0006 — production closeout
+
+## Final status — closed successfully
+
+**Supersedes the open-acceptance wording in the historical foundation record below.** Migration 0006 schema and private qualified mapping persistence are complete. Owner-attended persistence run `35607354636`, attempt 1, on exact SHA `051a68841fd04dde8f5f239dadbfb285231646c3` returned `DEFINITELY_APPLIED_SUCCESSFULLY`: D1 HTTP 200, 43/43 statements successful, durable 20 entity mappings / 1 qualification / 20 members / 1 head, complete 20-club coverage, durable reread/reconstruction success and 0 API-Football requests.
+
+The first independent read-only reconciliation, run `35607762989`, read 24,536 rows with 0 production mutations and 0 API-Football requests but returned `PARTIAL_OR_UNEXPECTED_MAPPING_STATE_REQUIRES_OWNER_ATTENTION`. Investigation proved a validator false negative: the reconciliation required `current_qualification_integrity_hash` to equal the historical owner-approved qualification hash even though the current value is intentionally regenerated against fresh Official FPL authority. PR #276 retained the historical approval hash pin and independently validated the fresh current hash as lowercase 64-hex. It merged as `8c5c7fbf80b70961f2e39d8acc73c806d8c95659`; post-merge Verify Teamsheet `35608962183` and Pages succeeded.
+
+Fresh final reconciliation run `35609344995`, attempt 1, on that exact main succeeded as `COMPLETE_QUALIFIED_MAPPING_VISIBLE`, with 24,536 rows read, 0 production mutations and 0 API-Football requests. Artifact `10643366243` has SHA-256 `15cead166619fbf07a99c6f7aa5a09b5416080f1c0d122e56b33771fa7b4c2c8`. Earlier mutation-submitting runs `35575463178` and `35587588095` remain consumed and forbidden from rerun. No retry, repair, restore or additional mapping write is required.
+
+The next checkpoint is collector activation investigation/design only. This closeout does not deploy/bind/credential the collector, enable Cron, activate `PRELIVE_PLANNER_ONLY`, make an API-Football request, ingest workload evidence or change model/product behaviour.
+
+---
 
 ## Status
 

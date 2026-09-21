@@ -1,3 +1,9 @@
+## API-Football source status after Migration 0006 final closeout
+
+API-Football remains a private-use, shadow-only source under `owner_risk_accepted_private_use`. Migration 0006 schema and the approved qualified 20/20 team mapping are now durably persisted in canonical `teamsheet-data` D1. Persistence run `35607354636` made 0 API-Football requests and committed the normalized 20 entity mappings / 1 qualification / 20 members / 1 head state; final independent reconciliation `35609344995` made 0 API-Football requests and 0 production mutations and accepted `COMPLETE_QUALIFIED_MAPPING_VISIBLE`. The private crosswalk remains private and is not reproduced in repository content, docs, artifacts or browser code.
+
+This is storage/identity readiness, not source activation. No production provider collection, new API-Football payload acquisition, workload ingestion, provider-to-model admission or product/UI read path is approved by this closeout. Official FPL remains authoritative for Premier League identity.
+
 ## API-Football migration 0006 live / mapping recovery status
 
 Migration 0006 is live after attended production run `35572526804`; private 20/20 mapping persistence is not. Schema postflight and final read-only postflight reported `READY_FOR_PRIVATE_MAPPING_PERSISTENCE`. The mapping attempt stopped before mutation because its protected writer environment supplied no usable owner-crosswalk secret. The recovery candidate is mapping-only, makes zero API-Football requests, and does not activate collection or any model/product path. A later production attempt requires the qualified crosswalk to be configured in the protected writer environment and separate owner approval.

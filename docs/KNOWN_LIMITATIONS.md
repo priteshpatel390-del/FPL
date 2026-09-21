@@ -1,3 +1,9 @@
+## Current API-Football limitations after Migration 0006 closeout
+
+Migration 0006 schema and the private qualified 20/20 mapping are no longer open limitations: persistence run `35607354636` durably established 20 entity mappings / 1 qualification / 20 members / 1 head, and independent read-only reconciliation `35609344995` accepted `COMPLETE_QUALIFIED_MAPPING_VISIBLE`. The initial reconciliation false negative `35607762989` was caused by repository comparison of two intentionally distinct qualification hashes and was corrected by PR #276; it did not require a production rewrite.
+
+Remaining limitations are downstream. The production collector deployment/binding, Worker secret `API_FOOTBALL_API_KEY`, runtime enablement, Cron and provider egress are not accepted by this closeout. The shipped collector still stops after pre-egress planning; workload-detail enrichment/correction remains blocked; live unattended Cloudflare concurrency/reliability and quota behaviour remain unaccepted; provider entitlement remains narrow private-use; and no predictive/model value is established. API-Football remains shadow-only and has no approved path into expected minutes, projections, XI, captaincy, transfers, fixture model, simulations, rank, Mini Leagues, rivals, recommendations, alerts or UI decisions.
+
 ## Migration 0006 mapping state is unresolved
 
 Migration 0006 schema is live, but mapping-only run `35575463178` submitted a D1 mutation and returned `AMBIGUOUS_REQUIRES_OWNER_ATTENTION`. Later qualification/member/head counts were all zero and independent postflight remained `READY_FOR_PRIVATE_MAPPING_PERSISTENCE`; those facts do not prove that mapping-specific `entity_mappings` rows or partial persistence are absent. Until the protected read-only diagnostic is separately approved and executed, reconciliation remains pending. Blind retry and automatic restore are forbidden. Repository implementation or merge is not production execution authority.
