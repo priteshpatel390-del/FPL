@@ -1375,3 +1375,7 @@ The Team experience now includes an artifact-only weekly decision synthesis abov
 ## DATA-S2B E2C-B repository-only preparation
 
 E2C-B hardens the disposable live boundary with mandatory production-account separation, exact returned-value affinity/storage semantics, missing-versus-zero bounded provider metadata, sanitized evidence and a manual exact-main/exact-Verify protected workflow that rejects reruns and never cleans up. No live action occurred; preparation, execution, acceptance and manual cleanup remain separate owner gates. See [E2C-B implementation record](../workers/data-platform/DATA-S2B-E2C-B-DISPOSABLE-LIVE-EXPERIMENT-PREPARATION.md).
+
+## 21 September 2026 — API-Football inactive staging implementation candidate
+
+Repository-only implementation is owner-approved for the dormant infrastructure-staging machinery described in `API-FOOTBALL-COLLECTOR-INACTIVE-VERSION-STAGING.md`. The candidate introduces no product/model behaviour. Its future live path is bounded to one inert Worker-shell creation followed by one inactive Version upload, only after fresh read-only admission. Live execution, environment creation/configuration, provider credentials, D1 mutation, Deployment, Cron, routes/domains and provider egress remain separately owner-gated.
