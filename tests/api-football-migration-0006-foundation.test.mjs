@@ -14,6 +14,7 @@ import {EXPECTED_D1_DATABASE_ID} from '../workers/data-platform/phase4b/live-con
 
 const workflowPath='.github/workflows/api-football-migration-0006.yml';
 const workflow=fs.readFileSync(workflowPath,'utf8');
+const readonlyWorkflow=fs.readFileSync('.github/workflows/api-football-migration-0006-readonly-preflight.yml','utf8');
 const source=fs.readFileSync('workers/data-platform/migration6/production.mjs','utf8');
 const runner=fs.readFileSync('workers/data-platform/run-migration-0006.mjs','utf8');
 const ledger=[
@@ -76,6 +77,16 @@ test('workflow separates schema and private mapping and admits each mutation fre
   assert.equal((workflow.match(/API_FOOTBALL_OWNER_CROSSWALK_JSON/g)||[]).length,2);
   assert.match(workflow,/API_FOOTBALL_OWNER_CROSSWALK_JSON: "\$\{\{ secrets\.API_FOOTBALL_OWNER_CROSSWALK_JSON \}\}"/);
   assert.doesNotMatch(workflow,/API_FOOTBALL_API_KEY|api-sports\.io|wrangler deploy|wrangler secret|wrangler triggers/);
+});
+
+test('dedicated migration 0006 preflight is manual, exact-main, exact-Verify and read-only',()=>{
+  assert.match(readonlyWorkflow,/on:\n  workflow_dispatch:/);assert.doesNotMatch(readonlyWorkflow,/\n  (push|schedule|pull_request):/);
+  assert.match(readonlyWorkflow,/github\.run_attempt == 1/);assert.match(readonlyWorkflow,/refs\/heads\/main/);
+  assert.match(readonlyWorkflow,/Tests and deterministic build/);assert.match(readonlyWorkflow,/MIGRATION_0006_PREFLIGHT_MODE: schema_pre/);
+  assert.match(readonlyWorkflow,/data-steward-readonly/);assert.match(readonlyWorkflow,/DATA_STEWARD_CLOUDFLARE_READ_TOKEN/);
+  assert.match(readonlyWorkflow,/DATA_STEWARD_CLOUDFLARE_ANALYTICS_TOKEN/);assert.match(readonlyWorkflow,/workers\/data-platform\/migration6\/preflight\.mjs/);
+  assert.doesNotMatch(readonlyWorkflow,/CLOUDFLARE_D1_TOKEN|API_FOOTBALL_OWNER_CROSSWALK_JSON|API_FOOTBALL_API_KEY/);
+  assert.doesNotMatch(readonlyWorkflow,/run-migration-0006\.mjs|wrangler deploy|wrangler d1|wrangler secret|wrangler triggers|api-sports\.io/);
 });
 
 test('preflight preserves 50,000 daily-write admission and runtime isolation',()=>{
