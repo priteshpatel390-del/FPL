@@ -22,3 +22,11 @@ Reports and retained artifacts contain only classifications, counts, approved in
 ## Future owner gate
 
 Before any dispatch, independently prove: merged exact current `main`; successful exact-head Verify Teamsheet; protected-environment and secret availability without reading secret values; fresh `READY_FOR_MIGRATION_0006` production state; exact accepted migration 0005 predecessor; current 20-team Official FPL authority; zero foreign-key violations; disabled runtime; absent collector deployment/Cron/API-key binding; account-wide D1 rows written at or below 50,000; and reviewed D1 Time Travel availability. Owner must then explicitly approve one new attempt. Failure after either mutation requires reconciliation and new owner review, never a GitHub rerun.
+
+## Independent read-only admission workflow
+
+A dedicated manual-only workflow, `.github/workflows/api-football-migration-0006-readonly-preflight.yml`, can collect fresh `schema_pre` evidence without starting the mutation-capable migration workflow. It requires exact current `main`, an exact-head successful `Tests and deterministic build` check, and the existing `data-steward-readonly` environment. It reuses `workers/data-platform/migration6/preflight.mjs`, including the 50,000-row current-UTC-day D1 admission ceiling, and retains only the sanitized preflight report.
+
+The workflow has no production D1 write token, private crosswalk secret, `API_FOOTBALL_API_KEY`, migration runner, deployment command, schedule/secret mutation or API-Football egress. Its successful result can establish fresh `READY_FOR_MIGRATION_0006` admission evidence, but it cannot apply migration 0006 or persist the private mapping.
+
+D1 Time Travel checkpoint availability is intentionally not probed by this read-only workflow. The existing production runner obtains the checkpoint immediately before mutation using the separately gated production identity. Therefore Time Travel availability remains a distinct attended execution precondition and must not be inferred from read-only preflight success.
