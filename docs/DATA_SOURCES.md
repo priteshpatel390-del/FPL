@@ -1,3 +1,7 @@
+## API-Football source state after inactive staging
+
+API-Football remains **shadow-only and non-acquiring**. Live inactive-staging run `35645387203` created only an inert Worker shell and one inactive Version; it made **0 API-Football requests**, persisted no provider response, changed no D1 data and provisioned no `API_FOOTBALL_API_KEY`. Provider acquisition, fixture ingestion and every downstream model/product use remain separately gated.
+
 ## Inactive collector staging source boundary
 
 The proposed inactive Worker/D1-binding stage acquires no football data and adds no provider source. It binds code to the already-existing production `teamsheet-data` D1 resource but keeps execution blocked and uncredentialed. Official FPL remains the current-team authority; API-Football remains private-use/shadow-only. No provider request, response, workload fact, model input or UI source is introduced by this infrastructure proposal.

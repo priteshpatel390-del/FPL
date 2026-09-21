@@ -74,7 +74,7 @@ function fakeFetch({collectorPresent=false,state=d1Rows()}={}){
       return collectorPresent?json({schedules:[]}):absent();
     }
     if(value.includes('/workers/scripts/teamsheet-api-football-shadow-collector/deployments')){
-      return collectorPresent?json([]):absent();
+      return collectorPresent?json({deployments:[]}):absent();
     }
     if(value.endsWith('/query')){
       assert.equal(init.method,'POST');
@@ -120,7 +120,8 @@ test('repository infrastructure staging admission passes only from exact post-00
   assert.equal(report.officialFplAuthority.teamCount,20);
   assert.deepEqual(report.mapping,{state:'COMMITTED',mappingCount:20,memberCount:20,distinctProviderIds:20,distinctFplIds:20,canonicalCoverageMatches:true,historicalAuthorityProvenancePresent:true});
   assert.deepEqual(report.priorState,{requestAttempts:0,generations:0,fixtureRevisions:0,attempt2Count:0,reservedAttemptCount:0,stagingGenerationCount:0});
-  assert.equal(report.inventory.deployed,false);
+  assert.equal(report.inventory.workerPresent,false);
+  assert.equal(report.inventory.deploymentCount,0);
   assert.equal(report.inventory.cronCount,0);
   assert.equal(report.inventory.secretBindingPresent,false);
   assert.equal(report.inventory.databaseIdPlaceholder,true);
@@ -161,6 +162,13 @@ test('existing live collector blocks repository-infrastructure staging admission
   assert.equal(report.ok,false);
   assert.equal(report.reason,'repository_stage_inventory_unexpected');
   assert.match(report.classification,/^STOP_REPOSITORY_INFRASTRUCTURE_STAGING_/);
+});
+
+test('Worker presence is reported separately from Deployment count',async()=>{
+  const report=await runApiFootballActivationLivePreflight({env:env(),fetchImpl:fakeFetch({collectorPresent:true}),now:()=>NOW});
+  assert.equal(report.inventory.workerPresent,true);
+  assert.equal(report.inventory.deploymentCount,0);
+  assert.equal(report.reason,'repository_stage_inventory_unexpected');
 });
 
 test('stale Official FPL authority fails closed',async()=>{

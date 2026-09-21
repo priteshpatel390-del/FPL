@@ -39,12 +39,16 @@ export function classifyCollectorActivationPreflight(evidence,{now}={}){
   const stage=evidence?.stage;
   if(![COLLECTOR_PREFLIGHT_REPOSITORY_STAGE,COLLECTOR_PREFLIGHT_ATTENDED_STAGE].includes(stage))return stop('UNKNOWN_STAGE','preflight_stage_invalid');
   const shared=sharedEvidence(evidence,stage,{now});if(!shared.ok)return shared;
-  const inventory=evidence.inventory;if(!inventory||inventory.cronCount!==0||inventory.workersDev!==false||inventory.previewUrls!==false||typeof inventory.secretBindingPresent!=='boolean')return stop(stage,'collector_inventory_unexpected');
+  const inventory=evidence.inventory;if(!inventory||inventory.cronCount!==0||inventory.workersDev!==false||inventory.previewUrls!==false||
+    typeof inventory.workerPresent!=='boolean'||!Number.isSafeInteger(inventory.deploymentCount)||inventory.deploymentCount<0||
+    typeof inventory.secretBindingPresent!=='boolean')return stop(stage,'collector_inventory_unexpected');
   if(stage===COLLECTOR_PREFLIGHT_REPOSITORY_STAGE){
-    if(inventory.activation!=='REPOSITORY_ONLY_BLOCKED'||inventory.databaseIdPlaceholder!==true||inventory.deployed!==false||inventory.secretBindingPresent!==false)return stop(stage,'repository_stage_inventory_unexpected');
+    if(inventory.activation!=='REPOSITORY_ONLY_BLOCKED'||inventory.databaseIdPlaceholder!==true||inventory.workerPresent!==false||
+      inventory.deploymentCount!==0||inventory.secretBindingPresent!==false)return stop(stage,'repository_stage_inventory_unexpected');
     return safe({ok:true,stage,classification:COLLECTOR_REPOSITORY_STAGE_READY,secretBindingPresent:false});
   }
-  if(inventory.activation!==API_FOOTBALL_ATTENDED_DISCOVERY_ACTIVATION||inventory.databaseIdPlaceholder!==false||inventory.productionBindingProven!==true||inventory.deployed!==true||inventory.configurationExact!==true||inventory.secretBindingPresent!==true)return stop(stage,'attended_stage_inventory_unexpected');
+  if(inventory.activation!==API_FOOTBALL_ATTENDED_DISCOVERY_ACTIVATION||inventory.databaseIdPlaceholder!==false||inventory.productionBindingProven!==true||
+    inventory.workerPresent!==true||inventory.configurationExact!==true||inventory.secretBindingPresent!==true)return stop(stage,'attended_stage_inventory_unexpected');
   if(evidence.runtime.credentialState!=='AVAILABLE')return stop(stage,'credential_state_unexpected');
   if(evidence.counts.requestAttempts!==0||evidence.counts.generations!==0||evidence.counts.fixtureRevisions!==0)return stop(stage,'first_acceptance_history_not_pristine');
   return safe({ok:true,stage,classification:COLLECTOR_ATTENDED_STAGE_READY,secretBindingPresent:true});

@@ -1,3 +1,13 @@
+## API-Football inactive collector staging — LIVE CLOSEOUT
+
+**Supersedes the inactive-staging candidate wording below; historical design sections remain for audit.** Owner-attended workflow run `35645387203`, attempt 1, completed successfully on exact `main` `302dc21cc4b821ac8b224d176765a29c0724a244`. Fresh admission again returned `READY_FOR_REPOSITORY_INFRASTRUCTURE_STAGING`; the protected stage then created the inert `teamsheet-api-football-shadow-collector` shell and uploaded exactly one inactive Version, `e49ac8f2-4289-46bc-9f0b-87a20cd7be62`. Both approved Cloudflare mutations were definite successes.
+
+Postflight proved: workers.dev disabled, Preview URLs disabled, **Deployment count 0**, Cron 0, routes/custom domains 0, secret bindings 0, activation still `REPOSITORY_ONLY_BLOCKED`, D1 mutations 0 and API-Football requests 0. The final independent read-only closeout preserved migrations 0001–0006, zero FK violations, fresh exact-20 Official FPL authority, committed 20/20 mapping, disabled runtime, credential `UNPROVISIONED`, no active lease and request attempts / generations / fixture revisions 0 / 0 / 0 while reading 38,703 D1 rows with zero writes.
+
+Evidence artifacts: admission `10660381729` / `e53fe027c5c0a059c917c0a1d405672a39da06847cf7c4e579b61bd6068f4864`; inactive staging `10659703499` / `199aa79fd363c6d4396d970e7a7db5915e695247be59de62d0052c9a7dfa9cf2`; closeout `10659194310` / `6549d1950a2144041d330089c52dbdab034179e6b865102a587cc6c29ed53324`.
+
+The generic live-preflight field previously called `deployed` meant only “the Worker/script inventory exists”; it did **not** prove a Cloudflare Deployment. This closeout remediation renames that evidence to `workerPresent` and records `deploymentCount` separately. No Deployment, API-Football credential, runtime enablement, Cron or provider egress is authorized by this repository closeout.
+
 ## API-Football collector repository/infrastructure staging admitted
 
 Owner-attended corrected read-only run `35634186433` on exact main `d88312eb6263a3ef0e5de1be3e79b647a797b830` returned `READY_FOR_REPOSITORY_INFRASTRUCTURE_STAGING` with artifact `10655278906` / SHA-256 `5da299cc5b0bec4064ad7d839e40e05e2b2ad9dde41f7eed785534dfa9bb501b`. The next approved work is documentation/design only for an inert collector Worker shell and one inactive D1-bound Version while preserving `REPOSITORY_ONLY_BLOCKED`, zero secrets, zero Cron, zero Deployment and zero provider egress. Implementation and execution are separate future gates. See [inactive collector staging proposal](API-FOOTBALL-COLLECTOR-INACTIVE-VERSION-STAGING.md).

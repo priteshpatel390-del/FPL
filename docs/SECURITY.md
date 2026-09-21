@@ -1,3 +1,11 @@
+## API-Football inactive-staging security closeout
+
+Owner-attended run `35645387203` used the dedicated protected environment `api-football-collector-version-upload` and a narrowly scoped `Workers Scripts Write` token for exactly two allowlisted Cloudflare mutations: inert Worker-shell creation and one inactive Version upload. Postflight proved workers.dev and Preview URLs disabled, Deployment count 0, Cron/routes/domains 0, secret bindings 0, D1 writes 0 and API-Football requests 0. Final independent read-only closeout preserved disabled runtime and `UNPROVISIONED` provider credential state.
+
+The previous generic `deployed` inventory boolean is security-ambiguous because it meant only that the Worker/script endpoints existed. The live-preflight report now separates `workerPresent` from `deploymentCount`. A Worker object or inactive Version must never be treated as traffic exposure.
+
+The upload token/environment secret may still exist after the successful one-shot run; repository evidence cannot prove revocation. Revoking the Cloudflare token and removing the GitHub environment secret would be a separate owner-approved live credential cleanup action.
+
 ## Proposed inactive collector staging security boundary
 
 The next collector infrastructure stage remains unimplemented. Its design requires a dedicated protected environment containing only a collector Worker-upload token plus account identity/fingerprint; it must contain no `API_FOOTBALL_API_KEY` and no private crosswalk. A separate `data-steward-readonly` job must freshly re-establish `READY_FOR_REPOSITORY_INFRASTRUCTURE_STAGING` before any mutation-capable environment is eligible. The future mutation helper may allow only one inert Worker-shell creation and one inactive Version upload. It must forbid Deployment, Schedules mutation, secret mutation, route/domain mutation, D1 mutation, Access mutation and provider egress. The first Version must not exist until workers.dev and Preview URLs are proven disabled.

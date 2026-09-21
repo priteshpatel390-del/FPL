@@ -10,7 +10,7 @@ import {
   COLLECTOR_PREFLIGHT_REPOSITORY_STAGE
 } from './activation-preflight.mjs';
 
-export const API_FOOTBALL_ACTIVATION_LIVE_PREFLIGHT_VERSION='api-football-activation-live-preflight-v2';
+export const API_FOOTBALL_ACTIVATION_LIVE_PREFLIGHT_VERSION='api-football-activation-live-preflight-v3';
 export const CLOUDFLARE_API_BASE='https://api.cloudflare.com/client/v4';
 export const EXPECTED_DATABASE_NAME='teamsheet-data';
 export const EXPECTED_DATA_PLATFORM_WORKER='teamsheet-data-platform';
@@ -91,12 +91,14 @@ function dataPlatformBindingMatches(result){
 }
 function collectorInventory(reads){
   const statuses=[reads.settings.status,reads.schedules.status,reads.deployments.status];
-  if(statuses.every(status=>status===404))return Object.freeze({deployed:false,secretBindingPresent:false,cronCount:0});
+  if(statuses.every(status=>status===404))return Object.freeze({workerPresent:false,deploymentCount:0,secretBindingPresent:false,cronCount:0});
   if(!reads.settings.ok||!reads.schedules.ok||!reads.deployments.ok)return null;
   const bindings=decodeBindings(reads.settings.result);
   const secretBindingPresent=bindings.some(row=>row.name==='API_FOOTBALL_API_KEY'&&row.type==='secret_text');
   const schedules=Array.isArray(reads.schedules.result?.schedules)?reads.schedules.result.schedules:Array.isArray(reads.schedules.result)?reads.schedules.result:[];
-  return Object.freeze({deployed:true,secretBindingPresent,cronCount:schedules.length});
+  const deployments=Array.isArray(reads.deployments.result?.deployments)?reads.deployments.result.deployments:Array.isArray(reads.deployments.result)?reads.deployments.result:null;
+  if(!deployments)return null;
+  return Object.freeze({workerPresent:true,deploymentCount:deployments.length,secretBindingPresent,cronCount:schedules.length});
 }
 
 function parseWrangler(){
@@ -221,8 +223,9 @@ export async function runApiFootballActivationLivePreflight({env=process.env,fet
 
   const d1=await runD1(fetchImpl,{accountId,token});if(!d1.ok)return d1;
   const inventory=Object.freeze({
-    activation:wrangler.activation,databaseIdPlaceholder:wrangler.databaseIdPlaceholder,deployed:collector.deployed,
-    secretBindingPresent:collector.secretBindingPresent,cronCount:collector.cronCount,workersDev:wrangler.workersDev,previewUrls:wrangler.previewUrls
+    activation:wrangler.activation,databaseIdPlaceholder:wrangler.databaseIdPlaceholder,workerPresent:collector.workerPresent,
+    deploymentCount:collector.deploymentCount,secretBindingPresent:collector.secretBindingPresent,cronCount:collector.cronCount,
+    workersDev:wrangler.workersDev,previewUrls:wrangler.previewUrls
   });
   const built=buildEvidence(d1.rows,{inventory,nowIso});if(!built.ok)return built;
   const classified=classifyCollectorActivationPreflight(built.evidence,{now:nowIso});
@@ -273,7 +276,8 @@ export function sanitizedSummaryLines(report){
     '- Request attempts: '+String(report?.priorState?.requestAttempts??'unknown'),
     '- Discovery generations: '+String(report?.priorState?.generations??'unknown'),
     '- Fixture revisions: '+String(report?.priorState?.fixtureRevisions??'unknown'),
-    '- Collector deployed: '+String(report?.inventory?.deployed??'unknown'),
+    '- Collector Worker present: '+String(report?.inventory?.workerPresent??'unknown'),
+    '- Worker Deployment count: '+String(report?.inventory?.deploymentCount??'unknown'),
     '- Collector Cron count: '+String(report?.inventory?.cronCount??'unknown'),
     '- API key binding present: '+String(report?.inventory?.secretBindingPresent??'unknown'),
     '- Production mutations: 0',

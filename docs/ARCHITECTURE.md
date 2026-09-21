@@ -1,3 +1,9 @@
+## Current API-Football collector infrastructure state
+
+The collector now has a live Cloudflare Worker **object** plus one inactive Version, but still has **zero Deployments**. Run `35645387203` on exact `main` `302dc21cc4b821ac8b224d176765a29c0724a244` created the inert shell and inactive Version `e49ac8f2-4289-46bc-9f0b-87a20cd7be62`, with workers.dev/Preview URLs disabled, no routes/domains, no Cron, no secret binding, blocked activation and zero provider/D1 mutations.
+
+Inventory semantics are now explicit: `workerPresent` means the Worker/script control-plane object exists; `deploymentCount` is the separate traffic-deployment fact. The old `deployed` boolean conflated those concepts and is retired from the live-preflight report contract. Inactive Version presence must never be treated as evidence of production traffic.
+
 ## Proposed API-Football collector inactive infrastructure staging
 
 After live `READY_FOR_REPOSITORY_INFRASTRUCTURE_STAGING`, the next proposed architecture deliberately separates Worker existence, Version identity and Deployment. Because the collector Worker is currently absent, the design first creates only an inert Worker shell with workers.dev and Preview URLs disabled, then may upload exactly one inactive Version with an explicit production `TEAMSHEET_DATA_DB` binding, three reviewed plain-text variables and no secret bindings. `EIA_2I5D_ACTIVATION` stays `REPOSITORY_ONLY_BLOCKED`; Deployment count and Cron count remain zero. This prevents a first Version from becoming reachable through a preview URL before routability is proven disabled. See [inactive collector staging proposal](API-FOOTBALL-COLLECTOR-INACTIVE-VERSION-STAGING.md).

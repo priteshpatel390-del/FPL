@@ -1,3 +1,7 @@
+## Post-staging terminology correction — 21 September 2026
+
+Live inactive staging run `35645387203` demonstrated that the preflight's historical `inventory.deployed` label actually meant only “collector Worker/script inventory is present”: the run had a present Worker and inactive Version while the dedicated postflight proved **Deployment count 0**. The sanitized live-preflight report contract therefore moves to `workerPresent` plus explicit `deploymentCount`. This is a semantics/evidence correction, not a live infrastructure change.
+
 # API-Football Collector Activation Read-Only Preflight
 
 ## Approval and purpose

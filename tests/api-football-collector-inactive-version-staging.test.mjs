@@ -165,10 +165,12 @@ test('read-only closeout requires migrations mapping runtime and zero-history ev
     reason:'repository_stage_inventory_unexpected',migrationCount:6,foreignKeyViolations:0,officialFplAuthority:{teamCount:20},
     mapping:{state:'COMMITTED',mappingCount:20,memberCount:20,distinctProviderIds:20,distinctFplIds:20,canonicalCoverageMatches:true,historicalAuthorityProvenancePresent:true},
     runtime:{collectionEnabled:0,credentialState:'UNPROVISIONED',activeLease:false},
+    inventory:{workerPresent:true,deploymentCount:0,cronCount:0,secretBindingPresent:false},
     priorState:{requestAttempts:0,generations:0,fixtureRevisions:0,attempt2Count:0,reservedAttemptCount:0,stagingGenerationCount:0},
     modelUiImportCount:0,evidence:{productionMutations:0,apiFootballRequests:0,secretValuesRead:0}
   };
   assert.equal(validateReadOnlyCloseoutReport(report),true);
+  assert.throws(()=>validateReadOnlyCloseoutReport({...report,inventory:{...report.inventory,deploymentCount:1}}),/closeout_inventory_drift/);
   assert.throws(()=>validateReadOnlyCloseoutReport({...report,priorState:{...report.priorState,requestAttempts:1}}),/closeout_history_drift/);
 });
 
