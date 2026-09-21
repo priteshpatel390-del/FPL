@@ -1,5 +1,14 @@
 ## Proposed inactive collector staging security boundary
 
+## API-Football inactive collector staging security boundary
+
+Draft PR #283 is repository-only and has not been dispatched. The future mutation-capable job references a dedicated protected environment, `api-football-collector-version-upload`, with `CLOUDFLARE_COLLECTOR_WORKER_UPLOAD_TOKEN`, `CLOUDFLARE_ACCOUNT_ID` and a non-secret account fingerprint. No API-Football credential belongs in that environment. Repository code does not create or configure the environment and cannot prove its live protection or token scope.
+
+The staging helper permits exactly two mutation method/path pairs: one Worker-object create and one inactive Version upload. Deployment, schedules/Cron, secrets, routes/domains, Access and D1 mutation paths are rejected structurally. Definite 4xx stops without retry; network/timeout/malformed/5xx outcomes are treated as ambiguous and are never blindly retried. Reconciliation is read-only and unresolved ambiguity requires owner review.
+
+The future upload graph is a closed reviewed repository-owned ES-module set. It excludes the owner crosswalk/qualification construction path and includes only a runtime durable-mapping reader. Evidence output is sanitized to non-secret identities, counts and hashes; raw Cloudflare responses, tokens, secret values and private mapping pairs are not retained.
+
+
 The next collector infrastructure stage remains unimplemented. Its design requires a dedicated protected environment containing only a collector Worker-upload token plus account identity/fingerprint; it must contain no `API_FOOTBALL_API_KEY` and no private crosswalk. A separate `data-steward-readonly` job must freshly re-establish `READY_FOR_REPOSITORY_INFRASTRUCTURE_STAGING` before any mutation-capable environment is eligible. The future mutation helper may allow only one inert Worker-shell creation and one inactive Version upload. It must forbid Deployment, Schedules mutation, secret mutation, route/domain mutation, D1 mutation, Access mutation and provider egress. The first Version must not exist until workers.dev and Preview URLs are proven disabled.
 
 ## Activation mapping-provenance remediation security boundary
