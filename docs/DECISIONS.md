@@ -1,3 +1,11 @@
+## 2026-09-21 — Use approved aggregate reconciliation as a mandatory gate for a new mapping-persistence attempt
+
+**Decision:** Treat successful run `35584694866` and artifact `10631743543` (SHA-256 `d0bd4c795a561f5dc3fe8c68c3ed28e256ec31cbff598bb0ea42130e6f02b014`) as necessary, not sufficient, admission evidence for a new attended mapping-persistence-only workflow. Require its exact sanitized classification `NO_SUBMITTED_MAPPING_STATE_VISIBLE`, zero production mutations and zero API-Football requests before fresh independent `mapping_pre` admission and protected writer access. Keep recovery run `35575463178` consumed; never rerun it. Reuse the unchanged Migration 0006 mapping runner, with the private crosswalk scoped only to its persistence step, followed by independent sanitized `mapping_post`.
+
+**Reason:** The fixed aggregate diagnostic found no submitted mapping state after the earlier ambiguous mutation, but did not inspect or prove facts outside its query set. Binding exact artifact evidence plus a fresh live admission avoids treating that limited result as broader proof or blindly retrying the consumed execution.
+
+**Boundary:** Repository implementation only. No schema migration, restore, provider egress, deployment, collector activation, workload ingestion, model/product change or production dispatch is authorized.
+
 ## 20 September 2026 — migration 0006 production foundation decision
 
 Use one dormant manual workflow with separately admitted schema and private-persistence stages. Preserve the 0005 shared writer lock, 50,000-row daily admission ceiling, Time Travel checkpoint and no-automatic-restore policy. Reuse strict mapping persistence rather than duplicate validation; adapt D1 REST to its prepared/bound interface. Never serialize private rows or dynamic errors. Production execution remains a later owner decision. See [migration 0006 production foundation](API-FOOTBALL-MIGRATION-0006-PRODUCTION-FOUNDATION.md).

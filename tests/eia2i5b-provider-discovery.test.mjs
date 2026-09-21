@@ -652,6 +652,7 @@ test('API-Football discovery stays isolated from production, live config and mig
     'api-football-migration-0004.yml',
     'api-football-migration-0005.yml',
     'api-football-migration-0006-readonly-preflight.yml',
+    'api-football-mapping-0006-persistence.yml',
     'api-football-mapping-0006-reconciliation.yml',
     'api-football-mapping-0006-recovery.yml',
     'api-football-migration-0006.yml'
@@ -692,7 +693,7 @@ test('API-Football discovery stays isolated from production, live config and mig
       assert.doesNotMatch(source,/secrets\.API_FOOTBALL_API_KEY|x-apisports-key|v3\.football\.api-sports\.io|wrangler\s+(?:deploy|secret)|collection_enabled\s*=\s*1|schedule:/i);
       continue;
     }
-    if(file==='api-football-mapping-0006-recovery.yml'){
+    if(file==='api-football-mapping-0006-recovery.yml'||file==='api-football-mapping-0006-persistence.yml'){
       assert.match(source,/secrets\.API_FOOTBALL_OWNER_CROSSWALK_JSON/);
       assert.match(source,/MIGRATION_0006_PHASE: mapping/);
       assert.match(source,/MIGRATION_0006_PREFLIGHT_MODE: mapping_pre/);
