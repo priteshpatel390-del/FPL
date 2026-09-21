@@ -1,3 +1,9 @@
+## API-Football inactive-staging live acceptance and terminology regression
+
+Live workflow `35645387203`, attempt 1, succeeded on exact `main` `302dc21cc4b821ac8b224d176765a29c0724a244`. Fresh admission, protected inactive staging and final read-only closeout all passed. Candidate Version: `e49ac8f2-4289-46bc-9f0b-87a20cd7be62`; Deployment/Cron/route/domain/secret counts remained zero; D1 mutations and API-Football requests remained zero.
+
+Permanent regression coverage now distinguishes `workerPresent` from `deploymentCount`, models the real deployments response shape, proves a present Worker with zero Deployments is not traffic deployment, and requires the inactive-staging closeout validator to reject any nonzero Deployment count. The sanitized live-preflight report contract is bumped to v3 for this field-shape correction.
+
 ## Proposed inactive collector staging verification
 
 Future repository implementation must permanently test exact Worker-shell identity, workers.dev/Preview URLs disabled before first Version creation, exact first-Version D1/plain-text binding set, absence of secret bindings, blocked activation, zero Deployment/Cron paths, closed mutation request allowlist, deterministic transitive ES-module graph and hashes, exact-main/Verify gates, fresh `READY_FOR_REPOSITORY_INFRASTRUCTURE_STAGING` admission, no-retry reconciliation for ambiguous shell/version mutations, and postflight proof that production D1 logical state plus collector attempt/generation/revision counts remain unchanged. Full repository tests and deterministic production builds remain required before any live execution approval.
