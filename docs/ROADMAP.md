@@ -1,3 +1,7 @@
+## Immediate API-Football gate — remediate activation provenance false negative
+
+Attended read-only run `35631979158` is consumed after a safe STOP. Current approved work is repository-only: replace invalid historical-provenance-vs-latest-authority digest equality with independent historical-provenance validation plus exact current canonical-team-set equality. Preserve the same ten fixed D1 statements, read-only credential, sanitized evidence, zero provider requests and zero production mutations. After merge and exact-main verification, a new read-only preflight needs separate owner approval. Inactive Version upload/binding remains later and blocked.
+
 ## Immediate API-Football gate — activation read-only production admission
 
 PR #278 is merged and exact-main verified at `9be781456b9781d89352a4f085d61a0d2e1a0782` with 2,294/2,294 passing. Current approved work is repository preparation for one manual activation-specific read-only preflight only. After review/merge, the already-approved attended observation may establish `READY_FOR_REPOSITORY_INFRASTRUCTURE_STAGING`. It cannot upload/deploy the collector, provision/read the provider key, mutate runtime, enable Cron or call API-Football. Any inactive Version upload/binding preparation remains the next separate mutation gate after evidence review.

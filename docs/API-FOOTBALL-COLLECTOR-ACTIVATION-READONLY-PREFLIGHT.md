@@ -8,6 +8,20 @@ This checkpoint prepares a new manual read-only workflow. It does not upload or 
 
 The historical `API-Football Live Storage Read-Only Preflight` remains unchanged. It is not reused as the activation classifier because it was intentionally designed to stop on mapping/collector state that is valid after Migration 0006.
 
+## First live result and provenance remediation
+
+Owner-attended run `35631979158`, attempt 1, executed on exact protected main `c4b67cd1709f4c14d53c79896468fa07c632e70a`. Repository admission passed and the protected preflight stopped safely as `STOP_REPOSITORY_INFRASTRUCTURE_STAGING_REVIEW_REQUIRED` with reason `qualified_mapping_unavailable`. Sanitized evidence proved migrations 0001–0006, zero FK violations, fresh exact-20 Official FPL authority, committed 20/20 mapping cardinality, disabled runtime, zero attempts/generations/fixture revisions, absent collector/Cron/API-key binding, zero model/UI imports, 38,703 D1 rows read, 0 production mutations, 0 API-Football requests and 0 secret-value reads. Artifact `10655490002` has SHA-256 `6f7ae4318a61def0ec447da9d7232b634fffbdc848f23f2f84ce31828e3b7ddb`.
+
+Investigation proved the stop was a repository false negative. Migration 0006 stores an immutable authority-provenance hash derived from the qualification-time authority, while activation preflight v2 compared that stored historical value directly with the latest live authority digest. Those values are not required to be equal and may differ structurally or because Official FPL has refreshed since qualification.
+
+The corrected v3 contract therefore keeps both protections but separates their purpose:
+- historical mapping authority provenance must remain present, well-formed and immutable;
+- latest Official FPL authority must independently be fresh and exact-20;
+- the committed mapping must independently contain exactly the same 20 canonical FPL team IDs as the latest authority;
+- private provider IDs and mapping pairs remain absent from reports and retained evidence.
+
+Run `35631979158` is consumed and must not be rerun. A fresh read-only dispatch after this remediation is merged and exact-main verified remains a separate owner gate.
+
 ## Exact admission target
 
 The new workflow may return only the activation foundation's existing repository-stage classification:
@@ -19,8 +33,9 @@ That classification requires:
 - exact migration ledger 0001–0006;
 - zero D1 foreign-key violations;
 - fresh <=48-hour Official FPL authority with exact 20-team current `present=true` shape;
-- one current committed 20/20 API-Football mapping head;
+- one current committed 20/20 API-Football mapping head with valid historical authority provenance;
 - exactly 20 mapping members, 20 distinct provider IDs and 20 distinct FPL IDs;
+- exact equality between the mapping's 20 canonical FPL team IDs and the latest fresh Official FPL authority team-ID set, without requiring historical provenance digest equality;
 - API-Football runtime collection disabled;
 - credential state only `UNPROVISIONED` or `AVAILABLE`;
 - no active request lease;
@@ -58,7 +73,7 @@ It never references `API_FOOTBALL_API_KEY`, the private crosswalk, deployment/up
 
 The seven-day artifact contains only bounded admission facts: classification, migration/FK counts, authority team count/fresh timestamp, mapping cardinalities, disabled runtime state, collector attempt/generation/revision counts, live collector presence/Cron/secret-binding booleans, repository config booleans, model/UI import count and aggregate D1 rows read.
 
-It excludes account IDs, database IDs, provider/FPL mapping pairs, qualification IDs, secret values, API-Football responses and raw Cloudflare payloads.
+It excludes account IDs, database IDs, provider/FPL mapping pairs, canonical team-ID lists, qualification IDs, authority digests, secret values, API-Football responses and raw Cloudflare payloads. It may retain only booleans confirming current canonical coverage and historical provenance presence.
 
 The permanent counters remain:
 

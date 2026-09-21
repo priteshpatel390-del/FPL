@@ -10,7 +10,7 @@ import {
   COLLECTOR_PREFLIGHT_REPOSITORY_STAGE
 } from './activation-preflight.mjs';
 
-export const API_FOOTBALL_ACTIVATION_LIVE_PREFLIGHT_VERSION='api-football-activation-live-preflight-v1';
+export const API_FOOTBALL_ACTIVATION_LIVE_PREFLIGHT_VERSION='api-football-activation-live-preflight-v2';
 export const CLOUDFLARE_API_BASE='https://api.cloudflare.com/client/v4';
 export const EXPECTED_DATABASE_NAME='teamsheet-data';
 export const EXPECTED_DATA_PLATFORM_WORKER='teamsheet-data-platform';
@@ -54,8 +54,8 @@ export const ACTIVATION_QUERIES=Object.freeze({
   foreignKeys:"PRAGMA foreign_key_check",
   officialRun:"SELECT run_id,completed_at,status FROM ingestion_runs WHERE source_revision_id='official-fpl-r1' AND status='completed' AND completed_at IS NOT NULL ORDER BY completed_at DESC LIMIT 1",
   officialTeams:"SELECT o.subject_entity_id,o.observation_id,o.input_revision,o.logical_key FROM observation_heads h JOIN shadow_observations o ON o.observation_id=h.observation_id JOIN ingestion_runs r ON r.run_id=o.ingestion_run_id AND r.source_revision_id=o.source_revision_id WHERE h.logical_key>='official-fpl|2026-27|team|' AND h.logical_key<'official-fpl|2026-27|team|￿' AND o.source_revision_id='official-fpl-r1' AND o.category='official_fpl_team' AND o.metric='present' AND o.value_type='boolean' AND o.value_boolean=1 AND r.status='completed' ORDER BY o.logical_key",
-  mappingHead:"SELECT h.fpl_season,q.state,q.mapping_count,q.official_fpl_authority_digest FROM api_football_team_mapping_heads h JOIN api_football_team_mapping_qualifications q ON q.qualification_id=h.qualification_id WHERE h.fpl_season='2026-27'",
-  mappingMembers:"SELECT COUNT(*) AS member_count,COUNT(DISTINCT provider_team_id) AS distinct_provider_ids,COUNT(DISTINCT canonical_fpl_team_id) AS distinct_fpl_ids FROM api_football_team_mapping_members WHERE qualification_id=(SELECT qualification_id FROM api_football_team_mapping_heads WHERE fpl_season='2026-27')",
+  mappingHead:"SELECT h.fpl_season,q.state,q.mapping_count,q.official_fpl_authority_digest,q.official_fpl_authority_fetched_at FROM api_football_team_mapping_heads h JOIN api_football_team_mapping_qualifications q ON q.qualification_id=h.qualification_id WHERE h.fpl_season='2026-27'",
+  mappingMembers:"SELECT COUNT(*) AS member_count,COUNT(DISTINCT provider_team_id) AS distinct_provider_ids,COUNT(DISTINCT canonical_fpl_team_id) AS distinct_fpl_ids,GROUP_CONCAT(canonical_fpl_team_id,'|') AS canonical_fpl_team_ids FROM (SELECT provider_team_id,canonical_fpl_team_id FROM api_football_team_mapping_members WHERE qualification_id=(SELECT qualification_id FROM api_football_team_mapping_heads WHERE fpl_season='2026-27') ORDER BY canonical_fpl_team_id)",
   runtime:"SELECT provider,collection_enabled,credential_state,in_flight_attempt_id,in_flight_lease_expires_at FROM api_football_runtime_state WHERE provider='api-football'",
   attempts:"SELECT COUNT(*) AS total,SUM(CASE WHEN attempt_number=2 THEN 1 ELSE 0 END) AS attempt2_count,SUM(CASE WHEN outcome='RESERVED' THEN 1 ELSE 0 END) AS reserved_count FROM api_football_request_attempts",
   generations:"SELECT COUNT(*) AS total,SUM(CASE WHEN state='STAGING' THEN 1 ELSE 0 END) AS staging_count FROM api_football_discovery_generations",
@@ -177,7 +177,10 @@ function buildEvidence(rows,{inventory,nowIso}){
     mapping:{
       state:mappingHead.state,isCurrentHead:true,mappingCount:count(mappingHead.mapping_count),
       memberCount:count(members.member_count),distinctProviderIds:count(members.distinct_provider_ids),
-      distinctFplIds:count(members.distinct_fpl_ids),authorityDigest:mappingHead.official_fpl_authority_digest
+      distinctFplIds:count(members.distinct_fpl_ids),
+      canonicalTeamIds:typeof members.canonical_fpl_team_ids==='string'&&members.canonical_fpl_team_ids?Object.freeze(members.canonical_fpl_team_ids.split('|')):Object.freeze([]),
+      historicalAuthorityDigest:mappingHead.official_fpl_authority_digest,
+      historicalAuthorityFetchedAt:iso(mappingHead.official_fpl_authority_fetched_at)
     },
     runtime:{
       provider:runtime.provider,collectionEnabled:count(runtime.collection_enabled),credentialState:runtime.credential_state,
@@ -235,7 +238,9 @@ export async function runApiFootballActivationLivePreflight({env=process.env,fet
     mapping:Object.freeze({
       state:built.evidence.mapping.state,mappingCount:built.evidence.mapping.mappingCount,
       memberCount:built.evidence.mapping.memberCount,distinctProviderIds:built.evidence.mapping.distinctProviderIds,
-      distinctFplIds:built.evidence.mapping.distinctFplIds
+      distinctFplIds:built.evidence.mapping.distinctFplIds,
+      canonicalCoverageMatches:JSON.stringify(built.evidence.mapping.canonicalTeamIds.slice().sort())===JSON.stringify(built.evidence.authority.teamIds.slice().sort()),
+      historicalAuthorityProvenancePresent:hex64(built.evidence.mapping.historicalAuthorityDigest)&&Boolean(built.evidence.mapping.historicalAuthorityFetchedAt)
     }),
     runtime:Object.freeze({
       collectionEnabled:built.evidence.runtime.collectionEnabled,credentialState:built.evidence.runtime.credentialState,
@@ -262,6 +267,8 @@ export function sanitizedSummaryLines(report){
     '- Foreign-key violations: '+String(report?.foreignKeyViolations??'unknown'),
     '- Official FPL authority teams: '+String(report?.officialFplAuthority?.teamCount??'unknown'),
     '- Mapping members: '+String(report?.mapping?.memberCount??'unknown'),
+    '- Mapping current-team coverage: '+String(report?.mapping?.canonicalCoverageMatches??'unknown'),
+    '- Historical mapping provenance present: '+String(report?.mapping?.historicalAuthorityProvenancePresent??'unknown'),
     '- Collection enabled: '+String(report?.runtime?.collectionEnabled??'unknown'),
     '- Request attempts: '+String(report?.priorState?.requestAttempts??'unknown'),
     '- Discovery generations: '+String(report?.priorState?.generations??'unknown'),

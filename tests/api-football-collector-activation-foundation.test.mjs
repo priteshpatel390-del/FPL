@@ -201,7 +201,23 @@ test('active and expired durable reservations both block egress',async()=>{
   for(const [lease,reason] of [['2026-09-21T12:30:00.000Z','request_lease_busy'],['2026-09-21T11:00:00.000Z','expired_reservation_consumed']]){const db=new DeterministicD1(),request=requests()[0];db.attempts.set(request.attemptId,{attempt_id:request.attemptId,attempt_number:1,outcome:'RESERVED',lease_expires_at:lease});const run=await runConcrete({db});assert.equal(run.fetches(),0);assert.equal(run.result.reason,reason);}
 });
 
-function preflightEvidence(stage){const attended=stage===COLLECTOR_PREFLIGHT_ATTENDED_STAGE;return {version:COLLECTOR_ACTIVATION_PREFLIGHT_VERSION,stage,migrations:[[1,'shadow_data_foundation'],[2,'official_fpl_structured_history'],[3,'production_query_plan_indexes'],[4,'api_football_shadow_identity'],[5,'api_football_shadow_runtime'],[6,'api_football_mapping_qualification']],foreignKeyViolations:0,authority,mapping:{state:'COMMITTED',isCurrentHead:true,mappingCount:20,memberCount:20,distinctProviderIds:20,distinctFplIds:20,authorityDigest:authority.digest},runtime:{provider:'api-football',collectionEnabled:0,credentialState:attended?'AVAILABLE':'UNPROVISIONED',inFlightAttemptId:null,inFlightLeaseExpiresAt:null},inventory:{activation:attended?API_FOOTBALL_ATTENDED_DISCOVERY_ACTIVATION:'REPOSITORY_ONLY_BLOCKED',cronCount:0,workersDev:false,previewUrls:false,databaseIdPlaceholder:!attended,productionBindingProven:attended,deployed:attended,configurationExact:attended,secretBindingPresent:attended},counts:{requestAttempts:0,generations:0,fixtureRevisions:0},priorState:{attempt2Count:0,reservedAttemptCount:0,stagingGenerationCount:0},modelUiImportCount:0};}
+function preflightEvidence(stage){const attended=stage===COLLECTOR_PREFLIGHT_ATTENDED_STAGE;return {version:COLLECTOR_ACTIVATION_PREFLIGHT_VERSION,stage,migrations:[[1,'shadow_data_foundation'],[2,'official_fpl_structured_history'],[3,'production_query_plan_indexes'],[4,'api_football_shadow_identity'],[5,'api_football_shadow_runtime'],[6,'api_football_mapping_qualification']],foreignKeyViolations:0,authority,mapping:{state:'COMMITTED',isCurrentHead:true,mappingCount:20,memberCount:20,distinctProviderIds:20,distinctFplIds:20,canonicalTeamIds:authority.teamIds.slice(),historicalAuthorityDigest:'a'.repeat(64),historicalAuthorityFetchedAt:'2026-09-20T12:00:00.000Z'},runtime:{provider:'api-football',collectionEnabled:0,credentialState:attended?'AVAILABLE':'UNPROVISIONED',inFlightAttemptId:null,inFlightLeaseExpiresAt:null},inventory:{activation:attended?API_FOOTBALL_ATTENDED_DISCOVERY_ACTIVATION:'REPOSITORY_ONLY_BLOCKED',cronCount:0,workersDev:false,previewUrls:false,databaseIdPlaceholder:!attended,productionBindingProven:attended,deployed:attended,configurationExact:attended,secretBindingPresent:attended},counts:{requestAttempts:0,generations:0,fixtureRevisions:0},priorState:{attempt2Count:0,reservedAttemptCount:0,stagingGenerationCount:0},modelUiImportCount:0};}
+
+test('activation preflight separates immutable mapping provenance from fresh current authority',()=>{
+  const evidence=preflightEvidence(COLLECTOR_PREFLIGHT_REPOSITORY_STAGE);
+  evidence.mapping.historicalAuthorityDigest='b'.repeat(64);
+  assert.notEqual(evidence.mapping.historicalAuthorityDigest,evidence.authority.digest);
+  assert.equal(classifyCollectorActivationPreflight(evidence,{now:NOW}).classification,COLLECTOR_REPOSITORY_STAGE_READY);
+
+  const drift=preflightEvidence(COLLECTOR_PREFLIGHT_REPOSITORY_STAGE);
+  drift.mapping.canonicalTeamIds=drift.mapping.canonicalTeamIds.slice();
+  drift.mapping.canonicalTeamIds[19]='2026-27:fpl:team:99';
+  assert.equal(classifyCollectorActivationPreflight(drift,{now:NOW}).reason,'qualified_mapping_unavailable');
+
+  const invalid=preflightEvidence(COLLECTOR_PREFLIGHT_REPOSITORY_STAGE);
+  invalid.mapping.historicalAuthorityDigest='not-a-hash';
+  assert.equal(classifyCollectorActivationPreflight(invalid,{now:NOW}).reason,'mapping_provenance_invalid');
+});
 
 test('activation preflight has closed repository and attended acceptance stages',()=>{
   assert.equal(classifyCollectorActivationPreflight(preflightEvidence(COLLECTOR_PREFLIGHT_REPOSITORY_STAGE),{now:NOW}).classification,COLLECTOR_REPOSITORY_STAGE_READY);

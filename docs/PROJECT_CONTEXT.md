@@ -1,3 +1,7 @@
+## API-Football activation mapping-provenance remediation
+
+Read-only activation run `35631979158` safely stopped on exact main `c4b67cd1709f4c14d53c79896468fa07c632e70a` because preflight v2 required the committed mapping's historical authority-provenance hash to equal the latest Official FPL authority digest. Migration 0006 intentionally stores snapshot-bound immutable provenance, so that equality is not a valid currentness test. The approved repository remediation validates the historical provenance format/timestamp independently and proves currentness by exact equality between the committed mapping's 20 canonical FPL team IDs and the latest fresh authority's exact-20 team set. No production state is changed; a fresh live read-only preflight remains separately owner-gated after merge and exact-main verification.
+
 ## API-Football collector activation read-only preflight — repository candidate
 
 The next owner-approved gate is observation only. A new manual exact-main workflow reads the live post-Migration-0006 D1/collector state with the existing `data-steward-readonly` credential and classifies only repository/infrastructure staging readiness. It performs zero production mutations, zero API-Football requests and zero secret-value reads. A PASS would not authorize inactive Version upload, deployment, binding, secret provisioning, runtime enablement or Cron. See [activation read-only preflight](API-FOOTBALL-COLLECTOR-ACTIVATION-READONLY-PREFLIGHT.md).
