@@ -119,10 +119,13 @@ test('definite shell rejection stops without reconciliation or retry',async()=>{
   assert.deepEqual({mutations,reads},{mutations:1,reads:0});
 });
 
-test('ambiguous shell create never retries and requires exact inert read-only reconciliation',async()=>{
+test('ambiguous or malformed shell create never retries and requires exact inert read-only reconciliation',async()=>{
   let mutations=0,reads=0;
   const result=await performShellCreate({accountId:'account',request:async()=>{mutations++;throw new MutationAmbiguousError();},readWorker:async()=>{reads++;return inertWorker();}});
   assert.equal(result.disposition,'reconciled');assert.deepEqual({mutations,reads},{mutations:1,reads:1});
+  mutations=0;reads=0;
+  const malformed=await performShellCreate({accountId:'account',request:async()=>{mutations++;return {result:{name:WORKER_NAME}};},readWorker:async()=>{reads++;return inertWorker();}});
+  assert.equal(malformed.disposition,'reconciled');assert.deepEqual({mutations,reads},{mutations:1,reads:1});
   await assert.rejects(()=>performShellCreate({accountId:'account',request:async()=>{throw new MutationAmbiguousError();},readWorker:async()=>null}),/shell_ambiguous_owner_review_required/);
 });
 
