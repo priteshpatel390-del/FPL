@@ -1,3 +1,15 @@
+## API-Football inactive collector staging — LIVE CLOSEOUT
+
+**Supersedes the inactive-staging candidate wording below; historical design sections remain for audit.** Owner-attended workflow run `35645387203`, attempt 1, completed successfully on exact `main` `302dc21cc4b821ac8b224d176765a29c0724a244`. Fresh admission again returned `READY_FOR_REPOSITORY_INFRASTRUCTURE_STAGING`; the protected stage then created the inert `teamsheet-api-football-shadow-collector` shell and uploaded exactly one inactive Version, `e49ac8f2-4289-46bc-9f0b-87a20cd7be62`. Both approved Cloudflare mutations were definite successes.
+
+Postflight proved: workers.dev disabled, Preview URLs disabled, **Deployment count 0**, Cron 0, routes/custom domains 0, secret bindings 0, activation still `REPOSITORY_ONLY_BLOCKED`, D1 mutations 0 and API-Football requests 0. The final independent read-only closeout preserved migrations 0001–0006, zero FK violations, fresh exact-20 Official FPL authority, committed 20/20 mapping, disabled runtime, credential `UNPROVISIONED`, no active lease and request attempts / generations / fixture revisions 0 / 0 / 0 while reading 38,703 D1 rows with zero writes.
+
+Evidence artifacts: admission `10660381729` / `e53fe027c5c0a059c917c0a1d405672a39da06847cf7c4e579b61bd6068f4864`; inactive staging `10659703499` / `199aa79fd363c6d4396d970e7a7db5915e695247be59de62d0052c9a7dfa9cf2`; closeout `10659194310` / `6549d1950a2144041d330089c52dbdab034179e6b865102a587cc6c29ed53324`.
+
+The generic live-preflight field previously called `deployed` meant only “the Worker/script inventory exists”; it did **not** prove a Cloudflare Deployment. This closeout remediation renames that evidence to `workerPresent` and records `deploymentCount` separately. No Deployment, API-Football credential, runtime enablement, Cron or provider egress is authorized by this repository closeout.
+
+**Current approval boundary:** repository-only closeout/documentation and terminology remediation. Live credential cleanup/revocation and every later activation step remain separately owner-gated.
+
 ## Current checkpoint — inactive API-Football collector staging implementation candidate
 
 Owner approval now covers **repository implementation only** of the merged inactive-Version staging design. Branch `codex/api-football-inactive-version-staging` adds a dormant manual-only workflow, a closed deterministic collector module-graph uploader, exact two-primitive Cloudflare mutation allowlisting, no-retry ambiguity reconciliation, immediate inactive-Version postflight, permanent tests and sanitized final read-only D1/runtime closeout. Cloudflare's current first-party contract was rechecked on 21 September 2026: pre-Version Worker creation with explicit `subdomain.enabled=false` and `previews_enabled=false` remains under the Workers Beta Create Worker API; the stable Scripts Version Upload API still uploads a Version without deployment.
