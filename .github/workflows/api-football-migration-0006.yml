@@ -25,9 +25,13 @@ jobs:
       approved_sha: ${{ steps.identity.outputs.approved_sha }}
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
-        with: {ref: "${{ inputs.approved_sha }}", fetch-depth: 0, persist-credentials: false}
+        with:
+          ref: ${{ inputs.approved_sha }}
+          fetch-depth: 0
+          persist-credentials: false
       - id: identity
-        env: {APPROVED_SHA: "${{ inputs.approved_sha }}"}
+        env:
+          APPROVED_SHA: ${{ inputs.approved_sha }}
         run: |
           set -euo pipefail
           test "${{ github.event_name }}" = workflow_dispatch
@@ -38,7 +42,9 @@ jobs:
           test "$(git ls-remote https://github.com/priteshpatel390-del/FPL.git refs/heads/main | cut -f1)" = "$APPROVED_SHA"
           test -z "$(git status --porcelain)"
           echo "approved_sha=$APPROVED_SHA" >> "$GITHUB_OUTPUT"
-      - env: {GH_TOKEN: "${{ github.token }}", APPROVED_SHA: "${{ inputs.approved_sha }}"}
+      - env:
+          GH_TOKEN: ${{ github.token }}
+          APPROVED_SHA: ${{ inputs.approved_sha }}
         run: |
           set -euo pipefail
           curl --fail --silent --show-error -H "Authorization: Bearer $GH_TOKEN" -H 'Accept: application/vnd.github+json' "https://api.github.com/repos/priteshpatel390-del/FPL/commits/$APPROVED_SHA/check-runs" > "$RUNNER_TEMP/checks.json"
@@ -176,7 +182,8 @@ jobs:
           node-version: 24.19.0
           check-latest: false
       - name: Download pinned sanitized provider universe
-        env: {GH_TOKEN: "${{ github.token }}"}
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
           curl --fail --silent --show-error --location -H "Authorization: Bearer $GH_TOKEN" https://api.github.com/repos/priteshpatel390-del/FPL/actions/artifacts/10540321648/zip -o "$RUNNER_TEMP/provider.zip"
