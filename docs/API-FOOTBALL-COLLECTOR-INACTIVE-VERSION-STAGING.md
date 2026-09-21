@@ -436,3 +436,7 @@ Branch `codex/api-football-inactive-version-staging` implements the dormant gate
 Current first-party Cloudflare documentation was rechecked before implementation. Pre-Version Worker creation with explicit `subdomain.enabled=false` and `subdomain.previews_enabled=false` still uses the Workers Beta Create Worker API. The stable Scripts Version Upload endpoint remains the upload primitive and explicitly creates a Version without deploying it. Current multipart metadata documents D1 bindings with `database_id`.
 
 No staging workflow dispatch, Cloudflare mutation, D1 mutation, API-Football request, provider-secret action, Deployment, Cron or route/domain mutation occurred during repository implementation. Live execution remains a separate owner gate after merge and exact-main verification.
+
+### Runtime mapping graph minimisation
+
+Repository implementation narrows the future Worker upload graph so it does not carry mapping-issuance code or private provider/FPL anchor pairs. `planner-orchestrator.mjs` uses `mapping-runtime.mjs` to read the already-persisted mapping. That reader still requires the approved immutable qualification/provenance hashes, validates every mapping identity and receipt shape, recomputes the durable persistence integrity hash across all 20 rows, and requires exact current Official FPL team coverage. The private mapping rows themselves remain in D1 and are absent from retained staging evidence.
