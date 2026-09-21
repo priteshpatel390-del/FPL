@@ -11,7 +11,7 @@ import {
 const workflow=fs.readFileSync('.github/workflows/api-football-mapping-0006-reconciliation.yml','utf8');
 const source=fs.readFileSync('workers/data-platform/migration6/reconciliation.mjs','utf8');
 const ledger=Array.from({length:6},(_,index)=>({version:index+1,name:[null,'shadow_data_foundation','official_fpl_structured_history','production_query_plan_indexes','api_football_shadow_identity','api_football_shadow_runtime','api_football_mapping_qualification'][index+1],applied_at:'2026-09-18T00:00:00.000Z'}));
-const rows=(values={})=>({ledger,foreignKeys:[],mappings:[{total:0,expected_shape:0}],qualifications:[{total:0,staging:0,committed:0,expected_provenance:0}],members:[{total:0,unique_provider:0,unique_fpl:0}],heads:[{total:0,expected_shape:0}],...values});
+const rows=(values={})=>({ledger,foreignKeys:[],mappings:[{total:0,expected_shape:0}],qualifications:[{total:0,staging:0,committed:0,expected_provenance:0}],members:[{total:0,unique_provider:0,unique_fpl:0,expected_shape:0}],heads:[{total:0,expected_shape:0}],...values});
 const payload=data=>({success:true,result:Object.keys(RECONCILIATION_QUERIES).map(key=>({success:true,results:data[key],meta:{rows_read:1,rows_written:0}}))});
 
 test('SQL is fixed, aggregate-only and read-only',()=>{
@@ -34,7 +34,7 @@ test('workflow is manual one-shot exact-main exact-Verify and read-only credenti
 
 test('zero, exact complete and partial states classify distinctly',()=>{
   assert.equal(classifyMapping0006Reconciliation(rows()),NO_SUBMITTED_MAPPING_STATE_VISIBLE);
-  const complete=rows({mappings:[{total:20,expected_shape:20}],qualifications:[{total:1,staging:0,committed:1,expected_provenance:1}],members:[{total:20,unique_provider:20,unique_fpl:20}],heads:[{total:1,expected_shape:1}]});
+  const complete=rows({mappings:[{total:20,expected_shape:20}],qualifications:[{total:1,staging:0,committed:1,expected_provenance:1}],members:[{total:20,unique_provider:20,unique_fpl:20,expected_shape:20}],heads:[{total:1,expected_shape:1}]});
   assert.equal(classifyMapping0006Reconciliation(complete),COMPLETE_QUALIFIED_MAPPING_VISIBLE);
   assert.equal(classifyMapping0006Reconciliation(rows({mappings:[{total:1,expected_shape:1}]})),PARTIAL_OR_UNEXPECTED_MAPPING_STATE_REQUIRES_OWNER_ATTENTION);
 });
@@ -43,6 +43,13 @@ test('malformed state and foreign-key violations fail closed',()=>{
   assert.equal(classifyMapping0006Reconciliation(null),STATE_CANNOT_SAFELY_BE_DETERMINED);
   assert.equal(classifyMapping0006Reconciliation(rows({members:[]})),STATE_CANNOT_SAFELY_BE_DETERMINED);
   assert.equal(classifyMapping0006Reconciliation(rows({foreignKeys:[{table:'synthetic'}]})),STATE_CANNOT_SAFELY_BE_DETERMINED);
+});
+
+test('complete reconciliation accepts dynamic integrity hashes only through structural and provenance predicates',()=>{
+  assert.doesNotMatch(source,/ad89373375a6deed3763126225894e89d380b11ffd32ffbb5b6a1213331a4a02/);
+  assert.match(RECONCILIATION_QUERIES.qualifications,/qualification_id='api-football:team-mapping:'\|\|fpl_season\|\|':'\|\|persistence_integrity_hash/);
+  assert.match(RECONCILIATION_QUERIES.qualifications,/persistence_integrity_hash NOT GLOB/);
+  assert.match(RECONCILIATION_QUERIES.members,/receipt_integrity_hash NOT GLOB/);
 });
 
 test('D1 response must contain exact successful reads and report zero written rows',()=>{

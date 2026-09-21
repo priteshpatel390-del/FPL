@@ -12,6 +12,14 @@ const TIMEOUT_MS=120000;
 const sha256=value=>createHash('sha256').update(String(value)).digest('hex');
 const fixedError=code=>{const error=new Error(code);error.sanitized=true;return error;};
 const queryUrl=(accountId,databaseId)=>`${API_BASE}/accounts/${encodeURIComponent(accountId)}/d1/database/${encodeURIComponent(databaseId)}/query`;
+const safeInteger=(value,{min=0,max=1000000}={})=>Number.isSafeInteger(value)&&value>=min&&value<=max?value:null;
+const safeProviderCode=value=>safeInteger(value,{max:999999});
+const mutationDiagnostic=(category,{statementCount,requestBytes,responseReceived=false,httpStatus=null,resultCount=null,failedStatementIndex=null,providerErrorCode=null}={})=>Object.freeze({
+  category,statementCount:safeInteger(statementCount,{min:1,max:1000}),requestBytes:safeInteger(requestBytes,{max:16*1024*1024}),responseReceived,
+  httpStatus:safeInteger(httpStatus,{min:100,max:599}),resultCount:safeInteger(resultCount,{max:1000}),
+  failedStatementIndex:safeInteger(failedStatementIndex,{max:999}),providerErrorCode:safeProviderCode(providerErrorCode)
+});
+const firstProviderCode=payload=>safeProviderCode(payload?.errors?.find(row=>safeProviderCode(row?.code)!==null)?.code);
 
 function validateIdentity({accountId,accountFingerprint,databaseId,token}){
   if(typeof accountId!=='string'||!accountId||typeof token!=='string'||!token||
@@ -19,22 +27,46 @@ function validateIdentity({accountId,accountFingerprint,databaseId,token}){
     throw fixedError('migration_0006_identity_invalid');
 }
 
-async function sendBatch({transport,url,token,statements,mutation}){
+async function sendBatch({transport,url,token,statements,mutation,onMutationDiagnostic=()=>{}}){
   const body=JSON.stringify({batch:statements.map(statement=>({sql:statement.sql,params:statement.params}))});
+  const base={statementCount:statements.length,requestBytes:Buffer.byteLength(body,'utf8')};
+  const report=(category,fields={})=>{if(mutation)onMutationDiagnostic(mutationDiagnostic(category,{...base,...fields}));};
   let response;
   try{response=await transport(url,{method:'POST',headers:{Authorization:`Bearer ${token}`,'Content-Type':'application/json',Accept:'application/json'},body,redirect:'error',signal:AbortSignal.timeout(TIMEOUT_MS)});}
-  catch{const error=fixedError(mutation?'migration_0006_mutation_outcome_unknown':'migration_0006_read_failed');error.outcomeUnknown=mutation;throw error;}
-  if(response?.status===401||response?.status===403)throw fixedError('migration_0006_auth_failed');
-  if(!response?.ok)throw fixedError(mutation?'migration_0006_mutation_outcome_unknown':'migration_0006_read_failed');
-  let payload;try{payload=await response.json();}catch{throw fixedError(mutation?'migration_0006_mutation_outcome_unknown':'migration_0006_read_failed');}
-  if(payload?.success!==true||!Array.isArray(payload.result)||payload.result.length!==statements.length||payload.result.some(row=>row?.success!==true))
+  catch{report('transport_uncertain');const error=fixedError(mutation?'migration_0006_mutation_outcome_unknown':'migration_0006_read_failed');error.outcomeUnknown=mutation;throw error;}
+  const status=safeInteger(response?.status,{min:100,max:599});
+  let payload;try{payload=await response.json();}catch{report('response_json_invalid',{responseReceived:true,httpStatus:status});throw fixedError(mutation?'migration_0006_mutation_outcome_unknown':'migration_0006_read_failed');}
+  if(response?.status===401||response?.status===403){report('http_rejected',{responseReceived:true,httpStatus:status,providerErrorCode:firstProviderCode(payload)});throw fixedError('migration_0006_auth_failed');}
+  if(!response?.ok){
+    const explicit=response?.status===400&&payload?.success===false&&Array.isArray(payload?.errors)&&payload.errors.length>0;
+    report(explicit?'d1_rejected':'http_uncertain',{responseReceived:true,httpStatus:status,providerErrorCode:firstProviderCode(payload)});
     throw fixedError(mutation?'migration_0006_mutation_outcome_unknown':'migration_0006_read_failed');
+  }
+  if(payload?.success!==true||!Array.isArray(payload.result)){
+    report('response_envelope_invalid',{responseReceived:true,httpStatus:status,providerErrorCode:firstProviderCode(payload)});
+    throw fixedError(mutation?'migration_0006_mutation_outcome_unknown':'migration_0006_read_failed');
+  }
+  if(payload.result.length!==statements.length){
+    report('result_cardinality_invalid',{responseReceived:true,httpStatus:status,resultCount:payload.result.length});
+    throw fixedError(mutation?'migration_0006_mutation_outcome_unknown':'migration_0006_read_failed');
+  }
+  const failedIndex=payload.result.findIndex(row=>row?.success===false);
+  if(failedIndex!==-1){
+    const failed=payload.result[failedIndex];
+    report('statement_failed',{responseReceived:true,httpStatus:status,resultCount:payload.result.length,failedStatementIndex:failedIndex,providerErrorCode:safeProviderCode(failed?.error?.code??failed?.code)});
+    throw fixedError(mutation?'migration_0006_mutation_rejected':'migration_0006_read_failed');
+  }
+  if(payload.result.some(row=>row?.success!==true)){
+    report('result_entry_invalid',{responseReceived:true,httpStatus:status,resultCount:payload.result.length});
+    throw fixedError(mutation?'migration_0006_mutation_outcome_unknown':'migration_0006_read_failed');
+  }
+  report('batch_success',{responseReceived:true,httpStatus:status,resultCount:payload.result.length});
   return payload.result.map(row=>row.results??[]);
 }
 
-export function createParameterizedD1Adapter({accountId,accountFingerprint,databaseId=EXPECTED_D1_DATABASE_ID,token,transport=globalThis.fetch,onMutationSubmitted=()=>{}}){
+export function createParameterizedD1Adapter({accountId,accountFingerprint,databaseId=EXPECTED_D1_DATABASE_ID,token,transport=globalThis.fetch,onMutationSubmitted=()=>{},onMutationDiagnostic=()=>{}}){
   validateIdentity({accountId,accountFingerprint,databaseId,token});
-  if(typeof transport!=='function'||typeof onMutationSubmitted!=='function')throw fixedError('migration_0006_transport_invalid');
+  if(typeof transport!=='function'||typeof onMutationSubmitted!=='function'||typeof onMutationDiagnostic!=='function')throw fixedError('migration_0006_transport_invalid');
   const url=queryUrl(accountId,databaseId);
   const prepared=(sql,params=[])=>Object.freeze({
     sql,params:Object.freeze([...params]),
@@ -48,7 +80,7 @@ export function createParameterizedD1Adapter({accountId,accountFingerprint,datab
       if(!Array.isArray(statements)||statements.length<1||statements.some(row=>typeof row?.sql!=='string'||!Array.isArray(row?.params)))
         throw fixedError('migration_0006_parameterized_batch_invalid');
       onMutationSubmitted();
-      return sendBatch({transport,url,token,statements,mutation:true});
+      return sendBatch({transport,url,token,statements,mutation:true,onMutationDiagnostic});
     },
     async checkpoint(){
       let response;
@@ -64,18 +96,18 @@ const READ_STATE=Object.freeze([
   {key:'ledger',sql:'SELECT version,name,applied_at FROM schema_migrations ORDER BY version'},
   {key:'objects',sql:"SELECT type,name,tbl_name FROM sqlite_master WHERE name LIKE 'api_football_%' ORDER BY type,name"},
   {key:'foreignKeys',sql:'PRAGMA foreign_key_check'},
-  {key:'mappingCounts',sql:'SELECT (SELECT COUNT(*) FROM api_football_team_mapping_qualifications) AS qualifications,(SELECT COUNT(*) FROM api_football_team_mapping_members) AS members,(SELECT COUNT(*) FROM api_football_team_mapping_heads) AS heads'}
+  {key:'mappingCounts',sql:"SELECT (SELECT COUNT(*) FROM entity_mappings WHERE source_revision_id='api-football:eia-2i5a:1' AND provider_entity_type='team') AS entity_mappings,(SELECT COUNT(*) FROM api_football_team_mapping_qualifications) AS qualifications,(SELECT COUNT(*) FROM api_football_team_mapping_members) AS members,(SELECT COUNT(*) FROM api_football_team_mapping_heads) AS heads"}
 ]);
 
 async function readState(db,{beforeSchema=false}={}){
   const statements=beforeSchema?READ_STATE.slice(0,3):READ_STATE;
   const rows=await Promise.all(statements.map(async row=>[row.key,(await db.prepare(row.sql).all()).results]));
   const result=Object.fromEntries(rows);
-  const mappingCounts=beforeSchema?{qualifications:0,members:0,heads:0}:result.mappingCounts?.[0];
+  const mappingCounts=beforeSchema?{entity_mappings:0,qualifications:0,members:0,heads:0}:result.mappingCounts?.[0];
   return Object.freeze({
     classification:classifyMigration0006State({ledger:result.ledger,objects:result.objects,mappingCounts}),
     ledger:result.ledger.map(row=>`${row.version}:${row.name}`),foreignKeyViolations:result.foreignKeys.length,
-    mappingCounts:Object.freeze({qualifications:Number(mappingCounts?.qualifications??0),members:Number(mappingCounts?.members??0),heads:Number(mappingCounts?.heads??0)})
+    mappingCounts:Object.freeze({entityMappings:Number(mappingCounts?.entity_mappings??0),qualifications:Number(mappingCounts?.qualifications??0),members:Number(mappingCounts?.members??0),heads:Number(mappingCounts?.heads??0)})
   });
 }
 
@@ -106,21 +138,31 @@ export async function applyMigration0006Schema(options){
 }
 
 export function sanitizedPrivateMappingEvidence({state=null,plan=null}={}){
-  return Object.freeze({qualificationCount:state?.mappingCounts?.qualifications??null,memberCount:state?.mappingCounts?.members??null,headCount:state?.mappingCounts?.heads??null,
+  return Object.freeze({entityMappingCount:state?.mappingCounts?.entityMappings??null,qualificationCount:state?.mappingCounts?.qualifications??null,memberCount:state?.mappingCounts?.members??null,headCount:state?.mappingCounts?.heads??null,
     completeTwentyClubCoverage:state?.mappingCounts?.members===20,persistenceIntegrityHash:plan?.persistenceIntegrityHash??null,
     crosswalkIntegrityHash:plan?.crosswalkIntegrityHash??null,providerUniverseRevision:plan?.providerUniverseRevision??null,
     officialFplAuthorityDigest:plan?.officialFplAuthorityDigest??null,officialFplAuthorityFetchedAt:plan?.officialFplAuthorityFetchedAt??null});
 }
-function mappingReport(classification,{ok=false,mutationIssued=false,state=null,plan=null,note=null,officialFplRequests=0}={}){
+function mappingReport(classification,{ok=false,mutationIssued=false,state=null,plan=null,note=null,officialFplRequests=0,d1Outcome=null}={}){
   return Object.freeze({ok,classification,mutationIssued,recoveryIssued:false,automaticRestorePermitted:false,note,
-    mapping:sanitizedPrivateMappingEvidence({state,plan}),
+    mapping:sanitizedPrivateMappingEvidence({state,plan}),d1Outcome,
     officialFplRequests,apiFootballRequests:0,workerCronSecretChanges:0
   });
+}
+export function classifyPrivateMappingReconciliation({state,verified,plan,mutationError,d1Outcome}){
+  if(state?.classification===MIGRATION_0006_POST_WITH_MAPPING&&state.foreignKeyViolations===0&&verified?.ok&&verified.persistenceIntegrityHash===plan?.persistenceIntegrityHash)
+    return Object.freeze({classification:'DEFINITELY_APPLIED_SUCCESSFULLY',ok:true,note:mutationError?'reconciled_after_unknown_transport':null});
+  const exactEmpty=state?.classification===MIGRATION_0006_EXACT_POST_EMPTY&&state.foreignKeyViolations===0&&state.mappingCounts?.entityMappings===0;
+  const definiteRejection=['http_rejected','d1_rejected','statement_failed'].includes(d1Outcome?.category);
+  if(mutationError&&definiteRejection&&exactEmpty)
+    return Object.freeze({classification:'DEFINITELY_NOT_APPLIED',ok:false,note:'explicit_rejection_reconciled_exact_prestate'});
+  return Object.freeze({classification:'AMBIGUOUS_REQUIRES_OWNER_ATTENTION',ok:false,note:'owner_attention_required'});
 }
 
 export async function persistPrivateMapping0006(options){
   const {crosswalkJson,providerUniverse,now=()=>new Date().toISOString(),officialFetch=globalThis.fetch,...identity}=options??{};
-  const db=createParameterizedD1Adapter(identity);
+  let d1Outcome=null;
+  const db=createParameterizedD1Adapter({...identity,onMutationDiagnostic:value=>{d1Outcome=value;}});
   const before=await readState(db);
   if(before.foreignKeyViolations!==0||before.classification!==MIGRATION_0006_EXACT_POST_EMPTY)
     return mappingReport(before.classification===MIGRATION_0006_POST_WITH_MAPPING?'DEFINITELY_ALREADY_APPLIED':'DEFINITELY_NOT_APPLIED',{state:before});
@@ -136,7 +178,6 @@ export async function persistPrivateMapping0006(options){
   try{const result=await persistQualifiedTeamMappingPlan(db,plan);if(!result.ok)mutationError=fixedError('private_mapping_mutation_failed');}catch{mutationError=fixedError('private_mapping_mutation_outcome_unknown');}
   let verified=null,state=null;
   try{state=await readState(db);verified=await readQualifiedTeamMappings(db,{season:plan.fplSeason,authority});}catch{}
-  if(state?.classification===MIGRATION_0006_POST_WITH_MAPPING&&state.foreignKeyViolations===0&&verified?.ok&&verified.persistenceIntegrityHash===plan.persistenceIntegrityHash)
-    return mappingReport('DEFINITELY_APPLIED_SUCCESSFULLY',{ok:true,mutationIssued:true,state,plan,note:mutationError?'reconciled_after_unknown_transport':null,officialFplRequests});
-  return mappingReport('AMBIGUOUS_REQUIRES_OWNER_ATTENTION',{mutationIssued:true,state,plan,note:'owner_attention_required',officialFplRequests});
+  const outcome=classifyPrivateMappingReconciliation({state,verified,plan,mutationError,d1Outcome});
+  return mappingReport(outcome.classification,{ok:outcome.ok,mutationIssued:true,state,plan,note:outcome.note,officialFplRequests,d1Outcome});
 }

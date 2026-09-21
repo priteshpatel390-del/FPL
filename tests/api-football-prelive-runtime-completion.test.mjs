@@ -65,6 +65,19 @@ test('qualified mapping persistence rejects wrong owner crosswalk before any D1 
   assert.equal(plan.ok,false);assert.equal(plan.reason,'legacy_anchor_conflict');
 });
 
+test('persistence hash is deterministic for one authority and evolves with fresh authority evidence',async()=>{
+  const providerUniverse=await universe(),firstWorld=officialFplWorld();
+  const firstAuthority=issueOfficialFplTeamUniverseAuthority(firstWorld);
+  const repeated=await prepareQualifiedTeamMappingPersistence({authority:firstAuthority,providerUniverse,crosswalk:crosswalk(),now:'2026-09-18T12:00:00Z',cryptoImpl:testCrypto()});
+  const same=await prepareQualifiedTeamMappingPersistence({authority:firstAuthority,providerUniverse,crosswalk:crosswalk(),now:'2026-09-18T13:00:00Z',cryptoImpl:testCrypto()});
+  const freshWorld=officialFplWorld();freshWorld.fetchedAt='2026-09-18T10:31:00.000Z';
+  const freshAuthority=issueOfficialFplTeamUniverseAuthority(freshWorld);
+  const fresh=await prepareQualifiedTeamMappingPersistence({authority:freshAuthority,providerUniverse,crosswalk:crosswalk(),now:'2026-09-18T13:00:00Z',cryptoImpl:testCrypto()});
+  assert.equal(repeated.ok,true);assert.equal(same.ok,true);assert.equal(fresh.ok,true);
+  assert.equal(repeated.persistenceIntegrityHash,same.persistenceIntegrityHash);
+  assert.notEqual(repeated.persistenceIntegrityHash,fresh.persistenceIntegrityHash);
+});
+
 function runtimeAuthority(){
   return {season:'2026-27',sourceKey:'official-fpl',sourceRevisionId:'official-fpl-r1',runStatus:'completed',fetchedAt:'2026-09-21T12:00:00.000Z',digest:'a'.repeat(64),teamIds:IDS.map(id=>'2026-27:fpl:team:'+id)};
 }
