@@ -156,7 +156,7 @@ jobs:
           rm "$RUNNER_TEMP/provider.zip"
       - name: Persist private mapping with parameterized D1 bindings
         env:
-          API_FOOTBALL_OWNER_CROSSWALK_JSON: ${{ secrets.API_FOOTBALL_OWNER_CROSSWALK_JSON }}
+          API_FOOTBALL_OWNER_CROSSWALK_JSON: "${{ secrets.API_FOOTBALL_OWNER_CROSSWALK_JSON }}"
           API_FOOTBALL_PROVIDER_UNIVERSE_PATH: ${{ runner.temp }}/provider-universe.json
           MAPPING_0006_REPORT_PATH: ${{ runner.temp }}/mapping-0006.json
         run: |
