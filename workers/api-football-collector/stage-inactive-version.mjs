@@ -21,8 +21,6 @@ export const EXPECTED_PLAIN_TEXT_VARS=Object.freeze({
 export const REVIEWED_MODULE_PATHS=Object.freeze([
   'src/decision-intelligence/api-football-discovery.mjs',
   'src/decision-intelligence/api-football-foundation.mjs',
-  'src/decision-intelligence/api-football-owner-mapping.mjs',
-  'src/decision-intelligence/api-football-prelive-qualification.mjs',
   'src/decision-intelligence/api-football-shadow-contracts.mjs',
   'src/decision-intelligence/canonical.mjs',
   'src/decision-intelligence/eia1-safety.mjs',
@@ -33,7 +31,7 @@ export const REVIEWED_MODULE_PATHS=Object.freeze([
   'workers/api-football-collector/activation-orchestrator.mjs',
   'workers/api-football-collector/collector.mjs',
   'workers/api-football-collector/d1-persistence.mjs',
-  'workers/api-football-collector/mapping-persistence.mjs',
+  'workers/api-football-collector/mapping-runtime.mjs',
   'workers/api-football-collector/planner-orchestrator.mjs',
   'workers/api-football-collector/runtime-contracts.mjs',
   'workers/api-football-collector/scheduler.mjs',
