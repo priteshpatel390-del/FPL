@@ -1,3 +1,7 @@
+## Activation mapping-provenance remediation security boundary
+
+The provenance correction does not widen live permissions or retained evidence. The D1 batch remains ten fixed read-only statements under `data-steward-readonly`; the mapping aggregate may read canonical FPL team IDs only to compare them in-memory with current Official FPL authority. Provider team IDs and mapping pairs are not returned by that evidence query, and canonical ID lists plus authority hashes are omitted from logs/artifacts. Retained evidence may expose only boolean current-coverage and historical-provenance-presence results. Production mutations, API-Football requests and secret-value reads remain zero.
+
 ## Collector activation read-only preflight security boundary
 
 The activation preflight introduces no provider or mutation credential. Its protected job references only the existing read-only Cloudflare account ID/fingerprint/token after exact-main and focused-test gates. The executable admits five fixed Cloudflare metadata/settings GETs and one D1 query POST containing ten fixed read-only statements; SQL mutation tokens, comments and semicolons are rejected, and any nonzero D1 `rows_written` fails closed. It never references `API_FOOTBALL_API_KEY`, the private crosswalk, deployment/upload credentials or a D1 writer. Retained evidence excludes account/database IDs, private mapping pairs, secret values and raw Cloudflare payloads. Production mutations, API-Football requests and secret-value reads are permanently reported as zero.
