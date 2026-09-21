@@ -1,6 +1,6 @@
 import {API_FOOTBALL_ATTENDED_DISCOVERY_ACTIVATION,API_FOOTBALL_FPL_SEASON,validateAuthority} from './runtime-contracts.mjs';
 
-export const COLLECTOR_ACTIVATION_PREFLIGHT_VERSION='collector-activation-preflight-v2';
+export const COLLECTOR_ACTIVATION_PREFLIGHT_VERSION='collector-activation-preflight-v3';
 export const COLLECTOR_PREFLIGHT_REPOSITORY_STAGE='REPOSITORY_INFRASTRUCTURE_STAGING';
 export const COLLECTOR_PREFLIGHT_ATTENDED_STAGE='ATTENDED_ACCEPTANCE';
 export const COLLECTOR_REPOSITORY_STAGE_READY='READY_FOR_REPOSITORY_INFRASTRUCTURE_STAGING';
@@ -11,6 +11,8 @@ const MIGRATIONS=Object.freeze([
 ]);
 const safe=value=>Object.freeze(value);
 const stop=(stage,reason)=>safe({ok:false,stage,classification:`STOP_${stage}_REVIEW_REQUIRED`,reason});
+const hex64=value=>typeof value==='string'&&/^[0-9a-f]{64}$/.test(value);
+const validIso=value=>typeof value==='string'&&Number.isFinite(Date.parse(value));
 
 function sharedEvidence(evidence,stage,{now}={}){
   if(!evidence||evidence.version!==COLLECTOR_ACTIVATION_PREFLIGHT_VERSION||evidence.stage!==stage)return stop(stage,'preflight_contract_invalid');
@@ -18,7 +20,11 @@ function sharedEvidence(evidence,stage,{now}={}){
   if(evidence.foreignKeyViolations!==0)return stop(stage,'foreign_key_violations');
   const authority=validateAuthority(evidence.authority,{now,season:API_FOOTBALL_FPL_SEASON});if(!authority.ok)return stop(stage,authority.reason);
   const mapping=evidence.mapping;
-  if(!mapping||mapping.state!=='COMMITTED'||mapping.isCurrentHead!==true||mapping.mappingCount!==20||mapping.memberCount!==20||mapping.distinctProviderIds!==20||mapping.distinctFplIds!==20||mapping.authorityDigest!==evidence.authority.digest)return stop(stage,'qualified_mapping_unavailable');
+  if(!mapping||mapping.state!=='COMMITTED'||mapping.isCurrentHead!==true||mapping.mappingCount!==20||mapping.memberCount!==20||mapping.distinctProviderIds!==20||mapping.distinctFplIds!==20)return stop(stage,'qualified_mapping_unavailable');
+  if(!hex64(mapping.historicalAuthorityDigest)||!validIso(mapping.historicalAuthorityFetchedAt))return stop(stage,'mapping_provenance_invalid');
+  if(!Array.isArray(mapping.canonicalTeamIds)||mapping.canonicalTeamIds.length!==20||new Set(mapping.canonicalTeamIds).size!==20)return stop(stage,'qualified_mapping_unavailable');
+  const currentTeamIds=evidence.authority.teamIds.slice().sort(),mappedTeamIds=mapping.canonicalTeamIds.slice().sort();
+  if(JSON.stringify(mappedTeamIds)!==JSON.stringify(currentTeamIds))return stop(stage,'qualified_mapping_unavailable');
   const runtime=evidence.runtime;
   if(!runtime||runtime.provider!=='api-football'||runtime.collectionEnabled!==0||!['UNPROVISIONED','AVAILABLE'].includes(runtime.credentialState))return stop(stage,'runtime_state_unexpected');
   if(runtime.inFlightAttemptId!==null||runtime.inFlightLeaseExpiresAt!==null)return stop(stage,'active_request_lease');
