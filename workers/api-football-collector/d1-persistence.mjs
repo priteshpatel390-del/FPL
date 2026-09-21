@@ -16,10 +16,10 @@ export async function readOfficialFplAuthority(db,{now,season=API_FOOTBALL_FPL_S
   return {ok:true,authority:{season,sourceKey:'official-fpl',sourceRevisionId:'official-fpl-r1',runId:run.run_id,runStatus:run.status,fetchedAt:run.completed_at,teamIds,digest}};
 }
 
-export async function reserveAttempt(db,input){
+export async function reserveAttempt(db,input,{runtimeState=null}={}){
   if(input.attemptId!==requestAttemptIdentity(input.logicalRequestId,input.attemptNumber))return {ok:false,reason:'request_identity_invalid'};
   const now=new Date(input.now).toISOString();
-  const state=await db.prepare(stateSql).bind(API_FOOTBALL_PROVIDER).first();
+  const state=runtimeState??await db.prepare(stateSql).bind(API_FOOTBALL_PROVIDER).first();
   const decision=reservationDecision(state,{now,requiresAuthority:input.requiresAuthority,authority:input.authority});
   if(!decision.ok)return decision;
   const update=db.prepare(`UPDATE api_football_runtime_state SET quota_utc_day=?,daily_attempt_count=?,quota_state=?,observed_daily_limit=?,observed_daily_remaining=?,observed_minute_limit=?,observed_minute_remaining=?,quota_observed_at=?,in_flight_attempt_id=?,in_flight_lease_expires_at=?,updated_at=? WHERE provider=? AND collection_enabled=1 AND credential_state='AVAILABLE' AND (in_flight_attempt_id IS NULL OR in_flight_lease_expires_at<=?) AND (earliest_next_request_at IS NULL OR earliest_next_request_at<=?)`).bind(decision.utcDay,decision.nextCount,decision.probeRequired?'PROBE_REQUIRED':state.quota_state,decision.probeRequired?null:state.observed_daily_limit,decision.probeRequired?null:state.observed_daily_remaining,decision.probeRequired?null:state.observed_minute_limit,decision.probeRequired?null:state.observed_minute_remaining,decision.probeRequired?null:state.quota_observed_at,input.attemptId,decision.leaseExpiresAt,now,API_FOOTBALL_PROVIDER,now,now);
@@ -29,9 +29,9 @@ export async function reserveAttempt(db,input){
   return {ok:true,probeRequired:decision.probeRequired,leaseExpiresAt:decision.leaseExpiresAt};
 }
 
-export async function completeAttempt(db,{attemptId,completion,now}){
+export async function completeAttempt(db,{attemptId,completion,now,runtimeState=null}){
   const at=new Date(now).toISOString(),quota=completion.quota||{};
-  const state=await db.prepare(stateSql).bind(API_FOOTBALL_PROVIDER).first();
+  const state=runtimeState??await db.prepare(stateSql).bind(API_FOOTBALL_PROVIDER).first();
   const gap=effectiveRequestGapMs(quota.minuteLimit??state?.observed_minute_limit);
   const earliest=new Date(Date.parse(at)+Math.max(API_FOOTBALL_MIN_GAP_MS,gap)).toISOString();
   let results;try{results=await db.batch([
@@ -109,6 +109,36 @@ export function createD1CollectorRepository(db,{authority,cryptoImpl=globalThis.
     return safe({ok:true,results,rowsWritten:actual});
   }
   return Object.freeze({
+    async assertExecutionEnabled(now){
+      if(!admit({statements:1}))return failure('d1_exposure_ceiling_exceeded');
+      let state;try{state=await db.prepare(stateSql).bind(API_FOOTBALL_PROVIDER).first();}catch{return failure('runtime_state_unavailable');}
+      const decision=reservationDecision(state,{now,requiresAuthority:true,authority});
+      return decision.ok?safe({ok:true}):decision;
+    },
+    async readAdmission(request,now){
+      if(!request?.attemptId)return failure('request_identity_invalid');
+      if(!admit({statements:1}))return failure('d1_exposure_ceiling_exceeded');
+      let row;try{row=await db.prepare(`SELECT a.attempt_id,a.attempt_number,a.outcome,a.lease_expires_at,a.completed_at,
+        s.provider runtime_provider,s.collection_enabled runtime_collection_enabled,s.credential_state runtime_credential_state,
+        s.quota_state runtime_quota_state,s.quota_utc_day runtime_quota_utc_day,s.daily_attempt_count runtime_daily_attempt_count,
+        s.in_flight_attempt_id runtime_in_flight_attempt_id,s.in_flight_lease_expires_at runtime_in_flight_lease_expires_at,
+        s.earliest_next_request_at runtime_earliest_next_request_at,s.observed_daily_limit runtime_observed_daily_limit,
+        s.observed_daily_remaining runtime_observed_daily_remaining,s.observed_minute_limit runtime_observed_minute_limit,
+        s.observed_minute_remaining runtime_observed_minute_remaining,s.quota_observed_at runtime_quota_observed_at
+        FROM api_football_runtime_state s LEFT JOIN api_football_request_attempts a ON a.attempt_id=?
+        WHERE s.provider=?`).bind(request.attemptId,API_FOOTBALL_PROVIDER).first();}catch{return failure('runtime_state_unavailable');}
+      if(!row)return failure('runtime_state_unavailable');
+      const runtimeState={
+        provider:row.runtime_provider,collection_enabled:Number(row.runtime_collection_enabled),credential_state:row.runtime_credential_state,
+        quota_state:row.runtime_quota_state,quota_utc_day:row.runtime_quota_utc_day,daily_attempt_count:Number(row.runtime_daily_attempt_count||0),
+        in_flight_attempt_id:row.runtime_in_flight_attempt_id,in_flight_lease_expires_at:row.runtime_in_flight_lease_expires_at,
+        earliest_next_request_at:row.runtime_earliest_next_request_at,observed_daily_limit:row.runtime_observed_daily_limit,
+        observed_daily_remaining:row.runtime_observed_daily_remaining,observed_minute_limit:row.runtime_observed_minute_limit,
+        observed_minute_remaining:row.runtime_observed_minute_remaining,quota_observed_at:row.runtime_quota_observed_at
+      };
+      const attempt=row.attempt_id?{attempt_id:row.attempt_id,attempt_number:Number(row.attempt_number),outcome:row.outcome,lease_expires_at:row.lease_expires_at,completed_at:row.completed_at}:null;
+      return safe({ok:true,attempt,runtimeState});
+    },
     async createStaging({requests,now}){
       const logicalOpportunity=requests?.[0]?.opportunityLogicalId;
       if(!logicalOpportunity||requests.some(request=>request.opportunityLogicalId!==logicalOpportunity))return failure('generation_identity_invalid');
@@ -122,23 +152,19 @@ export function createD1CollectorRepository(db,{authority,cryptoImpl=globalThis.
       if(!row||row.state!=='STAGING'||row.ingestion_run_id!==ingestionRunId||row.logical_opportunity!==logicalOpportunity||row.fpl_season!==API_FOOTBALL_FPL_SEASON||Number(row.provider_season)!==2026||row.source_revision_id!==API_FOOTBALL_SOURCE_REVISION_ID||row.official_fpl_authority_digest!==authority.digest||row.official_fpl_authority_run_id!==authority.runId||row.run_status!=='started'||row.run_source_revision_id!==API_FOOTBALL_SOURCE_REVISION_ID)return failure('generation_reconciliation_required');
       generationContext={generationId,ingestionRunId,logicalOpportunity};return safe({ok:true,generationId,ingestionRunId});
     },
-    async readAttempt(attemptId){
-      if(!admit({statements:1}))return {attempt_number:0,outcome:'CEILING_BLOCKED'};
-      return db.prepare('SELECT attempt_id,attempt_number,outcome,lease_expires_at,completed_at FROM api_football_request_attempts WHERE attempt_id=?').bind(attemptId).first();
-    },
-    async reserve(request,generationId,now){
+    async reserve(request,generationId,now,runtimeState){
       if(!admit({statements:2,mutationStatements:2,rowCeiling:2}))return failure('d1_exposure_ceiling_exceeded');
-      const result=await reserveAttempt(db,{...request,generationId,ingestionRunId:generationContext?.ingestionRunId,sourceRevisionId:API_FOOTBALL_SOURCE_REVISION_ID,authority,now});if(result.ok)metrics.batches+=1;return result;
+      const result=await reserveAttempt(db,{...request,generationId,ingestionRunId:generationContext?.ingestionRunId,sourceRevisionId:API_FOOTBALL_SOURCE_REVISION_ID,authority,now},{runtimeState});if(result.ok)metrics.batches+=1;return result;
     },
-    async completeFailure(request,completion,now){
+    async completeFailure(request,completion,now,runtimeState){
       if(!completion?.outcome)return failure('completion_contract_invalid');
       if(!admit({statements:2,mutationStatements:2,rowCeiling:2}))return failure('d1_exposure_ceiling_exceeded');
-      const result=await completeAttempt(db,{attemptId:request.attemptId,completion,now});if(result.ok)metrics.batches+=1;return result;
+      const result=await completeAttempt(db,{attemptId:request.attemptId,completion,now,runtimeState});if(result.ok)metrics.batches+=1;return result;
     },
-    async completeSuccess(request,completion,now){
+    async completeSuccess(request,completion,now,runtimeState){
       if(completion?.outcome!=='SUCCEEDED')return failure('completion_contract_invalid');
       if(!admit({statements:2,mutationStatements:2,rowCeiling:2}))return failure('d1_exposure_ceiling_exceeded');
-      const result=await completeAttempt(db,{attemptId:request.attemptId,completion,now});if(result.ok)metrics.batches+=1;return result;
+      const result=await completeAttempt(db,{attemptId:request.attemptId,completion,now,runtimeState});if(result.ok)metrics.batches+=1;return result;
     },
     async persistValidated(request,generationId,fixtures){
       if(generationId!==generationContext?.generationId||!Array.isArray(fixtures)||fixtures.length>API_FOOTBALL_MAX_DISCOVERY_GENERATION_ROWS)return failure('fixture_persistence_contract_invalid');
