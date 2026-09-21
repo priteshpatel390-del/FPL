@@ -3,7 +3,7 @@
 - No live activation preflight has run; repository classification proves no Cloudflare state.
 - `ATTENDED_ONE_SHOT_DISCOVERY` has a concrete D1-backed path but is not selected by shipped configuration.
 - Attempt 2 and automatic recovery are deliberately unimplemented. Expired, timed-out, or transport-unknown attempt 1 requires deterministic reconciliation.
-- Concrete 1,250-row D1 chunking and fail-closed operation accounting are repository-tested but not live Cloudflare-accepted.
+- Concrete 1,250-row D1 chunking and fail-closed operation accounting are repository-tested, including a 50-statement worst-case successful invocation, but not live Cloudflare-accepted. Any future extra D1 query must replace an existing query or obtain a separately approved higher platform envelope.
 - 2,500-fixture ceiling is evidence-based safety capacity, not proof future provider volume will fit.
 - API-Football remains shadow-only with no proven predictive benefit or model/product/UI path.
 
