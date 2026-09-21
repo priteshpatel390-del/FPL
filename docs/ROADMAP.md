@@ -1,3 +1,7 @@
+## Immediate gate — reconcile ambiguous migration 0006 mapping submission
+
+Migration 0006 schema is live. Run `35575463178` submitted the mapping mutation but ended `AMBIGUOUS_REQUIRES_OWNER_ATTENTION`. Qualification/member/head counts of 0/0/0 and postflight `READY_FOR_PRIVATE_MAPPING_PERSISTENCE` do not exclude mapping-specific `entity_mappings` rows. Next repository gate is review and merge of the fixed-SQL read-only reconciliation diagnostic. Production execution requires separate owner approval. No blind retry or automatic restore is allowed.
+
 ## Current API-Football gate — migration 0006 foundation review
 
 Migration-0006/private-mapping repository foundation is the current candidate. Next step is review and exact-head verification, not production dispatch. After merge, a separate owner gate must review fresh production preflight, D1 budget and Time Travel evidence before one attended attempt. Collector deployment/binding/key/Cron/provider egress and model/product use remain later independent gates.

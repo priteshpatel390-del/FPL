@@ -652,6 +652,7 @@ test('API-Football discovery stays isolated from production, live config and mig
     'api-football-migration-0004.yml',
     'api-football-migration-0005.yml',
     'api-football-migration-0006-readonly-preflight.yml',
+    'api-football-mapping-0006-reconciliation.yml',
     'api-football-mapping-0006-recovery.yml',
     'api-football-migration-0006.yml'
   ]);
@@ -701,6 +702,14 @@ test('API-Football discovery stays isolated from production, live config and mig
       assert.match(source,/cancel-in-progress: false/);
       assert.doesNotMatch(source,/MIGRATION_0006_PHASE: schema|MIGRATION_0006_PREFLIGHT_MODE: schema_(?:pre|post)/);
       assert.doesNotMatch(source,/secrets\.API_FOOTBALL_API_KEY|x-apisports-key|v3\.football\.api-sports\.io|wrangler\s+(?:deploy|secret)|collection_enabled\s*=\s*1|schedule:/i);
+      continue;
+    }
+    if(file==='api-football-mapping-0006-reconciliation.yml'){
+      assert.match(source,/name: data-steward-readonly/);
+      assert.match(source,/DATA_STEWARD_CLOUDFLARE_READ_TOKEN/);
+      assert.match(source,/migration6\/reconciliation\.mjs/);
+      assert.match(source,/github\.run_attempt == 1/);
+      assert.doesNotMatch(source,/CLOUDFLARE_D1_TOKEN|API_FOOTBALL_OWNER_CROSSWALK_JSON|secrets\.API_FOOTBALL_API_KEY|api-sports\.io|wrangler\s+(?:deploy|secret)|collection_enabled\s*=\s*1|schedule:/i);
       continue;
     }
     if(file==='api-football-migration-0006.yml'){

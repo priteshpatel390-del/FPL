@@ -1,4 +1,8 @@
-## Current checkpoint — migration 0006 live; private mapping recovery candidate
+## Current checkpoint — migration 0006 ambiguous mapping write; read-only reconciliation candidate
+
+Migration 0006 schema is live. Mapping-only run `35575463178` on `017a149473effbfd81219c1462661e644bbfb1f3`, attempt 1, submitted a D1 mutation and returned `AMBIGUOUS_REQUIRES_OWNER_ATTENTION`; automatic recovery/restore was not issued or permitted. Subsequent qualification/member/head counts were 0/0/0 and independent postflight remained `READY_FOR_PRIVATE_MAPPING_PERSISTENCE`, but those aggregates do not prove that mapping-specific `entity_mappings` rows are absent. Reconciliation therefore remains pending. This repository candidate adds only a protected, fixed-SQL, aggregate-only read-only diagnostic. Blind retry and automatic restore are forbidden. Implementation or merge does not authorize production execution; owner review/merge and later explicit execution approval are separate gates.
+
+## Earlier checkpoint — migration 0006 live; private mapping recovery candidate
 
 Owner-attended production run `35572526804` on exact main `080d5b24af0a8f25f28ee1001fb4dd10a95738db` applied migration 0006 and independently reached `READY_FOR_PRIVATE_MAPPING_PERSISTENCE`. The private-mapping step then failed safely before mutation because `API_FOOTBALL_OWNER_CROSSWALK_JSON` resolved empty in `data-s2-production-collection`; `mutationIssued=false`, 0 API-Football requests, and final read-only postflight remained `READY_FOR_PRIVATE_MAPPING_PERSISTENCE`. Migration 0006 must not be rerun. Owner approval now covers repository implementation only of a mapping-only recovery workflow. It requires the approved crosswalk to be configured separately as a protected `data-s2-production-collection` environment secret before any later production dispatch. Production mapping execution remains separately owner-gated.
 

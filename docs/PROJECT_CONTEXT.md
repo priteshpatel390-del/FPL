@@ -1,4 +1,8 @@
-## API-Football migration 0006 — live; private mapping recovery candidate
+## API-Football migration 0006 — ambiguous mapping mutation; reconciliation pending
+
+Migration 0006 schema is live. Mapping recovery run `35575463178` on exact main `017a149473effbfd81219c1462661e644bbfb1f3`, attempt 1, submitted a D1 mutation and classified it `AMBIGUOUS_REQUIRES_OWNER_ATTENTION`. It issued no recovery; automatic restore was not permitted. Later qualification/member/head counts were 0/0/0 and an independent postflight still returned `READY_FOR_PRIVATE_MAPPING_PERSISTENCE`. Those observations show no complete qualified mapping, but cannot prove absence of mapping-specific `entity_mappings` rows after a submitted mutation. Reconciliation remains pending; blind retry and automatic restore are forbidden. The repository candidate supplies a manual protected read-only diagnostic using only fixed aggregate SQL and existing steward read credentials. Merge does not authorize its production execution.
+
+## Earlier API-Football migration 0006 checkpoint — live; private mapping recovery candidate
 
 Owner-attended run `35572526804` applied migration 0006 on exact main `080d5b24af0a8f25f28ee1001fb4dd10a95738db`. Independent postflight admitted `READY_FOR_PRIVATE_MAPPING_PERSISTENCE`. Private persistence then stopped before mutation because the writer environment did not supply a usable `API_FOOTBALL_OWNER_CROSSWALK_JSON`; `mutationIssued=false`, and final postflight remained `READY_FOR_PRIVATE_MAPPING_PERSISTENCE`. The combined migration workflow must not be rerun. The repository recovery candidate is mapping-only and requires a separately configured protected writer-environment crosswalk secret plus a later explicit production approval.
 
