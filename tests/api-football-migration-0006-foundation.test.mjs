@@ -8,7 +8,7 @@ import {
   MIGRATION_0006_REQUIRED_OBJECTS,MIGRATION_0006_STATEMENT_COUNT,MIGRATION_0006_VERSION,
   classifyMigration0006State,readPinnedMigration0006
 } from '../workers/data-platform/migration6/migration-0006-contract.mjs';
-import {createParameterizedD1Adapter,sanitizedPrivateMappingEvidence} from '../workers/data-platform/migration6/production.mjs';
+import {classifyPrivateMappingReconciliation,createParameterizedD1Adapter,sanitizedPrivateMappingEvidence} from '../workers/data-platform/migration6/production.mjs';
 import {executeMigration0006} from '../workers/data-platform/run-migration-0006.mjs';
 import {EXPECTED_D1_DATABASE_ID} from '../workers/data-platform/phase4b/live-contract.mjs';
 
@@ -62,6 +62,49 @@ test('D1 adapter keeps private values exclusively in parameter bindings',async()
   const body=JSON.parse(bodies[0]);assert.equal(body.batch[0].sql,'INSERT INTO private_mapping(provider_id,fpl_id) VALUES(?,?)');
   assert.equal(mutationSubmitted,true);
   assert.deepEqual(body.batch[0].params,[sentinelProvider,sentinelFpl]);assert.doesNotMatch(body.batch[0].sql,/987654321|999999/);
+});
+
+const adapterIdentity=async(overrides={})=>{
+  const accountId='account';
+  return {accountId,accountFingerprint:await crypto.subtle.digest('SHA-256',new TextEncoder().encode(accountId)).then(value=>Buffer.from(value).toString('hex')),databaseId:EXPECTED_D1_DATABASE_ID,token:'secret',...overrides};
+};
+const attemptMutation=async transport=>{
+  let diagnostic=null;
+  const db=createParameterizedD1Adapter(await adapterIdentity({transport,onMutationDiagnostic:value=>{diagnostic=value;}}));
+  await assert.rejects(()=>db.batch([db.prepare('INSERT INTO synthetic(value) VALUES(?)').bind('PRIVATE_SENTINEL')]));
+  return diagnostic;
+};
+
+test('D1 mutation diagnostics distinguish transport, HTTP, JSON, envelope, cardinality and result failures',async()=>{
+  assert.equal((await attemptMutation(async()=>{throw new Error('PRIVATE_TRANSPORT_SENTINEL');})).category,'transport_uncertain');
+  assert.equal((await attemptMutation(async()=>({status:500,ok:false,json:async()=>({success:false,errors:[{code:1000,message:'PRIVATE_MESSAGE'}]})}))).category,'http_uncertain');
+  assert.equal((await attemptMutation(async()=>({status:400,ok:false,json:async()=>({success:false,errors:[{code:7500,message:'PRIVATE_MESSAGE'}]})}))).category,'d1_rejected');
+  assert.equal((await attemptMutation(async()=>({status:200,ok:true,json:async()=>{throw new Error('PRIVATE_JSON');}}))).category,'response_json_invalid');
+  assert.equal((await attemptMutation(async()=>({status:200,ok:true,json:async()=>({success:false,errors:[]})}))).category,'response_envelope_invalid');
+  assert.equal((await attemptMutation(async()=>({status:200,ok:true,json:async()=>({success:true,result:[]})}))).category,'result_cardinality_invalid');
+  assert.equal((await attemptMutation(async()=>({status:200,ok:true,json:async()=>({success:true,result:[{}]})}))).category,'result_entry_invalid');
+  const statement=await attemptMutation(async()=>({status:200,ok:true,json:async()=>({success:true,result:[{success:false,error:{code:19,message:'PRIVATE_PAIR_SENTINEL'}}]})}));
+  assert.deepEqual({category:statement.category,index:statement.failedStatementIndex,code:statement.providerErrorCode},{category:'statement_failed',index:0,code:19});
+  assert.doesNotMatch(JSON.stringify(statement),/PRIVATE|message|sql|params|account|database|token/i);
+});
+
+test('D1 success diagnostics retain only bounded aggregate request metadata',async()=>{
+  let diagnostic=null;
+  const db=createParameterizedD1Adapter(await adapterIdentity({onMutationDiagnostic:value=>{diagnostic=value;},transport:async()=>({status:200,ok:true,json:async()=>({success:true,result:[{success:true,results:[],meta:{rows_written:1}}]})})}));
+  await db.batch([db.prepare('INSERT INTO synthetic(value) VALUES(?)').bind('PRIVATE_SENTINEL')]);
+  assert.equal(diagnostic.category,'batch_success');assert.equal(diagnostic.statementCount,1);assert.equal(diagnostic.resultCount,1);
+  assert.doesNotMatch(JSON.stringify(diagnostic),/PRIVATE|sql|params|account|database|token/i);
+});
+
+test('private mapping reconciliation requires explicit rejection plus comprehensive exact prestate',()=>{
+  const empty={classification:MIGRATION_0006_EXACT_POST_EMPTY,foreignKeyViolations:0,mappingCounts:{entityMappings:0,qualifications:0,members:0,heads:0}};
+  const input={state:empty,verified:null,plan:{persistenceIntegrityHash:'a'.repeat(64)},mutationError:new Error('sanitized')};
+  for(const category of ['http_rejected','d1_rejected','statement_failed'])
+    assert.equal(classifyPrivateMappingReconciliation({...input,d1Outcome:{category}}).classification,'DEFINITELY_NOT_APPLIED');
+  for(const category of ['transport_uncertain','http_uncertain','response_json_invalid','response_envelope_invalid','result_cardinality_invalid','result_entry_invalid','batch_success'])
+    assert.equal(classifyPrivateMappingReconciliation({...input,d1Outcome:{category}}).classification,'AMBIGUOUS_REQUIRES_OWNER_ATTENTION');
+  assert.equal(classifyPrivateMappingReconciliation({...input,state:{...empty,mappingCounts:{...empty.mappingCounts,entityMappings:1}},d1Outcome:{category:'statement_failed'}}).classification,'AMBIGUOUS_REQUIRES_OWNER_ATTENTION');
+  assert.equal(classifyPrivateMappingReconciliation({...input,state:null,d1Outcome:{category:'statement_failed'}}).classification,'AMBIGUOUS_REQUIRES_OWNER_ATTENTION');
 });
 
 test('workflow is one-shot exact-main exact-Verify and shares non-cancelling writer lock',()=>{
