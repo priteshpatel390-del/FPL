@@ -69,7 +69,12 @@ test('closed transitive module graph is exact deterministic and repository-relat
   assert.equal(modules.size,REVIEWED_MODULE_PATHS.length);
   assert.deepEqual([...sources.keys()].sort(),[...REVIEWED_MODULE_PATHS].sort());
   assert.ok(modules.has('collector.mjs'));
-  for(const source of modules.values())assert.doesNotMatch(source,/\b(?:import|export)\s+[^;]*?from\s*['"](?:https?:|npm:|node:|[^'"]*node_modules\/)/);
+  assert.ok(REVIEWED_MODULE_PATHS.includes('workers/api-football-collector/mapping-runtime.mjs'));
+  for(const forbidden of ['workers/api-football-collector/mapping-persistence.mjs','src/decision-intelligence/api-football-owner-mapping.mjs','src/decision-intelligence/api-football-prelive-qualification.mjs'])assert.equal(REVIEWED_MODULE_PATHS.includes(forbidden),false);
+  for(const source of modules.values()){
+    assert.doesNotMatch(source,/\b(?:import|export)\s+[^;]*?from\s*['"](?:https?:|npm:|node:|[^'"]*node_modules\/)/);
+    assert.doesNotMatch(source,/legacy_anchor_conflict|issueOwnerApprovedTwentyClubMappings|OFFICIAL_FPL_2026_27_OWNER_REVIEW_TEAM_LABELS/);
+  }
 });
 
 test('module graph rejects external or unreviewed additions',()=>{
