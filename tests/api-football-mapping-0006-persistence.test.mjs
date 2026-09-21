@@ -26,9 +26,9 @@ test('writer cannot start before approved reconciliation and fresh mapping admis
   assert.match(writer,/needs: \[repository-gate, approved-evidence-gate, mapping-preflight\]/);
   assert.match(jobs('mapping-preflight'),/needs: \[repository-gate, approved-evidence-gate\]/);
   assert.match(jobs('mapping-preflight'),/MIGRATION_0006_PREFLIGHT_MODE: mapping_pre/);
-  assert.match(jobs('approved-evidence-gate'),/35584694866/);
-  assert.match(jobs('approved-evidence-gate'),/10631743543/);
-  assert.match(jobs('approved-evidence-gate'),/d0bd4c795a561f5dc3fe8c68c3ed28e256ec31cbff598bb0ea42130e6f02b014/);
+  assert.match(jobs('approved-evidence-gate'),/35604949049/);
+  assert.match(jobs('approved-evidence-gate'),/10641607212/);
+  assert.match(jobs('approved-evidence-gate'),/4d0798c7ddbb84e61098b180b4d15036331987f4c746ee022e1204b127bf9f29/);
   assert.match(jobs('approved-evidence-gate'),/NO_SUBMITTED_MAPPING_STATE_VISIBLE/);
   assert.match(jobs('approved-evidence-gate'),/productionMutations!==0\|\|r\.apiFootballRequests!==0/);
 });
