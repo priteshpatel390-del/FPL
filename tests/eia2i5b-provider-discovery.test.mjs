@@ -650,6 +650,7 @@ test('API-Football discovery stays isolated from production, live config and mig
     'api-football-owner-mapping-qualification.yml',
     'api-football-live-storage-preflight.yml',
     'api-football-collector-activation-preflight.yml',
+    'api-football-collector-inactive-version-staging.yml',
     'api-football-migration-0004.yml',
     'api-football-migration-0005.yml',
     'api-football-migration-0006-readonly-preflight.yml',
@@ -701,6 +702,17 @@ test('API-Football discovery stays isolated from production, live config and mig
       assert.match(source,/github\.run_attempt == 1/);
       assert.match(source,/Tests and deterministic build/);
       assert.doesNotMatch(source,/secrets\.API_FOOTBALL_API_KEY|API_FOOTBALL_OWNER_CROSSWALK_JSON|DEPLOY_TOKEN|WORKER_UPLOAD_TOKEN|x-apisports-key|v3\.football\.api-sports\.io|wrangler\s+(?:deploy|secret)|collection_enabled\s*=\s*1|schedule:/i);
+      continue;
+    }
+    if(file==='api-football-collector-inactive-version-staging.yml'){
+      assert.match(source,/name: api-football-collector-version-upload/);
+      assert.match(source,/CLOUDFLARE_COLLECTOR_WORKER_UPLOAD_TOKEN/);
+      assert.match(source,/name: data-steward-readonly/);
+      assert.match(source,/READY_FOR_REPOSITORY_INFRASTRUCTURE_STAGING/);
+      assert.match(source,/stage-inactive-version\.mjs/);
+      assert.match(source,/github\.run_attempt == 1/);
+      assert.match(source,/Tests and deterministic build/);
+      assert.doesNotMatch(source,/secrets\.API_FOOTBALL_API_KEY|API_FOOTBALL_OWNER_CROSSWALK_JSON|CLOUDFLARE_D1_WRITE_TOKEN|CLOUDFLARE_PHASE3_DEPLOY_TOKEN|x-apisports-key|v3\.football\.api-sports\.io|wrangler\s+(?:deploy|secret)|collection_enabled\s*=\s*1|^\s{2}schedule:/im);
       continue;
     }
     if(file==='api-football-mapping-0006-recovery.yml'||file==='api-football-mapping-0006-persistence.yml'){

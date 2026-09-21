@@ -1,6 +1,6 @@
 # API-Football Collector — Inactive Worker Version / Production D1 Binding Staging Proposal
 
-Status: **DESIGN / APPROVAL PROPOSAL ONLY — NO INFRASTRUCTURE MUTATION AUTHORIZED**
+Status: **REPOSITORY IMPLEMENTATION CANDIDATE — LIVE INFRASTRUCTURE MUTATION NOT AUTHORIZED**
 
 Prepared: **21 September 2026**
 
@@ -36,9 +36,9 @@ Authoritative evidence:
 
 The earlier STOP run `35631979158` is consumed and must never be rerun.
 
-## Decision requested
+## Repository implementation approval
 
-Approve repository implementation of one dormant, manual-only infrastructure-staging workflow that may later, under a separate execution approval:
+Pritesh approved repository implementation only of one dormant, manual-only infrastructure-staging workflow that may later, under a separate execution approval:
 
 1. create the previously absent `teamsheet-api-football-shadow-collector` Worker shell with both `workers.dev` and Version Preview URLs disabled;
 2. upload exactly one **inactive** Worker Version;
@@ -48,7 +48,7 @@ Approve repository implementation of one dormant, manual-only infrastructure-sta
 6. include no `API_FOOTBALL_API_KEY` binding;
 7. create no Deployment and route no traffic.
 
-This proposal does **not** approve repository implementation, live execution, secret provisioning, Deployment, runtime enablement, Cron or provider egress until Pritesh separately approves those gates.
+This approval does **not** authorize live execution, protected-environment creation/configuration, secret provisioning, Worker/Version mutation, Deployment, runtime enablement, Cron or provider egress until Pritesh separately approves those gates.
 
 ## Why the Worker shell is a separate first primitive
 
@@ -422,3 +422,21 @@ Upload success does not authorize Deployment. Deployment would not authorize API
   https://developers.cloudflare.com/workers/versions-and-deployments/preview-urls/
 - Worker Script Subdomain API:
   https://developers.cloudflare.com/api/resources/workers/subresources/scripts/subresources/subdomain/
+
+
+## Repository implementation candidate — 21 September 2026
+
+Branch `codex/api-football-inactive-version-staging` implements the dormant gate without dispatching it. The candidate adds:
+
+- `.github/workflows/api-football-collector-inactive-version-staging.yml` with repository, fresh read-only admission, protected staging and final read-only closeout jobs;
+- `workers/api-football-collector/stage-inactive-version.mjs` with exact shell/Version contracts, deterministic transitive graph construction, SHA-bound module/metadata identity, a two-endpoint mutation allowlist and no-retry ambiguity reconciliation;
+- `tests/api-football-collector-inactive-version-staging.test.mjs` with permanent repository-only coverage;
+- canonical documentation updates.
+
+Current first-party Cloudflare documentation was rechecked before implementation. Pre-Version Worker creation with explicit `subdomain.enabled=false` and `subdomain.previews_enabled=false` still uses the Workers Beta Create Worker API. The stable Scripts Version Upload endpoint remains the upload primitive and explicitly creates a Version without deploying it. Current multipart metadata documents D1 bindings with `database_id`.
+
+No staging workflow dispatch, Cloudflare mutation, D1 mutation, API-Football request, provider-secret action, Deployment, Cron or route/domain mutation occurred during repository implementation. Live execution remains a separate owner gate after merge and exact-main verification.
+
+### Runtime mapping graph minimisation
+
+Repository implementation narrows the future Worker upload graph so it does not carry mapping-issuance code or private provider/FPL anchor pairs. `planner-orchestrator.mjs` uses `mapping-runtime.mjs` to read the already-persisted mapping. That reader still requires the approved immutable qualification/provenance hashes, validates every mapping identity and receipt shape, recomputes the durable persistence integrity hash across all 20 rows, and requires exact current Official FPL team coverage. The private mapping rows themselves remain in D1 and are absent from retained staging evidence.

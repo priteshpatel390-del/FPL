@@ -503,3 +503,7 @@ Effective **22 August 2026**, the owner superseded the blanket £0 recurring-cos
 ## DATA-S2B E2C-B repository-only preparation
 
 E2C-B hardens the disposable live boundary with mandatory production-account separation, exact returned-value affinity/storage semantics, missing-versus-zero bounded provider metadata, sanitized evidence and a manual exact-main/exact-Verify protected workflow that rejects reruns and never cleans up. No live action occurred; preparation, execution, acceptance and manual cleanup remain separate owner gates. See [E2C-B implementation record](../workers/data-platform/DATA-S2B-E2C-B-DISPOSABLE-LIVE-EXPERIMENT-PREPARATION.md).
+
+## API-Football inactive staging data boundary
+
+The inactive staging candidate adds no new provider acquisition and makes no API-Football request. The first Version, if separately approved for live upload later, contains no `API_FOOTBALL_API_KEY` binding and remains `REPOSITORY_ONLY_BLOCKED`. Its only data binding is the existing production `teamsheet-data` D1 identity; Version upload changes binding configuration only and does not authorize or perform a D1 data mutation.

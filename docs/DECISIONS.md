@@ -1132,3 +1132,7 @@ Effective **22 August 2026**, the owner superseded the blanket £0 recurring-cos
 ## DATA-S2B E2C-B repository-only preparation
 
 E2C-B hardens the disposable live boundary with mandatory production-account separation, exact returned-value affinity/storage semantics, missing-versus-zero bounded provider metadata, sanitized evidence and a manual exact-main/exact-Verify protected workflow that rejects reruns and never cleans up. No live action occurred; preparation, execution, acceptance and manual cleanup remain separate owner gates. See [E2C-B implementation record](../workers/data-platform/DATA-S2B-E2C-B-DISPOSABLE-LIVE-EXPERIMENT-PREPARATION.md).
+
+## 21 September 2026 — dormant inactive collector staging implementation approved
+
+Decision: implement repository machinery for the already-designed inactive API-Football collector staging gate, without executing it. The future mutation sequence remains exactly two primitives: create one inert Worker object with workers.dev and Preview URLs disabled, then upload one inactive Version with the production D1 binding, three reviewed plain-text variables and zero secrets. Ambiguous mutation outcomes are never retried; they require read-only reconciliation. No Deployment, Cron, route/domain, provider credential, D1 write, provider request, model or UI change is authorized by this decision.
