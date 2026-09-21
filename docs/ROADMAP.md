@@ -1,3 +1,7 @@
+## Immediate API-Football gate — inactive Worker Version staging design
+
+Repository/infrastructure staging admission is now live-PASS via run `35634186433` on exact main `d88312eb6263a3ef0e5de1be3e79b647a797b830`. Current approved work is documentation/design only for the next mutation-capable stage: create an inert non-routable collector Worker shell and upload one inactive Version with explicit production D1 binding, `REPOSITORY_ONLY_BLOCKED`, no secret, no Cron and no Deployment. Next approval after this docs/design PR is repository implementation only; live execution remains a later separate gate.
+
 ## Immediate API-Football gate — remediate activation provenance false negative
 
 Attended read-only run `35631979158` is consumed after a safe STOP. Current approved work is repository-only: replace invalid historical-provenance-vs-latest-authority digest equality with independent historical-provenance validation plus exact current canonical-team-set equality. Preserve the same ten fixed D1 statements, read-only credential, sanitized evidence, zero provider requests and zero production mutations. After merge and exact-main verification, a new read-only preflight needs separate owner approval. Inactive Version upload/binding remains later and blocked.
