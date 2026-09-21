@@ -72,7 +72,8 @@ jobs:
 
   schema:
     needs: [repository-gate, schema-preflight]
-    environment: data-s2-production-collection
+    environment:
+      name: data-s2-production-collection
     runs-on: ubuntu-latest
     env:
       APPROVED_SHA: "${{ needs.repository-gate.outputs.approved_sha }}"
