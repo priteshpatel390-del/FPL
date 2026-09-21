@@ -1,6 +1,6 @@
 ## Collector activation foundation coverage
 
-Injected transport plus the concrete D1 adapter under a deterministic D1 test double cover exact response identity, wrong league/season/paging, malformed fixtures, exact mapping admission, known-fixture identity, 2,500-row generation ceiling and exact 7,525-row/49-statement exposure, first-attempt-only recovery, active and expired leases, complete commit/head advancement, partial/failure head preservation, persistence uncertainty, immutable revision supersession, shipped activation isolation, and post-0006 activation preflight. Tests make no real API-Football or production D1 request.
+Injected transport plus the concrete D1 adapter under a deterministic D1 test double cover exact response identity, non-empty provider errors, wrong league/season/paging, malformed fixtures, exact mapping admission, known-fixture identity, 2,500-row generation ceiling, pre-mutation runtime kill switch and exact 7,525-row/50-statement exposure, first-attempt-only recovery, active and expired leases, complete commit/head advancement, partial/failure head preservation, persistence uncertainty, immutable revision supersession, shipped activation isolation, and pristine first-acceptance preflight. A Node built-in SQLite integration test executes migrations 0001–0006 and the concrete bulk identity/revision/membership SQL with foreign-key checking. Tests make no real API-Football or production D1 request.
 
 ## Migration 0006 production-foundation coverage
 
