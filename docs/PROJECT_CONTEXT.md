@@ -1,3 +1,7 @@
+## API-Football migration 0006 — live; private mapping recovery candidate
+
+Owner-attended run `35572526804` applied migration 0006 on exact main `080d5b24af0a8f25f28ee1001fb4dd10a95738db`. Independent postflight admitted `READY_FOR_PRIVATE_MAPPING_PERSISTENCE`. Private persistence then stopped before mutation because the writer environment did not supply a usable `API_FOOTBALL_OWNER_CROSSWALK_JSON`; `mutationIssued=false`, and final postflight remained `READY_FOR_PRIVATE_MAPPING_PERSISTENCE`. The combined migration workflow must not be rerun. The repository recovery candidate is mapping-only and requires a separately configured protected writer-environment crosswalk secret plus a later explicit production approval.
+
 ## API-Football migration 0006/private mapping — dormant production foundation candidate
 
 Repository-only candidate adds the attended two-phase 0006 schema/private-mapping path. Schema and mapping each require fresh read-only production admission; private values remain memory-only and enter D1 only as parameter bindings; all evidence is allowlisted and sanitized; unknown mutation transport is reconciled without blind retry or automatic restore. Production 0006 and private persistence have not occurred. Collector, API key, Cron, provider requests and all model/product paths remain unchanged and inactive. See [migration 0006 production foundation](API-FOOTBALL-MIGRATION-0006-PRODUCTION-FOUNDATION.md).

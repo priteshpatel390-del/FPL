@@ -1,3 +1,7 @@
+## Migration 0006 private-mapping recovery secret boundary
+
+Production run `35572526804` proved migration 0006 applied but the private mapping did not: the `data-s2-production-collection` job received no usable `API_FOOTBALL_OWNER_CROSSWALK_JSON` and failed before mutation. Owner approval permits the already-qualified crosswalk to also exist as a protected `data-s2-production-collection` environment secret solely for the mapping-persistence step. It must never pass through repository content, job outputs, artifacts, logs or chat. The mapping-only recovery workflow keeps the secret scoped to the persistence step, retains parameterized D1 bindings and sanitized evidence, and has no schema-migration or API-Football egress path. Configuring the secret and production execution remain operational/separate gates.
+
 ## Private 20/20 mapping handling
 
 Only the private-persistence workflow step receives `API_FOOTBALL_OWNER_CROSSWALK_JSON`. Parsed values remain in memory and are sent to D1 only through positional parameter bindings. SQL strings, logs, summaries, thrown errors and retained reports cannot contain mapping rows, request bodies or parameters. Reports expose only allowlisted counts, hashes, provenance and classifications. Tests use synthetic sentinel values to pin this non-disclosure boundary.
