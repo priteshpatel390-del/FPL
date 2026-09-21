@@ -1,5 +1,14 @@
 ## Proposed API-Football collector inactive infrastructure staging
 
+## API-Football inactive collector staging architecture — repository candidate
+
+Draft PR #283 adds a dormant control-plane staging path only. Its future execution topology is `repository gate -> fresh data-steward-readonly admission -> protected inactive staging -> independent data-steward-readonly closeout`. The protected staging helper has a closed mutation allowlist containing exactly `POST /accounts/{account}/workers/workers` and `POST /accounts/{account}/workers/scripts/teamsheet-api-football-shadow-collector/versions`. There is no Deployment, schedules, secret, route/domain, Access, D1-write or provider mutation path.
+
+The uploaded module graph is resolved transitively from `collector.mjs`, must equal an explicit reviewed allowlist, is flattened deterministically for multipart upload, and hashes every module plus metadata against the exact approved repository SHA. `planner-orchestrator.mjs` now consumes `mapping-runtime.mjs`, a read-only durable-mapping validator that retains persisted qualification/provenance/integrity checks but does not import owner crosswalk/qualification construction. This narrows the future runtime bundle without altering persisted mapping state or collector calculations.
+
+No live Worker or Version is created by the repository candidate. The live control-plane sequence remains separately owner-gated after merge.
+
+
 After live `READY_FOR_REPOSITORY_INFRASTRUCTURE_STAGING`, the next proposed architecture deliberately separates Worker existence, Version identity and Deployment. Because the collector Worker is currently absent, the design first creates only an inert Worker shell with workers.dev and Preview URLs disabled, then may upload exactly one inactive Version with an explicit production `TEAMSHEET_DATA_DB` binding, three reviewed plain-text variables and no secret bindings. `EIA_2I5D_ACTIVATION` stays `REPOSITORY_ONLY_BLOCKED`; Deployment count and Cron count remain zero. This prevents a first Version from becoming reachable through a preview URL before routability is proven disabled. See [inactive collector staging proposal](API-FOOTBALL-COLLECTOR-INACTIVE-VERSION-STAGING.md).
 
 ## Collector activation read-only admission architecture

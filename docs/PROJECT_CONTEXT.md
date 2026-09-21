@@ -1,5 +1,12 @@
 ## API-Football collector repository/infrastructure staging admitted
 
+## Current API-Football infrastructure-staging candidate — 21 September 2026
+
+Draft PR #283 is the repository-only implementation candidate for the approved dormant API-Football collector staging design. It adds no live infrastructure and has not been dispatched. The candidate introduces an exact-main/manual-only repository gate, fresh read-only production admission, a future protected inactive-staging job, and independent read-only closeout. The only future mutation primitives structurally admitted are one inert collector Worker-shell creation and one inactive Version upload; Deployment, Cron, routes/domains, secrets, D1 mutation, runtime enablement and provider egress remain forbidden.
+
+The future Worker bundle is a deterministic, reviewed transitive ES-module graph rooted at `workers/api-football-collector/collector.mjs`. Runtime mapping reads have been separated from owner qualification/crosswalk construction so the upload does not carry that construction path while still validating the durable persisted qualification and integrity anchors. API-Football remains shadow-only and has no approved path into model, XI, captaincy, transfers, rank, Mini Leagues, rivals, strategy or UI decisions. Merge and exact-main verification are the current gate; live inactive staging requires a later explicit owner approval.
+
+
 Owner-attended corrected read-only run `35634186433` on exact main `d88312eb6263a3ef0e5de1be3e79b647a797b830` returned `READY_FOR_REPOSITORY_INFRASTRUCTURE_STAGING` with artifact `10655278906` / SHA-256 `5da299cc5b0bec4064ad7d839e40e05e2b2ad9dde41f7eed785534dfa9bb501b`. The next approved work is documentation/design only for an inert collector Worker shell and one inactive D1-bound Version while preserving `REPOSITORY_ONLY_BLOCKED`, zero secrets, zero Cron, zero Deployment and zero provider egress. Implementation and execution are separate future gates. See [inactive collector staging proposal](API-FOOTBALL-COLLECTOR-INACTIVE-VERSION-STAGING.md).
 
 ## API-Football activation mapping-provenance remediation
