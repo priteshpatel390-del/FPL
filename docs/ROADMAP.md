@@ -1,3 +1,9 @@
+## Immediate API-Football gate — collector activation investigation/design only
+
+Migration 0006 private mapping persistence is complete and independently accepted. Persistence run `35607354636` returned `DEFINITELY_APPLIED_SUCCESSFULLY` with durable 20/1/20/1 qualified mapping state and zero API-Football requests. After PR #276 corrected a reconciliation-only hash invariant, final read-only run `35609344995` on exact main `8c5c7fbf80b70961f2e39d8acc73c806d8c95659` returned `COMPLETE_QUALIFIED_MAPPING_VISIBLE` with 0 production mutations and 0 API-Football requests. No retry/repair/restore/additional mapping write remains.
+
+The next checkpoint is investigation/design of collector activation prerequisites and a staged reversible activation plan. Repository preparation, production Worker deployment/binding, `API_FOOTBALL_API_KEY`, runtime enablement, Cron, provider egress and any later workload/model path must remain separate gates. No production activation is authorized by this roadmap closeout.
+
 ## Immediate gate — reconcile ambiguous migration 0006 mapping submission
 
 Migration 0006 schema is live. Run `35575463178` submitted the mapping mutation but ended `AMBIGUOUS_REQUIRES_OWNER_ATTENTION`. Qualification/member/head counts of 0/0/0 and postflight `READY_FOR_PRIVATE_MAPPING_PERSISTENCE` do not exclude mapping-specific `entity_mappings` rows. Next repository gate is review and merge of the fixed-SQL read-only reconciliation diagnostic. Production execution requires separate owner approval. No blind retry or automatic restore is allowed.
