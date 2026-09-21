@@ -1,3 +1,7 @@
+## Inactive collector staging permanent coverage
+
+Repository tests now cover the exact inert shell body, the exact first-Version production D1 plus three-plain-text/zero-secret binding set, the closed deterministic 19-module graph, module/graph/metadata identity, exact two-mutation allowlist, definite rejection with no retry, ambiguous shell and Version reconciliation without a repeated mutation, first-attempt/exact-main/fresh-admission workflow ordering, and independent read-only postflight. Postflight must fail on any Deployment, Cron, custom domain, preview/workers.dev exposure, secret binding, unexpected Version, changed D1 runtime/mapping/history state, D1 rows written, provider request evidence or model/UI integration.
+
 ## Proposed inactive collector staging verification
 
 Future repository implementation must permanently test exact Worker-shell identity, workers.dev/Preview URLs disabled before first Version creation, exact first-Version D1/plain-text binding set, absence of secret bindings, blocked activation, zero Deployment/Cron paths, closed mutation request allowlist, deterministic transitive ES-module graph and hashes, exact-main/Verify gates, fresh `READY_FOR_REPOSITORY_INFRASTRUCTURE_STAGING` admission, no-retry reconciliation for ambiguous shell/version mutations, and postflight proof that production D1 logical state plus collector attempt/generation/revision counts remain unchanged. Full repository tests and deterministic production builds remain required before any live execution approval.

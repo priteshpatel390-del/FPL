@@ -1,5 +1,23 @@
 # API-Football Collector — Inactive Worker Version / Production D1 Binding Staging Proposal
 
+## Repository implementation candidate — 21 September 2026
+
+Pritesh has approved **repository implementation only** of this design. The candidate is on a separate branch and adds:
+
+- `.github/workflows/api-football-collector-inactive-version-staging.yml`;
+- `workers/api-football-collector/inactive-version-staging.mjs`;
+- `workers/api-football-collector/inactive-version-postflight.mjs`;
+- permanent staging and postflight tests.
+
+The implementation does **not** dispatch the workflow or make a Cloudflare/provider request.
+
+The current first-party Cloudflare contracts were rechecked on 21 September 2026. The explicit Worker-object create remains a Beta API and still exposes the pre-Version `subdomain.enabled` / `subdomain.previews_enabled` controls. The stable Workers Scripts Version Upload endpoint remains non-deploying and is deliberately preferred over the newer Beta Version-create surface that can also deploy.
+
+Repository investigation also refined the upload identity: the actual transitive graph rooted at `workers/api-football-collector/collector.mjs` is exactly **19 repository-owned ES modules**, including shared Decision Intelligence modules. The implementation preserves those source bytes and repository-relative module names rather than mechanically copying DATA-S2B's flat module layout. Every module, the graph and Version metadata are hash-bound to the exact approved repository SHA and later read back with module bytes for independent verification.
+
+The live shell create / inactive Version upload is still a separate future explicit owner approval after merge, exact-main verification and a fresh `READY_FOR_REPOSITORY_INFRASTRUCTURE_STAGING` admission.
+
+
 Status: **DESIGN / APPROVAL PROPOSAL ONLY — NO INFRASTRUCTURE MUTATION AUTHORIZED**
 
 Prepared: **21 September 2026**

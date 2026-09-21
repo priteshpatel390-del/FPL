@@ -1,3 +1,7 @@
+## API-Football inactive staging does not change source approval
+
+The dormant collector staging candidate adds no provider, field, retention right or model input. API-Football remains shadow-only. The future inactive Version would contain no `API_FOOTBALL_API_KEY`, make no provider request and retain `EIA_2I5D_ACTIVATION=REPOSITORY_ONLY_BLOCKED`. The explicit production D1 binding is infrastructure connectivity only; it is not approval to collect, persist new provider responses, enable workload ingestion or influence projections/recommendations.
+
 ## Inactive collector staging source boundary
 
 The proposed inactive Worker/D1-binding stage acquires no football data and adds no provider source. It binds code to the already-existing production `teamsheet-data` D1 resource but keeps execution blocked and uncredentialed. Official FPL remains the current-team authority; API-Football remains private-use/shadow-only. No provider request, response, workload fact, model input or UI source is introduced by this infrastructure proposal.

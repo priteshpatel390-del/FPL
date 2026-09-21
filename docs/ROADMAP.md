@@ -1,3 +1,7 @@
+## Current infrastructure checkpoint — inactive collector staging repository candidate
+
+The next deliverable is repository validation/review of the dormant inactive-staging workflow only. After merge and exact-main verification, a fresh read-only admission and a separately explicit owner approval are still required before any live Worker-shell creation or Version upload. Deployment, `API_FOOTBALL_API_KEY` provisioning, runtime enablement, Cron and provider egress remain later independent gates.
+
 ## Immediate API-Football gate — inactive Worker Version staging design
 
 Repository/infrastructure staging admission is now live-PASS via run `35634186433` on exact main `d88312eb6263a3ef0e5de1be3e79b647a797b830`. Current approved work is documentation/design only for the next mutation-capable stage: create an inert non-routable collector Worker shell and upload one inactive Version with explicit production D1 binding, `REPOSITORY_ONLY_BLOCKED`, no secret, no Cron and no Deployment. Next approval after this docs/design PR is repository implementation only; live execution remains a later separate gate.
