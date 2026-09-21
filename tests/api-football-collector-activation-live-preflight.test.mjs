@@ -43,15 +43,16 @@ function json(result,status=200){
   return new Response(JSON.stringify({success:status===200,result}),{status,headers:{'content-type':'application/json'}});
 }
 function absent(){return new Response('',{status:404});}
-function d1Rows({attempts=0,generations=0,fixtureRevisions=0,rowsWritten=0,completedAt=officialRun.completed_at,historicalAuthorityDigest=createHash('sha256').update('historical-authority').digest('hex'),historicalAuthorityFetchedAt='2026-09-20T12:00:00.000Z',canonicalTeamIds=officialTeams.map(row=>row.subject_entity_id).sort()}={}){
+function d1Rows({attempts=0,generations=0,fixtureRevisions=0,rowsWritten=0,completedAt=officialRun.completed_at,historicalAuthorityDigest=null,historicalAuthorityFetchedAt='2026-09-20T12:00:00.000Z',canonicalTeamIds=officialTeams.map(row=>row.subject_entity_id).sort()}={}){
   const run={...officialRun,completed_at:completedAt};
   const currentAuthority=buildAuthority([run],officialTeams);
+  const persistedAuthorityDigest=historicalAuthorityDigest??createHash('sha256').update(currentAuthority.digest).digest('hex');
   return {
     ledger:migrations.map(([version,name])=>({version,name})),
     foreignKeys:[],
     officialRun:[run],
     officialTeams,
-    mappingHead:[{fpl_season:'2026-27',state:'COMMITTED',mapping_count:20,official_fpl_authority_digest:historicalAuthorityDigest,official_fpl_authority_fetched_at:historicalAuthorityFetchedAt}],
+    mappingHead:[{fpl_season:'2026-27',state:'COMMITTED',mapping_count:20,official_fpl_authority_digest:persistedAuthorityDigest,official_fpl_authority_fetched_at:historicalAuthorityFetchedAt}],
     mappingMembers:[{member_count:20,distinct_provider_ids:20,distinct_fpl_ids:20,canonical_fpl_team_ids:canonicalTeamIds.join('|')}],
     runtime:[{provider:'api-football',collection_enabled:0,credential_state:'UNPROVISIONED',in_flight_attempt_id:null,in_flight_lease_expires_at:null}],
     attempts:[{total:attempts,attempt2_count:0,reserved_count:0}],
