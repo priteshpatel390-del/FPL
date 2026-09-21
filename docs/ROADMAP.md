@@ -1,3 +1,7 @@
+## Immediate API-Football gate — activation read-only production admission
+
+PR #278 is merged and exact-main verified at `9be781456b9781d89352a4f085d61a0d2e1a0782` with 2,294/2,294 passing. Current approved work is repository preparation for one manual activation-specific read-only preflight only. After review/merge, the already-approved attended observation may establish `READY_FOR_REPOSITORY_INFRASTRUCTURE_STAGING`. It cannot upload/deploy the collector, provision/read the provider key, mutate runtime, enable Cron or call API-Football. Any inactive Version upload/binding preparation remains the next separate mutation gate after evidence review.
+
 ## Immediate API-Football gate — dormant activation foundation review
 
 Repository-only collector activation foundation is current candidate. Next step after review is merge and exact-main verification only. Live activation preflight, production binding/secret/runtime mutation, attended five-request acceptance, and subsequent disable/reconciliation each require separate explicit owner gate. Model/product/UI use remains later and requires validation and ablation.
