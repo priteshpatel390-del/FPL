@@ -1,3 +1,7 @@
+## Inactive collector staging source boundary
+
+The proposed inactive Worker/D1-binding stage acquires no football data and adds no provider source. It binds code to the already-existing production `teamsheet-data` D1 resource but keeps execution blocked and uncredentialed. Official FPL remains the current-team authority; API-Football remains private-use/shadow-only. No provider request, response, workload fact, model input or UI source is introduced by this infrastructure proposal.
+
 ## API-Football activation preflight source boundary
 
 The collector activation preflight acquires no new football data and makes zero API-Football requests. It observes only existing normalized production D1 authority/mapping/runtime state plus Cloudflare infrastructure metadata under the current read-only steward credential. Official FPL remains the Premier League identity authority, API-Football remains private-use/shadow-only, and a repository-stage PASS does not admit provider evidence to any model or product path.
