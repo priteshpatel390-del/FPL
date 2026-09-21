@@ -19,7 +19,7 @@ concurrency:
 
 jobs:
   repository-gate:
-    if: ${{ github.event_name == 'workflow_dispatch' && github.run_attempt == 1 }}
+    if: github.event_name == 'workflow_dispatch' && github.run_attempt == 1
     runs-on: ubuntu-latest
     outputs:
       approved_sha: ${{ steps.identity.outputs.approved_sha }}
@@ -83,7 +83,9 @@ jobs:
         run: node workers/data-platform/migration6/preflight.mjs
 
   schema:
-    needs: [repository-gate, schema-preflight]
+    needs:
+      - repository-gate
+      - schema-preflight
     environment:
       name: data-s2-production-collection
     runs-on: ubuntu-latest
@@ -116,8 +118,10 @@ jobs:
           retention-days: 7
 
   schema-postflight:
-    needs: [repository-gate, schema]
-    if: ${{ always() }}
+    needs:
+      - repository-gate
+      - schema
+    if: always()
     environment:
       name: data-steward-readonly
     runs-on: ubuntu-latest
@@ -138,7 +142,9 @@ jobs:
         run: node workers/data-platform/migration6/preflight.mjs
 
   mapping-preflight:
-    needs: [repository-gate, schema-postflight]
+    needs:
+      - repository-gate
+      - schema-postflight
     environment:
       name: data-steward-readonly
     runs-on: ubuntu-latest
@@ -160,7 +166,9 @@ jobs:
         run: node workers/data-platform/migration6/preflight.mjs
 
   private-mapping:
-    needs: [repository-gate, mapping-preflight]
+    needs:
+      - repository-gate
+      - mapping-preflight
     environment:
       name: data-s2-production-collection
     runs-on: ubuntu-latest
@@ -206,8 +214,10 @@ jobs:
           retention-days: 7
 
   mapping-postflight:
-    needs: [repository-gate, private-mapping]
-    if: ${{ always() }}
+    needs:
+      - repository-gate
+      - private-mapping
+    if: always()
     environment:
       name: data-steward-readonly
     runs-on: ubuntu-latest
