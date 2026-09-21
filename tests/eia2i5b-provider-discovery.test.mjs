@@ -648,7 +648,7 @@ test('API-Football discovery stays isolated from production, live config and mig
     'eia-2i5e-api-football-qualification.yml',
     'api-football-team-universe-qualification.yml',
     'api-football-owner-mapping-qualification.yml',
-    'api-football-live-storage-preflight.yml',
+    'api-football-live-storage-preflight.yml',\n    'api-football-collector-activation-preflight.yml',
     'api-football-migration-0004.yml',
     'api-football-migration-0005.yml',
     'api-football-migration-0006-readonly-preflight.yml',
@@ -691,6 +691,15 @@ test('API-Football discovery stays isolated from production, live config and mig
       assert.match(source,/live-storage-preflight\.mjs/);
       assert.match(source,/github\.run_attempt == 1/);
       assert.doesNotMatch(source,/secrets\.API_FOOTBALL_API_KEY|x-apisports-key|v3\.football\.api-sports\.io|wrangler\s+(?:deploy|secret)|collection_enabled\s*=\s*1|schedule:/i);
+      continue;
+    }
+    if(file==='api-football-collector-activation-preflight.yml'){
+      assert.match(source,/name: data-steward-readonly/);
+      assert.match(source,/DATA_STEWARD_CLOUDFLARE_READ_TOKEN/);
+      assert.match(source,/activation-live-preflight\.mjs/);
+      assert.match(source,/github\.run_attempt == 1/);
+      assert.match(source,/Tests and deterministic build/);
+      assert.doesNotMatch(source,/secrets\.API_FOOTBALL_API_KEY|API_FOOTBALL_OWNER_CROSSWALK_JSON|DEPLOY_TOKEN|WORKER_UPLOAD_TOKEN|x-apisports-key|v3\.football\.api-sports\.io|wrangler\s+(?:deploy|secret)|collection_enabled\s*=\s*1|schedule:/i);
       continue;
     }
     if(file==='api-football-mapping-0006-recovery.yml'||file==='api-football-mapping-0006-persistence.yml'){
