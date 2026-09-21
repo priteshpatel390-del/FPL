@@ -110,9 +110,11 @@ export function resolveRelativeModule(sourcePath,specifier){
 
 export function buildUploadGraph(readFile=file=>fs.readFileSync(path.join(root,file),'utf8')){
   const queue=[ENTRY_SOURCE_PATH],sources=new Map();
+  const reviewedSet=new Set(REVIEWED_MODULE_PATHS);
   while(queue.length){
     const current=queue.shift();
     if(sources.has(current))continue;
+    if(!reviewedSet.has(current))throw new Error('collector_staging_unreviewed_module');
     let source;try{source=readFile(current);}catch{throw new Error('collector_staging_unresolved_module');}
     sources.set(current,source);
     for(const specifier of staticImportSpecifiers(source)){

@@ -105,7 +105,7 @@ test('graph resolver fails closed on unresolved or unreviewed transitive imports
   };
   assert.throws(()=>buildUploadGraph(unresolved),/unresolved_module/);
   const unreviewed=file=>file==='workers/api-football-collector/collector.mjs'?"import './extra.mjs';":'';
-  assert.throws(()=>buildUploadGraph(unreviewed),/module_allowlist_drift|unresolved_module/);
+  assert.throws(()=>buildUploadGraph(unreviewed),/unreviewed_module/);
 });
 
 test('module and metadata hashes deterministically bind every uploaded byte to the exact approved SHA',()=>{
