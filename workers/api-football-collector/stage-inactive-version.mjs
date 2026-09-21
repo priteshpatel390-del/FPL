@@ -41,4 +41,102 @@ export const REVIEWED_MODULE_PATHS=Object.freeze([
 
 const API_BASE='https://api.cloudflare.com/client/v4';
 const CONFIG_KEYS=Object.freeze(['$schema','name','main','compatibility_date','workers_dev','preview_urls','observability','vars','triggers','d1_databases']);
-const STATIC_SPECIFIER=/\
+const STATIC_SPECIFIER=/\b(?:import|export)\s+(?:[^'";]*?\sfrom\s*)?['"]([^'"]+)['"]/g;
+const DYNAMIC_IMPORT=/\bimport\s*\(/;
+const SAFE_MODULE_NAME=/^[A-Za-z0-9_.\/-]+$/;
+const HEX40=/^[0-9a-f]{40}$/;
+const HEX64=/^[0-9a-f]{64}$/;
+const UUID=/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+
+const sha256=value=>createHash('sha256').update(value).digest('hex');
+const exactKeys=(value,expected,code)=>{
+  if(!value||typeof value!=='object'||Array.isArray(value))throw new Error(code);
+  if(JSON.stringify(Object.keys(value).sort())!==JSON.stringify([...expected].sort()))throw new Error(code);
+  return value;
+};
+const canonicalModuleName=repoPath=>repoPath===ENTRY_PATH?ENTRY_MODULE:`modules/${repoPath}`;
+const fail=code=>{throw new Error(code);};
+
+export function parseAndValidateConfig(text){
+  let config;try{config=JSON.parse(text);}catch{fail('collector_staging_config_json_invalid');}
+  exactKeys(config,CONFIG_KEYS,'collector_staging_config_top_level_drift');
+  if(config.$schema!=='node_modules/wrangler/config-schema.json'||config.name!==WORKER_NAME||config.main!==ENTRY_MODULE||
+    config.compatibility_date!==EXPECTED_COMPATIBILITY_DATE||config.workers_dev!==false||config.preview_urls!==false)fail('collector_staging_config_identity_drift');
+  exactKeys(config.observability,['enabled'],'collector_staging_observability_drift');
+  if(config.observability.enabled!==true)fail('collector_staging_observability_drift');
+  exactKeys(config.vars,Object.keys(EXPECTED_PLAIN_TEXT_VARS),'collector_staging_vars_drift');
+  if(Object.entries(EXPECTED_PLAIN_TEXT_VARS).some(([key,value])=>String(config.vars[key])!==String(value)))fail('collector_staging_vars_drift');
+  exactKeys(config.triggers,['crons'],'collector_staging_triggers_drift');
+  if(!Array.isArray(config.triggers.crons)||config.triggers.crons.length!==0)fail('collector_staging_triggers_drift');
+  if(!Array.isArray(config.d1_databases)||config.d1_databases.length!==1)fail('collector_staging_d1_config_drift');
+  const d1=exactKeys(config.d1_databases[0],['binding','database_name','database_id','migrations_dir'],'collector_staging_d1_config_drift');
+  if(d1.binding!==EXPECTED_BINDING_NAME||d1.database_name!==EXPECTED_DATABASE_NAME||d1.database_id!=='00000000-0000-0000-0000-000000000000'||d1.migrations_dir!=='../data-platform/migrations')fail('collector_staging_d1_config_drift');
+  return config;
+}
+
+export function moduleSpecifiers(source){
+  if(typeof source!=='string'||!source.trim())fail('collector_staging_module_missing');
+  if(DYNAMIC_IMPORT.test(source))fail('collector_staging_dynamic_import_forbidden');
+  const specifiers=[];STATIC_SPECIFIER.lastIndex=0;let match;
+  while((match=STATIC_SPECIFIER.exec(source)))specifiers.push(match[1]);
+  return Object.freeze(specifiers);
+}
+
+export function resolveModuleGraph({readFile=repoPath=>fs.readFileSync(repoPath,'utf8')}={}){
+  const reviewed=new Set(REVIEWED_MODULE_PATHS),seen=new Set(),sources=new Map(),queue=[ENTRY_PATH];
+  while(queue.length){
+    const repoPath=queue.shift();
+    if(seen.has(repoPath))continue;
+    if(!reviewed.has(repoPath))fail('collector_staging_unreviewed_module');
+    let source;try{source=readFile(repoPath);}catch{fail('collector_staging_module_missing');}
+    const specifiers=moduleSpecifiers(source);
+    for(const specifier of specifiers){
+      if(!specifier.startsWith('./')&&!specifier.startsWith('../'))fail('collector_staging_external_module_dependency');
+      if(/^(?:https?:|npm:|node:)/i.test(specifier)||specifier.includes('node_modules/'))fail('collector_staging_external_module_dependency');
+      const resolved=path.posix.normalize(path.posix.join(path.posix.dirname(repoPath),specifier));
+      if(resolved.startsWith('../')||path.posix.isAbsolute(resolved)||!resolved.endsWith('.mjs'))fail('collector_staging_unresolved_import');
+      if(!reviewed.has(resolved))fail('collector_staging_unreviewed_module');
+      queue.push(resolved);
+    }
+    seen.add(repoPath);sources.set(repoPath,source);
+  }
+  const actual=[...seen].sort(),expected=[...REVIEWED_MODULE_PATHS].sort();
+  if(JSON.stringify(actual)!==JSON.stringify(expected))fail('collector_staging_reviewed_graph_not_exact');
+  return new Map(actual.map(repoPath=>[repoPath,sources.get(repoPath)]));
+}
+
+function rewriteModule(repoPath,source){
+  STATIC_SPECIFIER.lastIndex=0;
+  const rewritten=source.replace(STATIC_SPECIFIER,(whole,specifier)=>{
+    if(!specifier.startsWith('./')&&!specifier.startsWith('../'))fail('collector_staging_external_module_dependency');
+    const resolved=path.posix.normalize(path.posix.join(path.posix.dirname(repoPath),specifier));
+    const target=canonicalModuleName(resolved);
+    const from=path.posix.dirname(canonicalModuleName(repoPath));
+    let relative=path.posix.relative(from,target);if(!relative.startsWith('.'))relative=`./${relative}`;
+    return whole.replace(specifier,relative);
+  });
+  if(DYNAMIC_IMPORT.test(rewritten))fail('collector_staging_dynamic_import_forbidden');
+  return rewritten;
+}
+
+export function buildUploadModules(sources){
+  if(!(sources instanceof Map))fail('collector_staging_module_graph_invalid');
+  const modules=new Map();
+  for(const repoPath of REVIEWED_MODULE_PATHS){
+  const source=sources.get(repoPath);if(typeof source!=='string')fail('collector_staging_module_graph_invalid');
+    const name=canonicalModuleName(repoPath);if(!SAFE_MODULE_NAME.test(name)||name.includes('../'))fail('collector_staging_upload_module_name_invalid');
+    modules.set(name,rewriteModule(repoPath,source));
+  }
+  if(!modules.has(ENTRY_MODULE)||modules.size!==REVIEWED_MODULE_PATHS.length)fail('collector_staging_module_graph_invalid');
+  return modules;
+}
+
+export function buildWorkerShellBody(){
+  return Object.freeze({name:WORKER_NAME,observability:Object.freeze({enabled:true}),subdomain:Object.freeze({enabled:false,previews_enabled:false})});
+}
+
+export function buildVersionMetadata(approvedSha){
+  if(typeof approvedSha!=='string'||!HEX40.test(approvedSha))fail('collector_staging_approved_sha_invalid');
+  return {
+    main_module:ENTRY_MODULE,
+    compatibility_date:EXPECTED_COMPATIBILITY_DATE
