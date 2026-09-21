@@ -1377,3 +1377,7 @@ E2C-A adds inert, fail-closed disposable-D1 experiment plans, an identity-bound 
 ## DATA-S2B E2C-B repository-only preparation
 
 E2C-B hardens the disposable live boundary with mandatory production-account separation, exact returned-value affinity/storage semantics, missing-versus-zero bounded provider metadata, sanitized evidence and a manual exact-main/exact-Verify protected workflow that rejects reruns and never cleans up. No live action occurred; preparation, execution, acceptance and manual cleanup remain separate owner gates. See [E2C-B implementation record](../workers/data-platform/DATA-S2B-E2C-B-DISPOSABLE-LIVE-EXPERIMENT-PREPARATION.md).
+
+## API-Football collector activation — current staging checkpoint
+
+Current work is the repository-only inactive-Version staging implementation. Completion requires focused tests, full `./run-tests.sh`, deterministic production builds, canonical-doc updates and a draft PR. After merge and exact-main verification, **live staging execution remains a separate owner approval gate**. Deployment, API-key provisioning, runtime enablement, Cron and provider egress remain later checkpoints and must not be pulled forward.
