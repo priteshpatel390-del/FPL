@@ -652,6 +652,7 @@ test('API-Football discovery stays isolated from production, live config and mig
     'api-football-migration-0004.yml',
     'api-football-migration-0005.yml',
     'api-football-migration-0006-readonly-preflight.yml',
+    'api-football-mapping-0006-recovery.yml',
     'api-football-migration-0006.yml'
   ]);
   const workflowFiles=fs.readdirSync('.github/workflows');
