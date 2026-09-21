@@ -1,3 +1,7 @@
+## API-Football collector repository/infrastructure staging admitted
+
+Owner-attended corrected read-only run `35634186433` on exact main `d88312eb6263a3ef0e5de1be3e79b647a797b830` returned `READY_FOR_REPOSITORY_INFRASTRUCTURE_STAGING` with artifact `10655278906` / SHA-256 `5da299cc5b0bec4064ad7d839e40e05e2b2ad9dde41f7eed785534dfa9bb501b`. The next approved work is documentation/design only for an inert collector Worker shell and one inactive D1-bound Version while preserving `REPOSITORY_ONLY_BLOCKED`, zero secrets, zero Cron, zero Deployment and zero provider egress. Implementation and execution are separate future gates. See [inactive collector staging proposal](API-FOOTBALL-COLLECTOR-INACTIVE-VERSION-STAGING.md).
+
 ## API-Football activation mapping-provenance remediation
 
 Read-only activation run `35631979158` safely stopped on exact main `c4b67cd1709f4c14d53c79896468fa07c632e70a` because preflight v2 required the committed mapping's historical authority-provenance hash to equal the latest Official FPL authority digest. Migration 0006 intentionally stores snapshot-bound immutable provenance, so that equality is not a valid currentness test. The approved repository remediation validates the historical provenance format/timestamp independently and proves currentness by exact equality between the committed mapping's 20 canonical FPL team IDs and the latest fresh authority's exact-20 team set. No production state is changed; a fresh live read-only preflight remains separately owner-gated after merge and exact-main verification.

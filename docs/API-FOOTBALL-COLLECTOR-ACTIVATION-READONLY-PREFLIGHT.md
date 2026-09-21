@@ -22,6 +22,23 @@ The corrected v3 contract therefore keeps both protections but separates their p
 
 Run `35631979158` is consumed and must not be rerun. A fresh read-only dispatch after this remediation is merged and exact-main verified remains a separate owner gate.
 
+## Accepted corrected live result
+
+Corrected owner-attended run `35634186433`, attempt 1, executed on exact protected main `d88312eb6263a3ef0e5de1be3e79b647a797b830` and completed **SUCCESS** with:
+
+`READY_FOR_REPOSITORY_INFRASTRUCTURE_STAGING`
+
+Accepted artifact:
+
+- artifact: `10655278906`
+- SHA-256: `5da299cc5b0bec4064ad7d839e40e05e2b2ad9dde41f7eed785534dfa9bb501b`
+
+The run proved exact migrations 0001–0006, zero FK violations, fresh exact-20 Official FPL authority, committed 20/20 mapping cardinality, exact current canonical-team coverage, valid historical mapping provenance, disabled collection, credential `UNPROVISIONED`, no active lease, zero request attempts/generations/fixture revisions, absent collector Worker/Cron/API-key binding, zero model/UI imports and 38,703 D1 rows read. Production mutations, API-Football requests and secret-value reads were all zero.
+
+The earlier STOP run `35631979158` remains consumed and must never be rerun.
+
+This PASS closes repository/infrastructure-staging admission only. It does not authorize Worker creation, Version upload, D1 binding, Deployment, secret provisioning, runtime enablement, Cron or provider egress. The next design record is [API-Football Collector — Inactive Worker Version / Production D1 Binding Staging Proposal](API-FOOTBALL-COLLECTOR-INACTIVE-VERSION-STAGING.md).
+
 ## Exact admission target
 
 The new workflow may return only the activation foundation's existing repository-stage classification:
