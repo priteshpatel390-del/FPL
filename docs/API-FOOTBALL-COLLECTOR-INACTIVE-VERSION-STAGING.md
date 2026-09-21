@@ -1,8 +1,36 @@
 # API-Football Collector — Inactive Worker Version / Production D1 Binding Staging Proposal
 
-Status: **REPOSITORY IMPLEMENTATION CANDIDATE — LIVE INFRASTRUCTURE MUTATION NOT AUTHORIZED**
+Status: **LIVE INACTIVE STAGING COMPLETE — ZERO DEPLOYMENTS / ZERO PROVIDER EGRESS**
 
 Prepared: **21 September 2026**
+
+## Live closeout — 21 September 2026
+
+Owner-attended workflow run `35645387203`, attempt 1, completed successfully on exact `main` `302dc21cc4b821ac8b224d176765a29c0724a244`.
+
+- fresh admission: `READY_FOR_REPOSITORY_INFRASTRUCTURE_STAGING`
+- Worker shell: definite success
+- inactive Version upload: definite success
+- candidate Version: `e49ac8f2-4289-46bc-9f0b-87a20cd7be62`
+- workers.dev: disabled
+- Preview URLs: disabled
+- Deployment count: **0**
+- Cron / routes / custom domains: **0 / 0 / 0**
+- secret bindings: **0**
+- activation: `REPOSITORY_ONLY_BLOCKED`
+- D1 mutations: **0**
+- API-Football requests: **0**
+- final read-only D1 rows read: **38,703**, rows written 0
+- request attempts / generations / fixture revisions: **0 / 0 / 0**
+
+Artifacts:
+- admission `10660381729`, SHA-256 `e53fe027c5c0a059c917c0a1d405672a39da06847cf7c4e579b61bd6068f4864`
+- staging `10659703499`, SHA-256 `199aa79fd363c6d4396d970e7a7db5915e695247be59de62d0052c9a7dfa9cf2`
+- closeout `10659194310`, SHA-256 `6549d1950a2144041d330089c52dbdab034179e6b865102a587cc6c29ed53324`
+
+The generic activation reader historically emitted `inventory.deployed=true` whenever the Worker/script endpoints existed. That label did not inspect or prove a Deployment and became misleading once this intentionally inactive Worker existed. The repository closeout changes the report contract to `workerPresent` plus a separate `deploymentCount`.
+
+No Deployment, provider credential, runtime enablement, Cron, API-Football request, workload ingestion or model/product use is authorized by this closeout.
 
 ## Outcome of the prerequisite gate
 
