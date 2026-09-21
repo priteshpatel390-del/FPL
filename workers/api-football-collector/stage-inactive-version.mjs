@@ -323,6 +323,8 @@ export function validateReadOnlyCloseoutReport(report){
     report.mapping?.distinctProviderIds!==20||report.mapping?.distinctFplIds!==20||report.mapping?.canonicalCoverageMatches!==true||
     report.mapping?.historicalAuthorityProvenancePresent!==true)fail('collector_staging_closeout_foundation_drift');
   if(report.runtime?.collectionEnabled!==0||report.runtime?.credentialState!=='UNPROVISIONED'||report.runtime?.activeLease!==false)fail('collector_staging_closeout_runtime_drift');
+  if(report.inventory?.workerPresent!==true||report.inventory?.deploymentCount!==0||report.inventory?.cronCount!==0||
+    report.inventory?.secretBindingPresent!==false)fail('collector_staging_closeout_inventory_drift');
   if(report.priorState?.requestAttempts!==0||report.priorState?.generations!==0||report.priorState?.fixtureRevisions!==0||
     report.priorState?.attempt2Count!==0||report.priorState?.reservedAttemptCount!==0||report.priorState?.stagingGenerationCount!==0)fail('collector_staging_closeout_history_drift');
   if(report.modelUiImportCount!==0||report.evidence?.productionMutations!==0||report.evidence?.apiFootballRequests!==0||report.evidence?.secretValuesRead!==0)fail('collector_staging_closeout_isolation_drift');
