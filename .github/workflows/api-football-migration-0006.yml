@@ -62,7 +62,6 @@ jobs:
     needs: repository-gate
     environment:
       name: data-steward-readonly
-      deployment: false
     runs-on: ubuntu-latest
     env:
       APPROVED_SHA: ${{ needs.repository-gate.outputs.approved_sha }}
@@ -118,9 +117,9 @@ jobs:
 
   schema-postflight:
     needs: [repository-gate, schema]
+    if: always() && needs.repository-gate.result == 'success' && needs.schema.result != 'skipped'
     environment:
       name: data-steward-readonly
-      deployment: false
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09
@@ -142,7 +141,6 @@ jobs:
     needs: [repository-gate, schema-postflight]
     environment:
       name: data-steward-readonly
-      deployment: false
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09
@@ -209,9 +207,9 @@ jobs:
 
   mapping-postflight:
     needs: [repository-gate, private-mapping]
+    if: always() && needs.repository-gate.result == 'success' && needs.private-mapping.result != 'skipped'
     environment:
       name: data-steward-readonly
-      deployment: false
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09
