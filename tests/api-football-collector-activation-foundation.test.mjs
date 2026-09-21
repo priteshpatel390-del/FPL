@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
 import test from 'node:test';
+import {DatabaseSync} from 'node:sqlite';
 import {
   classifyCollectorActivationPreflight,COLLECTOR_ACTIVATION_PREFLIGHT_VERSION,COLLECTOR_ATTENDED_STAGE_READY,
   COLLECTOR_PREFLIGHT_ATTENDED_STAGE,COLLECTOR_PREFLIGHT_REPOSITORY_STAGE,COLLECTOR_REPOSITORY_STAGE_READY
@@ -48,7 +49,20 @@ class DeterministicD1{
   prepare(sql){const row=statement(sql);row.first=async()=>{
     if(sql==='SELECT * FROM api_football_runtime_state WHERE provider=?')return {...this.runtime};
     if(sql.startsWith('SELECT g.generation_id,g.state')){const generation=this.generations.get(row.args[0]),run=this.runs.get(generation?.ingestion_run_id);return generation?{...generation,fpl_season:'2026-27',provider_season:2026,source_revision_id:'api-football:eia-2i5a:1',official_fpl_authority_digest:authority.digest,official_fpl_authority_run_id:authority.runId,run_status:run?.status,run_source_revision_id:'api-football:eia-2i5a:1'}:null;}
-    if(sql.startsWith('SELECT attempt_id,attempt_number'))return this.attempts.get(row.args[0])||null;
+    if(sql.startsWith('SELECT a.attempt_id')){
+      const attempt=this.attempts.get(row.args[0])||{};
+      return {
+        attempt_id:attempt.attempt_id??null,attempt_number:attempt.attempt_number??null,outcome:attempt.outcome??null,
+        lease_expires_at:attempt.lease_expires_at??null,completed_at:attempt.completed_at??null,
+        runtime_provider:this.runtime.provider,runtime_collection_enabled:this.runtime.collection_enabled,
+        runtime_credential_state:this.runtime.credential_state,runtime_quota_state:this.runtime.quota_state,
+        runtime_quota_utc_day:this.runtime.quota_utc_day,runtime_daily_attempt_count:this.runtime.daily_attempt_count,
+        runtime_in_flight_attempt_id:this.runtime.in_flight_attempt_id,runtime_in_flight_lease_expires_at:this.runtime.in_flight_lease_expires_at,
+        runtime_earliest_next_request_at:this.runtime.earliest_next_request_at,runtime_observed_daily_limit:this.runtime.observed_daily_limit??null,
+        runtime_observed_daily_remaining:this.runtime.observed_daily_remaining??null,runtime_observed_minute_limit:this.runtime.observed_minute_limit??null,
+        runtime_observed_minute_remaining:this.runtime.observed_minute_remaining??null,runtime_quota_observed_at:this.runtime.quota_observed_at??null
+      };
+    }
     return null;
   };return row;}
   async batch(statements){
@@ -106,6 +120,13 @@ test('planner-only scheduled mode reads planner storage but never dependency fac
   assert.equal(result.reason,'provider_execution_not_approved');assert.deepEqual({plannerReads,factoryCalls,keyReads},{plannerReads:1,factoryCalls:0,keyReads:0});
 });
 
+test('attended runtime kill switch blocks before any staging mutation',async()=>{
+  const db=new DeterministicD1();db.runtime.collection_enabled=0;
+  const run=await runConcrete({db});
+  assert.equal(run.result.reason,'collection_disabled');assert.equal(run.fetches(),0);
+  assert.equal(db.runs.size,0);assert.equal(db.generations.size,0);assert.equal(db.attempts.size,0);assert.equal(db.batches.length,0);
+});
+
 for(const [name,change,reason] of [
   ['wrong echoed league',request=>({league:'999'}),'response_parameters_mismatch'],['wrong season',request=>({season:2025}),'response_parameters_mismatch'],
   ['paging greater than one',request=>({paging:{current:1,total:2}}),'pagination_unsupported'],['malformed fixture identity',request=>({invalid:{teams:{home:{id:0},away:{id:501}}}}),'fixture_identity_invalid']
@@ -123,10 +144,17 @@ test('known fixture validation requires approved competition and returns durable
   assert.equal(JSON.stringify(result).includes('"teams"'),false);assert.equal(JSON.stringify(result).includes('"league"'),false);assert.equal(JSON.stringify(result).includes('winner'),false);
 });
 
+test('provider errors must be empty for discovery and known-fixture payloads',()=>{
+  const discoveryRequest=requests()[0],discovery=payload(discoveryRequest);discovery.errors=['provider warning'];
+  assert.equal(validateDiscoveryPayload(discovery,discoveryRequest,{fetchedAt:NOW,teamMappings:mappings}).reason,'provider_schema_invalid');
+  const known=knownPayload();known.errors={rate:'provider warning'};
+  assert.equal(validateKnownFixturePayload(known,knownRequest(),{fetchedAt:NOW,teamMappings:mappings}).reason,'provider_schema_invalid');
+});
+
 test('generation ceiling and concrete D1 exposure are pinned to bulk implementation',()=>{
   assert.equal(API_FOOTBALL_MAX_DISCOVERY_GENERATION_ROWS,2500);assert.equal(enforceGenerationCeiling(2499,1).ok,true);assert.equal(enforceGenerationCeiling(2500,1).reason,'generation_row_ceiling_exceeded');
   assert.equal(DISCOVERY_PERSISTENCE_CHUNK_ROWS,1250);assert.equal(DISCOVERY_MAX_CHUNK_JSON_BYTES,1_500_000);assert.equal(DISCOVERY_MAX_FIXTURE_STATEMENTS,18);
-  assert.equal(DISCOVERY_MAX_MUTATION_STATEMENTS,43);assert.equal(DISCOVERY_MAX_D1_STATEMENTS,49);assert.equal(DISCOVERY_MAX_FIXTURE_ROWS_WRITTEN,7500);assert.equal(DISCOVERY_MAX_CONTROL_ROWS_WRITTEN,25);assert.equal(DISCOVERY_MAX_D1_ROWS_WRITTEN,7525);
+  assert.equal(DISCOVERY_MAX_MUTATION_STATEMENTS,43);assert.equal(DISCOVERY_MAX_D1_STATEMENTS,50);assert.equal(DISCOVERY_MAX_FIXTURE_ROWS_WRITTEN,7500);assert.equal(DISCOVERY_MAX_CONTROL_ROWS_WRITTEN,25);assert.equal(DISCOVERY_MAX_D1_ROWS_WRITTEN,7525);
 });
 
 test('prior attempts remain first-attempt-only and conservative',()=>{
@@ -138,12 +166,12 @@ test('prior attempts remain first-attempt-only and conservative',()=>{
 test('actual D1 composition stages once, reserves attempt 1 five times, persists, completes and advances one head',async()=>{
   const {result,db,fetches}=await runConcrete({rows:500});assert.equal(result.ok,true);assert.equal(fetches(),5);assert.equal(db.generations.size,1);assert.equal([...db.generations.values()][0].state,'COMMITTED');assert.equal(db.head,result.generationId);
   assert.equal(db.attempts.size,5);assert.equal([...db.attempts.values()].every(row=>row.attempt_number===1&&row.outcome==='SUCCEEDED'),true);assert.equal(db.memberships.size,2500);
-  assert.deepEqual(result.operations,{statements:46,mutationStatements:40,rowsWritten:7525,batches:17});
+  assert.deepEqual(result.operations,{statements:47,mutationStatements:40,rowsWritten:7525,batches:17});
 });
 
 test('worst admitted response fragmentation reaches but never exceeds pinned D1 exposure',async()=>{
   const {result,db}=await runConcrete({rows:[1,1,1,497,2000]});assert.equal(result.ok,true);assert.equal(db.memberships.size,2500);
-  assert.deepEqual(result.operations,{statements:49,mutationStatements:43,rowsWritten:7525,batches:18});
+  assert.deepEqual(result.operations,{statements:50,mutationStatements:43,rowsWritten:7525,batches:18});
 });
 
 test('concrete D1 adapter reuses unchanged revisions and appends immutable superseding changes',async()=>{
@@ -178,5 +206,50 @@ function preflightEvidence(stage){const attended=stage===COLLECTOR_PREFLIGHT_ATT
 test('activation preflight has closed repository and attended acceptance stages',()=>{
   assert.equal(classifyCollectorActivationPreflight(preflightEvidence(COLLECTOR_PREFLIGHT_REPOSITORY_STAGE),{now:NOW}).classification,COLLECTOR_REPOSITORY_STAGE_READY);
   assert.equal(classifyCollectorActivationPreflight(preflightEvidence(COLLECTOR_PREFLIGHT_ATTENDED_STAGE),{now:NOW}).classification,COLLECTOR_ATTENDED_STAGE_READY);
-  for(const mutate of [e=>e.inventory.cronCount=1,e=>e.runtime.collectionEnabled=1,e=>e.inventory.secretBindingPresent=false,e=>e.priorState.reservedAttemptCount=1,e=>e.modelUiImportCount=1]){const evidence=preflightEvidence(COLLECTOR_PREFLIGHT_ATTENDED_STAGE);mutate(evidence);assert.match(classifyCollectorActivationPreflight(evidence,{now:NOW}).classification,/^STOP_ATTENDED_ACCEPTANCE_/);}
+  for(const mutate of [e=>e.inventory.cronCount=1,e=>e.runtime.collectionEnabled=1,e=>e.inventory.secretBindingPresent=false,e=>e.priorState.reservedAttemptCount=1,e=>e.counts.requestAttempts=1,e=>e.counts.generations=1,e=>e.counts.fixtureRevisions=1,e=>e.modelUiImportCount=1]){const evidence=preflightEvidence(COLLECTOR_PREFLIGHT_ATTENDED_STAGE);mutate(evidence);assert.match(classifyCollectorActivationPreflight(evidence,{now:NOW}).classification,/^STOP_ATTENDED_ACCEPTANCE_/);}
+});
+
+
+class SqliteD1Statement{
+  constructor(database,sql){this.database=database;this.sql=sql;this.args=[];}
+  bind(...args){this.args=args;return this;}
+  async first(){return this.database.prepare(this.sql).get(...this.args)??null;}
+  async all(){return {results:this.database.prepare(this.sql).all(...this.args)};}
+  async run(){const info=this.database.prepare(this.sql).run(...this.args);return {success:true,meta:{changes:Number(info.changes)}};}
+  runSync(){const info=this.database.prepare(this.sql).run(...this.args);return {success:true,meta:{changes:Number(info.changes)}};}
+}
+class SqliteD1{
+  constructor(database){this.database=database;}
+  prepare(sql){return new SqliteD1Statement(this.database,sql);}
+  async batch(statements){
+    this.database.exec('BEGIN IMMEDIATE');
+    try{const results=statements.map(statement=>statement.runSync());this.database.exec('COMMIT');return results;}
+    catch(error){this.database.exec('ROLLBACK');throw error;}
+  }
+}
+
+test('concrete collector persistence SQL executes against migrations 0001-0006 in real SQLite',async()=>{
+  const database=new DatabaseSync(':memory:');
+  try{
+    database.exec('PRAGMA foreign_keys=ON');
+    for(const migration of [
+      '0001_shadow_data_foundation.sql','0002_official_fpl_structured_history.sql','0003_production_query_plan_indexes.sql',
+      '0004_api_football_shadow_identity.sql','0005_api_football_shadow_runtime.sql','0006_api_football_mapping_qualification.sql'
+    ])database.exec(fs.readFileSync(path.join(root,'workers/data-platform/migrations',migration),'utf8'));
+    database.exec(`UPDATE api_football_runtime_state SET collection_enabled=1,credential_state='AVAILABLE',quota_state='KNOWN',
+      quota_utc_day='2026-09-21',daily_attempt_count=0,in_flight_attempt_id=NULL,in_flight_lease_expires_at=NULL,
+      earliest_next_request_at=NULL WHERE provider='api-football'`);
+    const db=new SqliteD1(database),repository=createD1CollectorRepository(db,{authority});
+    const transport=async request=>({ok:true,payload:payload(request),completion:{ok:true,outcome:'SUCCEEDED',timeout:0,quotaState:'KNOWN',quota:{dailyLimit:7500,dailyRemaining:7499,minuteLimit:300,minuteRemaining:299}},fetchedAt:NOW});
+    const validate=(body,request,fetchedAt)=>validateProviderPayload(body,request,{fetchedAt,teamMappings:mappings});
+    const result=await runOneShotDiscoveryGeneration({requests:requests(),repository,transport,validate,now:NOW,clock:clock(NOW),sleep:async()=>{}});
+    assert.equal(result.ok,true);assert.equal(result.operations.statements<=50,true);
+    const generation=database.prepare("SELECT state,competition_count,fixture_count FROM api_football_discovery_generations WHERE generation_id=?").get(result.generationId);
+    assert.deepEqual({...generation},{state:'COMMITTED',competition_count:5,fixture_count:5});
+    assert.equal(database.prepare('SELECT COUNT(*) count FROM provider_fixture_identities').get().count,5);
+    assert.equal(database.prepare('SELECT COUNT(*) count FROM api_football_fixture_revisions').get().count,5);
+    assert.equal(database.prepare('SELECT COUNT(*) count FROM api_football_generation_fixtures WHERE generation_id=?').get(result.generationId).count,5);
+    assert.equal(database.prepare("SELECT generation_id FROM api_football_discovery_heads WHERE fpl_season='2026-27'").get().generation_id,result.generationId);
+    assert.equal(database.prepare('SELECT COUNT(*) count FROM pragma_foreign_key_check').get().count,0);
+  }finally{database.close();}
 });
