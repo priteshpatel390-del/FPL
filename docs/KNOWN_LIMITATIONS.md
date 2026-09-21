@@ -1,7 +1,8 @@
 ## Collector activation read-only preflight limitations
 
-- Repository tests prove the new bounded read-only contract, not current Cloudflare state.
-- No activation-specific live preflight has yet run.
+- Live run `35631979158` proved the read-only production observation path itself but stopped on a repository false-negative mapping-provenance comparison; it is consumed and must not be rerun.
+- This remediation is repository-only until merged and exact-main verified; no corrected live classification exists yet.
+- Historical mapping provenance remains snapshot-bound and is not proof of present-day team membership by itself; the corrected contract separately proves exact current canonical-team coverage against fresh Official FPL authority.
 - A future PASS may establish only repository/infrastructure-staging readiness; it does not validate inactive Version upload, deployment, production binding, secret provisioning, runtime enablement, Cron or provider egress.
 - The live observation depends on the existing `data-steward-readonly` environment remaining correctly scoped and available; repository code cannot prove its current credential contents before dispatch.
 
