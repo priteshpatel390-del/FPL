@@ -118,7 +118,6 @@ jobs:
 
   schema-postflight:
     needs: [repository-gate, schema]
-    if: ${{ always() && needs.repository-gate.result == 'success' && needs.schema.result != 'skipped' }}
     environment:
       name: data-steward-readonly
       deployment: false
@@ -210,7 +209,6 @@ jobs:
 
   mapping-postflight:
     needs: [repository-gate, private-mapping]
-    if: ${{ always() && needs.repository-gate.result == 'success' && needs.private-mapping.result != 'skipped' }}
     environment:
       name: data-steward-readonly
       deployment: false
