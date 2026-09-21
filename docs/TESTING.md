@@ -1,3 +1,7 @@
+## Collector activation mapping-provenance regression coverage
+
+Activation-preflight tests now reproduce the live false negative from run `35631979158`: a committed mapping with valid historical authority provenance is accepted even when that provenance hash differs from the latest authority digest, provided all 20 canonical FPL team IDs exactly match the current fresh authority. Separate regressions prove a replaced/missing canonical team still fails closed and malformed historical provenance still fails closed. The live reader continues to emit only sanitized booleans for canonical coverage/provenance presence; no provider IDs, mapping pairs or authority hashes are retained.
+
 ## Collector activation live-preflight coverage
 
 `tests/api-football-collector-activation-live-preflight.test.mjs` pins the ten-statement read-only SQL registry, production-account fingerprint fail-before-fetch, exact post-0006 repository-stage PASS shape, current 20/20 mapping and Official FPL authority binding, collector-absence requirement, stale-authority refusal, nonzero D1 `rows_written` refusal, production model/UI isolation and the manual exact-main protected-workflow contract. Tests use synthetic Cloudflare/D1 responses only; they perform no live request, production mutation or API-Football request.
