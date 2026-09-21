@@ -121,7 +121,6 @@ jobs:
     needs:
       - repository-gate
       - schema
-    if: always()
     environment:
       name: data-steward-readonly
     runs-on: ubuntu-latest
@@ -217,7 +216,6 @@ jobs:
     needs:
       - repository-gate
       - private-mapping
-    if: always()
     environment:
       name: data-steward-readonly
     runs-on: ubuntu-latest
