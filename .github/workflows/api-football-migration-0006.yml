@@ -19,7 +19,6 @@ concurrency:
 
 jobs:
   repository-gate:
-    if: github.event_name == 'workflow_dispatch' && github.run_attempt == 1
     runs-on: ubuntu-latest
     outputs:
       approved_sha: ${{ steps.identity.outputs.approved_sha }}
