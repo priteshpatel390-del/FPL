@@ -43,7 +43,7 @@ function json(result,status=200){
   return new Response(JSON.stringify({success:status===200,result}),{status,headers:{'content-type':'application/json'}});
 }
 function absent(){return new Response('',{status:404});}
-function d1Rows({attempts=0,generations=0,fixtureRevisions=0,rowsWritten=0,completedAt=officialRun.completed_at}={}){
+function d1Rows({attempts=0,generations=0,fixtureRevisions=0,rowsWritten=0,completedAt=officialRun.completed_at,historicalAuthorityDigest=createHash('sha256').update('historical-authority').digest('hex'),historicalAuthorityFetchedAt='2026-09-20T12:00:00.000Z',canonicalTeamIds=officialTeams.map(row=>row.subject_entity_id).sort()}={}){
   const run={...officialRun,completed_at:completedAt};
   const currentAuthority=buildAuthority([run],officialTeams);
   return {
@@ -51,8 +51,8 @@ function d1Rows({attempts=0,generations=0,fixtureRevisions=0,rowsWritten=0,compl
     foreignKeys:[],
     officialRun:[run],
     officialTeams,
-    mappingHead:[{fpl_season:'2026-27',state:'COMMITTED',mapping_count:20,official_fpl_authority_digest:currentAuthority.digest}],
-    mappingMembers:[{member_count:20,distinct_provider_ids:20,distinct_fpl_ids:20}],
+    mappingHead:[{fpl_season:'2026-27',state:'COMMITTED',mapping_count:20,official_fpl_authority_digest:historicalAuthorityDigest,official_fpl_authority_fetched_at:historicalAuthorityFetchedAt}],
+    mappingMembers:[{member_count:20,distinct_provider_ids:20,distinct_fpl_ids:20,canonical_fpl_team_ids:canonicalTeamIds.join('|')}],
     runtime:[{provider:'api-football',collection_enabled:0,credential_state:'UNPROVISIONED',in_flight_attempt_id:null,in_flight_lease_expires_at:null}],
     attempts:[{total:attempts,attempt2_count:0,reserved_count:0}],
     generations:[{total:generations,staging_count:0}],
@@ -117,7 +117,7 @@ test('repository infrastructure staging admission passes only from exact post-00
   assert.equal(report.migrationCount,6);
   assert.equal(report.foreignKeyViolations,0);
   assert.equal(report.officialFplAuthority.teamCount,20);
-  assert.deepEqual(report.mapping,{state:'COMMITTED',mappingCount:20,memberCount:20,distinctProviderIds:20,distinctFplIds:20});
+  assert.deepEqual(report.mapping,{state:'COMMITTED',mappingCount:20,memberCount:20,distinctProviderIds:20,distinctFplIds:20,canonicalCoverageMatches:true,historicalAuthorityProvenancePresent:true});
   assert.deepEqual(report.priorState,{requestAttempts:0,generations:0,fixtureRevisions:0,attempt2Count:0,reservedAttemptCount:0,stagingGenerationCount:0});
   assert.equal(report.inventory.deployed,false);
   assert.equal(report.inventory.cronCount,0);
@@ -129,6 +129,30 @@ test('repository infrastructure staging admission passes only from exact post-00
   assert.equal(report.evidence.productionMutations,0);
   assert.equal(report.evidence.apiFootballRequests,0);
   assert.equal(report.evidence.secretValuesRead,0);
+});
+
+test('fresh authority may differ from immutable historical mapping provenance when canonical coverage is unchanged',async()=>{
+  const state=d1Rows();
+  assert.notEqual(state.mappingHead[0].official_fpl_authority_digest,buildAuthority(state.officialRun,state.officialTeams).digest);
+  const report=await runApiFootballActivationLivePreflight({env:env(),fetchImpl:fakeFetch({state}),now:()=>NOW});
+  assert.equal(report.ok,true);
+  assert.equal(report.classification,COLLECTOR_REPOSITORY_STAGE_READY);
+  assert.equal(report.mapping.canonicalCoverageMatches,true);
+  assert.equal(report.mapping.historicalAuthorityProvenancePresent,true);
+});
+
+test('canonical mapping coverage drift still fails closed',async()=>{
+  const ids=officialTeams.map(row=>row.subject_entity_id).sort();
+  ids[ids.length-1]='2026-27:fpl:team:99';
+  const report=await runApiFootballActivationLivePreflight({env:env(),fetchImpl:fakeFetch({state:d1Rows({canonicalTeamIds:ids})}),now:()=>NOW});
+  assert.equal(report.ok,false);
+  assert.equal(report.reason,'qualified_mapping_unavailable');
+});
+
+test('invalid historical mapping provenance still fails closed',async()=>{
+  const report=await runApiFootballActivationLivePreflight({env:env(),fetchImpl:fakeFetch({state:d1Rows({historicalAuthorityDigest:'invalid'})}),now:()=>NOW});
+  assert.equal(report.ok,false);
+  assert.equal(report.reason,'mapping_provenance_invalid');
 });
 
 test('existing live collector blocks repository-infrastructure staging admission',async()=>{
