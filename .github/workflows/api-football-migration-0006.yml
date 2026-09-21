@@ -111,7 +111,10 @@ jobs:
           node workers/data-platform/run-migration-0006.mjs
       - if: ${{ always() }}
         uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f
-        with: {name: api-football-migration-0006-schema, path: "${{ runner.temp }}/migration-0006-schema.json", retention-days: 7}
+        with:
+          name: api-football-migration-0006-schema
+          path: ${{ runner.temp }}/migration-0006-schema.json
+          retention-days: 7
 
   schema-postflight:
     needs: [repository-gate, schema]
@@ -191,14 +194,18 @@ jobs:
           unzip -p "$RUNNER_TEMP/provider.zip" api-football-team-universe-qualification-result.json > "$API_FOOTBALL_PROVIDER_UNIVERSE_PATH"
           rm "$RUNNER_TEMP/provider.zip"
       - name: Persist private mapping with parameterized D1 bindings
-        env: {API_FOOTBALL_OWNER_CROSSWALK_JSON: "${{ secrets.API_FOOTBALL_OWNER_CROSSWALK_JSON }}"}
+        env:
+          API_FOOTBALL_OWNER_CROSSWALK_JSON: ${{ secrets.API_FOOTBALL_OWNER_CROSSWALK_JSON }}
         run: |
           set -euo pipefail
           test "$(git ls-remote https://github.com/priteshpatel390-del/FPL.git refs/heads/main | cut -f1)" = "$APPROVED_SHA"
           node workers/data-platform/run-migration-0006.mjs
       - if: ${{ always() }}
         uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f
-        with: {name: api-football-private-mapping-0006, path: "${{ runner.temp }}/mapping-0006.json", retention-days: 7}
+        with:
+          name: api-football-private-mapping-0006
+          path: ${{ runner.temp }}/mapping-0006.json
+          retention-days: 7
 
   mapping-postflight:
     needs: [repository-gate, private-mapping]
