@@ -1,3 +1,12 @@
+## Collector inactive-version staging design limitations
+
+- The live preflight now proves repository/infrastructure-staging readiness, not that any Worker upload path has been implemented or exercised.
+- The collector Worker does not yet exist in Cloudflare.
+- The proposed shell-create primitive uses Cloudflare's current Workers Beta API because it exposes pre-Version subdomain/preview controls; repository implementation must re-verify that API before merge and fail closed on response drift.
+- Workers Scripts Write is broader than the two proposed mutations, so a dedicated protected environment plus executable request allowlisting are mandatory.
+- Binding an inactive Version to production D1 is still a meaningful infrastructure mutation even with no Deployment, Cron, secret or provider execution.
+- No claim is made that the future candidate is safe to deploy until separate read-only closeout after upload and separate owner approval.
+
 ## Collector activation read-only preflight limitations
 
 - Live run `35631979158` proved the read-only production observation path itself but stopped on a repository false-negative mapping-provenance comparison; it is consumed and must not be rerun.
