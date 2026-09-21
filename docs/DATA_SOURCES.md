@@ -1,3 +1,7 @@
+## API-Football migration 0006 live / mapping recovery status
+
+Migration 0006 is live after attended production run `35572526804`; private 20/20 mapping persistence is not. Schema postflight and final read-only postflight reported `READY_FOR_PRIVATE_MAPPING_PERSISTENCE`. The mapping attempt stopped before mutation because its protected writer environment supplied no usable owner-crosswalk secret. The recovery candidate is mapping-only, makes zero API-Football requests, and does not activate collection or any model/product path. A later production attempt requires the qualified crosswalk to be configured in the protected writer environment and separate owner approval.
+
 ## API-Football private mapping persistence boundary
 
 The migration-0006 production candidate adds no provider acquisition. Future mapping persistence may consume the protected owner crosswalk in memory, the pinned sanitized provider-universe evidence and exactly two fresh Official FPL requests. It permits zero API-Football requests and retains no raw provider/Official FPL body or crosswalk artifact. No production persistence occurred in this checkpoint.
