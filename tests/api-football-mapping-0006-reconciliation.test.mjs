@@ -49,6 +49,10 @@ test('complete reconciliation accepts dynamic integrity hashes only through stru
   assert.doesNotMatch(source,/ad89373375a6deed3763126225894e89d380b11ffd32ffbb5b6a1213331a4a02/);
   assert.match(RECONCILIATION_QUERIES.qualifications,/qualification_id='api-football:team-mapping:'\|\|fpl_season\|\|':'\|\|persistence_integrity_hash/);
   assert.match(RECONCILIATION_QUERIES.qualifications,/persistence_integrity_hash NOT GLOB/);
+  assert.match(RECONCILIATION_QUERIES.qualifications,/approval_qualification_integrity_hash='[0-9a-f]{64}'/);
+  assert.match(RECONCILIATION_QUERIES.qualifications,/length\(current_qualification_integrity_hash\)=64/);
+  assert.match(RECONCILIATION_QUERIES.qualifications,/current_qualification_integrity_hash NOT GLOB/);
+  assert.doesNotMatch(RECONCILIATION_QUERIES.qualifications,/current_qualification_integrity_hash='[0-9a-f]{64}'/);
   assert.match(RECONCILIATION_QUERIES.members,/receipt_integrity_hash NOT GLOB/);
 });
 
