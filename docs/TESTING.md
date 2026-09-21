@@ -1,3 +1,7 @@
+## Proposed inactive collector staging verification
+
+Future repository implementation must permanently test exact Worker-shell identity, workers.dev/Preview URLs disabled before first Version creation, exact first-Version D1/plain-text binding set, absence of secret bindings, blocked activation, zero Deployment/Cron paths, closed mutation request allowlist, deterministic transitive ES-module graph and hashes, exact-main/Verify gates, fresh `READY_FOR_REPOSITORY_INFRASTRUCTURE_STAGING` admission, no-retry reconciliation for ambiguous shell/version mutations, and postflight proof that production D1 logical state plus collector attempt/generation/revision counts remain unchanged. Full repository tests and deterministic production builds remain required before any live execution approval.
+
 ## Collector activation mapping-provenance regression coverage
 
 Activation-preflight tests now reproduce the live false negative from run `35631979158`: a committed mapping with valid historical authority provenance is accepted even when that provenance hash differs from the latest authority digest, provided all 20 canonical FPL team IDs exactly match the current fresh authority. Separate regressions prove a replaced/missing canonical team still fails closed and malformed historical provenance still fails closed. The live reader continues to emit only sanitized booleans for canonical coverage/provenance presence; no provider IDs, mapping pairs or authority hashes are retained.
