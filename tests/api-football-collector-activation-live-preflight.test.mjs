@@ -21,7 +21,7 @@ import {
   COLLECTOR_PREFLIGHT_REPOSITORY_STAGE,
   COLLECTOR_REPOSITORY_STAGE_READY
 } from '../workers/api-football-collector/activation-preflight.mjs';
-import {buildReviewedAttendedIdentity,expectedAttendedBindings,ORIGINAL_BLOCKED_VERSION_ID} from '../workers/api-football-collector/attended-version.mjs';
+import {ATTENDED_VERSION_APPROVED_SHA,buildReviewedAttendedIdentity,expectedAttendedBindings,ORIGINAL_BLOCKED_VERSION_ID} from '../workers/api-football-collector/attended-version.mjs';
 import {buildUploadModules,resolveModuleGraph} from '../workers/api-football-collector/stage-inactive-version.mjs';
 
 const root=path.resolve(import.meta.dirname,'..');
@@ -29,7 +29,7 @@ const ACCOUNT='synthetic-production-account';
 const TOKEN='synthetic-read-token';
 const NOW='2026-09-21T16:00:00.000Z';
 const fingerprint=createHash('sha256').update(ACCOUNT).digest('hex');
-const APPROVED_SHA='a'.repeat(40),ATTENDED_VERSION_ID='11111111-1111-4111-8111-111111111111';
+const APPROVED_SHA=ATTENDED_VERSION_APPROVED_SHA,ATTENDED_VERSION_ID='11111111-1111-4111-8111-111111111111';
 const migrations=[
   [1,'shadow_data_foundation'],[2,'official_fpl_structured_history'],[3,'production_query_plan_indexes'],
   [4,'api_football_shadow_identity'],[5,'api_football_shadow_runtime'],[6,'api_football_mapping_qualification']
@@ -121,7 +121,7 @@ function env(){
     DATA_STEWARD_CLOUDFLARE_READ_TOKEN:TOKEN
   };
 }
-function attendedEnv(){return {...env(),APPROVED_SHA,API_FOOTBALL_PREFLIGHT_STAGE:'ATTENDED_ACCEPTANCE',API_FOOTBALL_ATTENDED_VERSION_ID:ATTENDED_VERSION_ID};}
+function attendedEnv(){return {...env(),APPROVED_SHA,API_FOOTBALL_PREFLIGHT_STAGE:'ATTENDED_ACCEPTANCE',API_FOOTBALL_ATTENDED_VERSION_ID:ATTENDED_VERSION_ID,API_FOOTBALL_ATTENDED_VERSION_APPROVED_SHA:ATTENDED_VERSION_APPROVED_SHA};}
 
 test('activation live preflight SQL registry is read-only and closed',()=>{
   assert.equal(Object.keys(ACTIVATION_QUERIES).length,11);
@@ -188,6 +188,17 @@ test('attended Version provenance override fails closed when malformed',async()=
   });
   assert.equal(report.ok,false);
   assert.equal(report.reason,'activation_attended_version_approved_sha_invalid');
+});
+
+test('attended Version provenance fails closed when a different well-formed SHA is supplied',async()=>{
+  const report=await runApiFootballActivationLivePreflight({
+    env:{...attendedEnv(),API_FOOTBALL_ATTENDED_VERSION_APPROVED_SHA:'c'.repeat(40)},
+    fetchImpl:fakeFetch({collectorPresent:true,attended:true}),now:()=>NOW
+  });
+  assert.equal(report.ok,false);
+  assert.equal(report.versionApprovedSha,'c'.repeat(40));
+  assert.equal(report.inventory.versionIdentityExact,false);
+  assert.equal(report.reason,'attended_stage_inventory_unexpected');
 });
 
 for(const [name,mutate] of [
