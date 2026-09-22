@@ -4,7 +4,7 @@ import {pathToFileURL} from 'node:url';
 import {EXPECTED_D1_DATABASE_ID} from '../data-platform/phase4b/live-contract.mjs';
 import {ATTENDED_ACCEPTANCE_PATH} from './collector.mjs';
 import {ATTENDED_CONTROL_MAX_D1_CALLS,ATTENDED_CONTROL_MAX_D1_STATEMENTS,ATTENDED_CONTROL_MAX_ROWS_CHANGED,runAttendedAcceptance} from './attended-acceptance.mjs';
-import {deriveVersionPreviewUrl} from './attended-version.mjs';
+import {ATTENDED_VERSION_APPROVED_SHA,deriveVersionPreviewUrl} from './attended-version.mjs';
 import {runApiFootballActivationLivePreflight} from './activation-live-preflight.mjs';
 
 const API='https://api.cloudflare.com/client/v4';
@@ -26,9 +26,9 @@ export function assertAttendedCloudflareRequestAllowed(method,requestPath,{accou
   fail('attended_cloudflare_endpoint_forbidden');
 }
 
-export function validateAdmissionHandoff(report,{approvedSha,versionId,accountFingerprint}={}){
-  if(!HEX40.test(String(approvedSha||''))||!HEX64.test(String(accountFingerprint||'')))fail('attended_handoff_identity_invalid');
-  if(report?.ok!==true||report.approvedSha!==approvedSha||!Number.isFinite(Date.parse(report.observedAt))||report.observedAt!==report.evidence?.observedAt||
+export function validateAdmissionHandoff(report,{approvedSha,versionId,versionApprovedSha,accountFingerprint}={}){
+  if(!HEX40.test(String(approvedSha||''))||versionApprovedSha!==ATTENDED_VERSION_APPROVED_SHA||!HEX64.test(String(accountFingerprint||'')))fail('attended_handoff_identity_invalid');
+  if(report?.ok!==true||report.approvedSha!==approvedSha||report.versionApprovedSha!==versionApprovedSha||!Number.isFinite(Date.parse(report.observedAt))||report.observedAt!==report.evidence?.observedAt||
     report.stage!=='ATTENDED_ACCEPTANCE'||report.classification!=='READY_FOR_SEPARATELY_APPROVED_ATTENDED_ACCEPTANCE'||
     report.inventory?.reviewedVersionId!==versionId||report.inventory?.versionIdentityExact!==true||
     report.inventory?.versionInventoryExact!==true||report.accountFingerprint!==accountFingerprint||
@@ -36,10 +36,10 @@ export function validateAdmissionHandoff(report,{approvedSha,versionId,accountFi
   return true;
 }
 
-export function validateCriticalRecheck(report,{approvedSha,versionId,accountFingerprint}={}){
-  if(!HEX40.test(String(approvedSha||''))||!HEX64.test(String(accountFingerprint||'')))fail('attended_critical_identity_invalid');
+export function validateCriticalRecheck(report,{approvedSha,versionId,versionApprovedSha,accountFingerprint}={}){
+  if(!HEX40.test(String(approvedSha||''))||versionApprovedSha!==ATTENDED_VERSION_APPROVED_SHA||!HEX64.test(String(accountFingerprint||'')))fail('attended_critical_identity_invalid');
   const inventory=report?.inventory||{},runtime=report?.runtime||{},prior=report?.priorState||{},mapping=report?.mapping||{};
-  if(report?.ok!==true||report.approvedSha!==approvedSha||report.accountFingerprint!==accountFingerprint||
+  if(report?.ok!==true||report.approvedSha!==approvedSha||report.versionApprovedSha!==versionApprovedSha||report.accountFingerprint!==accountFingerprint||
     report.stage!=='ATTENDED_ACCEPTANCE'||report.classification!=='READY_FOR_SEPARATELY_APPROVED_ATTENDED_ACCEPTANCE'||
     report.migrationCount!==6||report.foreignKeyViolations!==0||report.officialFplAuthority?.valid!==true||report.officialFplAuthority?.teamCount!==20||
     mapping.state!=='COMMITTED'||mapping.mappingCount!==20||mapping.memberCount!==20||mapping.distinctProviderIds!==20||mapping.distinctFplIds!==20||
@@ -60,10 +60,10 @@ export function validateCriticalRecheck(report,{approvedSha,versionId,accountFin
 export async function executeLiveAttendedAcceptance({env=process.env,fetchImpl=globalThis.fetch,criticalRecheck=runApiFootballActivationLivePreflight}={}){
   const account=required(env,'CLOUDFLARE_ACCOUNT_ID'),fingerprint=required(env,'CLOUDFLARE_ACCOUNT_FINGERPRINT');
   const token=required(env,'CLOUDFLARE_ATTENDED_MUTATION_TOKEN'),approvedSha=required(env,'APPROVED_SHA');
-  const versionId=required(env,'API_FOOTBALL_ATTENDED_VERSION_ID'),trigger=required(env,'API_FOOTBALL_ATTENDED_TRIGGER_SECRET');
+  const versionId=required(env,'API_FOOTBALL_ATTENDED_VERSION_ID'),versionApprovedSha=required(env,'API_FOOTBALL_ATTENDED_VERSION_APPROVED_SHA'),trigger=required(env,'API_FOOTBALL_ATTENDED_TRIGGER_SECRET');
   if(!HEX64.test(fingerprint)||digest(account)!==fingerprint)fail('attended_production_account_identity_mismatch');
   const admission=JSON.parse(fs.readFileSync(required(env,'API_FOOTBALL_ATTENDED_ADMISSION_PATH'),'utf8'));
-  validateAdmissionHandoff(admission,{approvedSha,versionId,accountFingerprint:fingerprint});
+  validateAdmissionHandoff(admission,{approvedSha,versionId,versionApprovedSha,accountFingerprint:fingerprint});
 
   const critical=await criticalRecheck({
     env:{
@@ -72,11 +72,12 @@ export async function executeLiveAttendedAcceptance({env=process.env,fetchImpl=g
       DATA_STEWARD_CLOUDFLARE_READ_TOKEN:token,
       API_FOOTBALL_PREFLIGHT_STAGE:'ATTENDED_ACCEPTANCE',
       API_FOOTBALL_ATTENDED_VERSION_ID:versionId,
+      API_FOOTBALL_ATTENDED_VERSION_APPROVED_SHA:versionApprovedSha,
       APPROVED_SHA:approvedSha
     },
     fetchImpl,stage:'ATTENDED_ACCEPTANCE'
   });
-  const previewIdentity=validateCriticalRecheck(critical,{approvedSha,versionId,accountFingerprint:fingerprint});
+  const previewIdentity=validateCriticalRecheck(critical,{approvedSha,versionId,versionApprovedSha,accountFingerprint:fingerprint});
   const previewUrl=deriveVersionPreviewUrl({versionId,previewUrlSuffix:previewIdentity.previewUrlSuffix,accountSubdomain:previewIdentity.accountSubdomain,path:ATTENDED_ACCEPTANCE_PATH});
 
   const headers={Authorization:'Bearer '+token,'content-type':'application/json'};
