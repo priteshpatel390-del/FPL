@@ -1,3 +1,9 @@
+## Attended acceptance immutable-provenance remediation
+
+The live secret-bearing attended Version is immutable: Version `04d79556-3070-429f-9944-b5b53d799842` was created from SHA `69bb84fadbcce94e9fece3ff438d985866cce183`. Acceptance must therefore keep current workflow execution SHA separate from Version provenance. The remediation pins the historical 17-module SHA-256 manifest and exact Version provenance, requires that provenance during initial read-only admission, the last critical pre-mutation recheck and final independent reconciliation, and retains it only as non-secret sanitized evidence. A later current `main` may not lend its annotation or source identity to the existing Version. Wrong or missing provenance fails before Preview enablement, D1 collection enablement or trigger-secret egress. Existing no-retry, two-control-mutation, exact-five-provider-request and secret-value non-disclosure boundaries are unchanged.
+
+Preparation-only `CLOUDFLARE_ATTENDED_VERSION_UPLOAD_TOKEN` and `CLOUDFLARE_ATTENDED_D1_MUTATION_TOKEN` are no longer required by the attended acceptance path after successful preparation/recovery, but revocation/removal is a separate owner-approved external-state cleanup action. `CLOUDFLARE_ATTENDED_MUTATION_TOKEN`, `API_FOOTBALL_API_KEY` and `API_FOOTBALL_ATTENDED_TRIGGER_SECRET` remain required for any separately approved acceptance execution.
+
 ## Attended preparation security boundary
 
 PR #286's acceptance foundation is merged, but no live attended secret action has occurred. The preparation candidate introduces two separate future protected mutation environments: one for an exact inactive Version upload and one for the single D1 credential-state transition. It deliberately does **not** assume the earlier staging upload token is reusable.
