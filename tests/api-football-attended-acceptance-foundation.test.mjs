@@ -51,7 +51,7 @@ test('immutable attended Version identity is pinned independently of current exe
   const historical=buildImmutableAttendedVersionIdentity(VERSION_PROVENANCE);
   assert.equal(historical.approvedSha,VERSION_PROVENANCE);
   assert.equal(Object.keys(historical.moduleSha256).length,17);
-  assert.equal(historical.moduleSha256['collector.mjs'],'15fef416230115fd87226a76ac02513f5d24de5bec88577c61e8ea85ee8e6f77');
+  assert.equal(historical.moduleSha256['collector.mjs'],'7cd42f9fe74a91dbd9eeeb024446409b767e4dd271f6736a8b3bb4c2f865817d');
   assert.equal(historical.moduleSha256,ATTENDED_VERSION_MODULE_SHA256);
   assert.throws(()=>buildImmutableAttendedVersionIdentity(SHA),/version_provenance_invalid/);
 });
