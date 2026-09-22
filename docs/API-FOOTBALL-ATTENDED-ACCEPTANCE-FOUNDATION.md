@@ -1,3 +1,9 @@
+## Protected critical-recheck diagnostic remediation after run 35751021431
+
+Run `35751021431` on exact main `1981871d30315ad31cf5274f3f88529592b36856` passed fresh read-only attended admission and entered the protected execution environment with all required values present. The executor's second full read-only preflight then stopped as `attended_critical_state_drift` before Preview enablement, D1 collection enablement or trigger-secret egress. Independent reconciliation recorded 0 provider attempts, 0 generations, 0 fixture revisions, 0 production mutations and 0 API-Football requests while preserving disabled runtime/Preview and exact Version inventory.
+
+The remediation does not relax that stop. It adds a closed diagnostic suffix derived only from repository-owned preflight reason codes or fixed structural mismatch groups. Unknown text becomes `preflight_failed_unknown`; raw Cloudflare responses/statuses and credential material are never emitted. This provides enough future evidence to distinguish read-capability failures from real state drift without granting any retry or mutation authority.
+
 ## Live admission false-negative discovered before first provider request
 
 Attended run `35748566087` on `ea423c7089a41287683e8d34f6e65175980e8a4c` never entered protected execution. Fresh admission failed only because Preview URL identity attempted to read `preview_url_suffix` from the legacy Script Subdomain response. Independent reconciliation proved the attended Version/two-Version inventory exact, runtime disabled, credential available and request/generation/revision history pristine with zero API-Football requests. The remediation uses one additional bounded read-only modern Get Worker request to prove the exact Preview suffix before any Preview/D1 mutation; all one-shot/no-retry and cleanup boundaries remain unchanged.

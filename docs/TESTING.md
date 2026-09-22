@@ -1,3 +1,7 @@
+## Attended critical-recheck sanitized diagnostic coverage — 22 September 2026
+
+Following zero-egress run `35751021431`, permanent acceptance-foundation tests require the protected executor's final pre-mutation recheck to retain the `attended_critical_state_drift` hard-stop prefix while exposing only a closed diagnostic suffix. Known read failures such as `activation_d1_read_failed` and `activation_attended_inventory_unreadable` map to bounded repository enums; arbitrary/unrecognized reason text maps to `preflight_failed_unknown`. Structural successful-report mismatches are separately classified for Version inventory, Preview identity and runtime/history. Regression coverage also proves the diagnostic stop occurs before Preview/D1 mutation or trigger-secret egress.
+
 ## Attended Preview identity endpoint regression — 22 September 2026
 
 Permanent activation-preflight coverage now models the real Cloudflare endpoint contracts: legacy `GET /workers/scripts/{script}/subdomain` returns only `enabled` and `previews_enabled`, while modern Get Worker metadata supplies `subdomain.preview_url_suffix`. A valid exact worker ID/name plus exact suffix admits the pristine attended state; a wrong modern suffix stops as `attended_stage_inventory_unexpected`. The attended Cloudflare GET budget is explicitly 14; preparation-stage budgets are unchanged. Run `35748566087` provides live evidence that the prior implementation failed closed with zero provider requests and zero production mutations.

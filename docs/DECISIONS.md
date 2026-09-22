@@ -1,3 +1,11 @@
+## Decision — attended critical recheck exposes only closed sanitized diagnostics
+
+**Context:** run `35751021431` passed fresh read-only admission but the mutation-capable executor's second read-only preflight collapsed every possible failure into `attended_critical_state_drift`, leaving no safe way to distinguish unreadable inventory/D1 from an actual invariant mismatch.
+
+**Decision:** retain `attended_critical_state_drift` as the fail-closed prefix and append only a repository-defined diagnostic enum. Known activation-preflight reasons are allowlisted into bounded values; any unrecognized reason becomes `preflight_failed_unknown`. Successful preflight reports are partitioned into fixed structural categories such as foundational state, Version inventory, collector configuration, Preview identity, topology, secret bindings, runtime/history, model isolation and evidence counters.
+
+**Boundary:** diagnostics contain no raw Cloudflare body/status text, credentials, account/database identifiers, provider payloads, secrets or arbitrary remote error text. The diagnostic change does not change acceptance authority, request/mutation budgets, endpoint allowlists, retry semantics or success criteria.
+
 ## 22 September 2026 — prove attended Preview suffix from Get Worker metadata
 
 **Decision:** during `ATTENDED_ACCEPTANCE`, keep the legacy Script Subdomain GET solely for `enabled=false` and `previews_enabled=false`, and obtain `preview_url_suffix` from Cloudflare's modern Get Worker metadata for the exact discovered collector worker ID/name. The read-only Cloudflare ceiling increases from 13 to 14 only for attended acceptance. The exact expected hostname remains `<version-prefix>-teamsheet-api-football-shadow-collector.<account-subdomain>.workers.dev`; no suffix is inferred from an absent legacy field, no mutation is introduced, and a wrong/missing modern suffix fails closed.
