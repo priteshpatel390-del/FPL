@@ -1,3 +1,5 @@
+> **Preparation extension — 22 September 2026:** the repository-only attended preparation candidate adds START, VERSION_READY and CLOSEOUT preflight states around the existing `ATTENDED_ACCEPTANCE` state. These are control-plane admission states only and do not change collector execution, retry, provider, persistence or model behaviour. See [attended preparation foundation](API-FOOTBALL-ATTENDED-PREPARATION-FOUNDATION.md).
+
 ## Attended acceptance remediation amendment
 
 `ATTENDED_ACCEPTANCE` now requires Deployment count zero, exact reviewed module bytes/annotations/bindings, a closed original-blocked plus final-attended Version inventory, trusted account/Worker Preview suffix, both secret names/types, route/domain absence, disabled runtime and pristine history. Ambiguous invocation is failure; two bounded control mutations are separate from the unchanged collector budget; independent read-only closeout never authorizes retry. Repository-stage admission is unchanged. See [attended acceptance foundation](API-FOOTBALL-ATTENDED-ACCEPTANCE-FOUNDATION.md).
