@@ -175,6 +175,7 @@ jobs:
           API_FOOTBALL_ATTENDED_ADMISSION_PATH: ${{ runner.temp }}/attended-admission/attended-admission.json
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           CLOUDFLARE_ACCOUNT_FINGERPRINT: ${{ vars.CLOUDFLARE_ACCOUNT_FINGERPRINT }}
+          CLOUDFLARE_ATTENDED_READ_TOKEN: ${{ secrets.CLOUDFLARE_ATTENDED_READ_TOKEN }}
           CLOUDFLARE_ATTENDED_MUTATION_TOKEN: ${{ secrets.CLOUDFLARE_ATTENDED_MUTATION_TOKEN }}
           EXPECTED_ARTIFACT_SHA256: ${{ needs.fresh-readonly-attended-admission.outputs.artifact_sha256 }}
         run: |
