@@ -728,6 +728,17 @@ test('API-Football discovery stays isolated from production, live config and mig
       assert.doesNotMatch(source,/secrets\.API_FOOTBALL_API_KEY|x-apisports-key|v3\.football\.api-sports\.io|wrangler\s+deploy|\/deployments|^\s{2}schedule:/im);
       continue;
     }
+    if(file==='api-football-attended-preparation-start-readonly.yml'){
+      assert.match(source,/name: data-steward-readonly/);
+      assert.match(source,/DATA_STEWARD_CLOUDFLARE_READ_TOKEN/);
+      assert.match(source,/API_FOOTBALL_PREFLIGHT_STAGE: ATTENDED_PREPARATION_START/);
+      assert.match(source,/activation-live-preflight\.mjs/);
+      assert.match(source,/READY_FOR_ATTENDED_VERSION_PREPARATION/);
+      assert.match(source,/github\.run_attempt == 1/);
+      assert.match(source,/Tests and deterministic build/);
+      assert.doesNotMatch(source,/CLOUDFLARE_ATTENDED_VERSION_UPLOAD_TOKEN|CLOUDFLARE_ATTENDED_D1_MUTATION_TOKEN|secrets\.API_FOOTBALL_API_KEY|API_FOOTBALL_ATTENDED_TRIGGER_SECRET|attended-preparation\.mjs|run-attended-acceptance|attended-one-shot|x-apisports-key|v3\.football\.api-sports\.io|wrangler\s+deploy|\/deployments|^\s{2}(?:schedule|push):/im);
+      continue;
+    }
     if(file==='api-football-attended-preparation.yml'){
       assert.match(source,/name: api-football-attended-preparation-version/);
       assert.match(source,/name: api-football-attended-preparation-credential/);
