@@ -1,3 +1,13 @@
+## Attended preparation security boundary
+
+PR #286's acceptance foundation is merged, but no live attended secret action has occurred. The preparation candidate introduces two separate future protected mutation environments: one for an exact inactive Version upload and one for the single D1 credential-state transition. It deliberately does **not** assume the earlier staging upload token is reusable.
+
+Future Version preparation expects protected `API_FOOTBALL_API_KEY`, `API_FOOTBALL_ATTENDED_TRIGGER_SECRET` and a narrowly scoped `CLOUDFLARE_ATTENDED_VERSION_UPLOAD_TOKEN`. Future credential preparation expects a separately scoped `CLOUDFLARE_ATTENDED_D1_MUTATION_TOKEN`. Secret values are masked, never written to reports/artifacts/summaries, never placed in URLs or query strings, and are retained only long enough to construct the Cloudflare Version upload. Read-back evidence admits secret binding **names/types only**.
+
+Mutation allowlists are closed: Version preparation can submit only the Version-upload endpoint once; credential preparation can submit only the production D1 query endpoint once. Neither helper can mutate Deployment, Preview, Cron, routes/domains or call API-Football. Transport ambiguity never authorizes a second mutation. Independent read-only reconciliation is mandatory.
+
+Outstanding pre-live housekeeping remains the owner-controlled cleanup/revocation of the old `api-football-collector-version-upload` / `CLOUDFLARE_COLLECTOR_WORKER_UPLOAD_TOKEN` credential and its Cloudflare Workers Scripts Write token. Repository work does not revoke it and must not claim it has been removed. See [attended preparation foundation](API-FOOTBALL-ATTENDED-PREPARATION-FOUNDATION.md).
+
 ## Attended collector trigger security
 
 Future attended execution requires a distinct high-entropy trigger secret plus attended activation on an exact module-proven inactive Version. Both secrets are uploaded together only in an ephemeral Version multipart request, remain absent from logs/reports/D1/docs, and read-only preflight sees names/types only. Account fingerprint, closed endpoint allowlist, exact two-Version inventory and trusted Preview hostname proof precede mutation. Checked-in config contains neither secret. See [attended acceptance foundation](API-FOOTBALL-ATTENDED-ACCEPTANCE-FOUNDATION.md).
