@@ -67,7 +67,9 @@ test('final attended Version preparation creates one new inactive Version and am
   let mutations=0,reads=0;const finalId=VERSION;
   const result=await prepareFinalAttendedVersion({accountId:'account',approvedSha:SHA,secrets:{apiKey:'synthetic-api-key',triggerSecret:SECRET},request:async(path,{method,multipart})=>{mutations++;assert.match(path,/\/versions$/);assert.equal(method,'POST');assert.ok(multipart instanceof FormData);return {result:{id:finalId}};},readVersions:async()=>{reads++;return [ORIGINAL_BLOCKED_VERSION_ID,finalId];}});
   assert.equal(result.versionId,finalId);assert.deepEqual({mutations,reads},{mutations:1,reads:1});
-  mutations=0;reads=0;await assert.rejects(()=>prepareFinalAttendedVersion({accountId:'account',approvedSha:SHA,secrets:{apiKey:'synthetic-api-key',triggerSecret:SECRET},request:async()=>{mutations++;throw new MutationAmbiguousError();},readVersions:async()=>{reads++;return [ORIGINAL_BLOCKED_VERSION_ID,finalId];}}),/ambiguous_reconciliation_required_no_retry/);
+  mutations=0;reads=0;const reconciled=await prepareFinalAttendedVersion({accountId:'account',approvedSha:SHA,secrets:{apiKey:'synthetic-api-key',triggerSecret:SECRET},request:async()=>{mutations++;throw new MutationAmbiguousError();},readVersions:async()=>{reads++;return [ORIGINAL_BLOCKED_VERSION_ID,finalId];}});
+  assert.equal(reconciled.versionId,finalId);assert.equal(reconciled.disposition,'reconciled');assert.deepEqual({mutations,reads},{mutations:1,reads:1});
+  mutations=0;reads=0;await assert.rejects(()=>prepareFinalAttendedVersion({accountId:'account',approvedSha:SHA,secrets:{apiKey:'synthetic-api-key',triggerSecret:SECRET},request:async()=>{mutations++;throw new MutationAmbiguousError();},readVersions:async()=>{reads++;return [ORIGINAL_BLOCKED_VERSION_ID,finalId,'22222222-2222-4222-8222-222222222222'];}}),/version_delta_ambiguous_owner_review_required/);
   assert.deepEqual({mutations,reads},{mutations:1,reads:1});
 });
 

@@ -1,6 +1,8 @@
-## Current checkpoint — attended API-Football acceptance foundation remediation
+## Current checkpoint — API-Football attended preparation foundation
 
-PR #286 remains a repository-only draft. Remediation proves exact Version module bytes and closed two-Version inventory, derives the Preview hostname from Cloudflare metadata, fingerprints the production account, closes mutation endpoints, treats ambiguous invocation as failure, separates control/collector D1 budgets and adds independent read-only reconciliation. Checked-in Wrangler remains inert. No live API-Football collector mutation, secret action, Preview toggle, D1 mutation or provider request occurred. The unrelated `teamsheet-fpl-gateway` Git integration did publish its normal PR previews; that is not collector deployment evidence. See [attended acceptance foundation](docs/API-FOOTBALL-ATTENDED-ACCEPTANCE-FOUNDATION.md).
+PR #286 is merged. Its reviewed head `f24d02864e0f1776bda28beb3e969be946bb9d17` entered `main` as merge commit `fda5a45ccd86928f60d91e8e34ded79ff49064da`. Post-merge Verify Teamsheet run `35699898106` and Pages run `35699897564` both succeeded; Verify passed 2,347 / 2,347 tests plus byte-identical production builds, root/deployable equality and exact manifest identity. The attended-acceptance foundation is therefore repository-merged, but **no live attended Version, secret provisioning, production D1 credential transition, Preview toggle or provider request has occurred**.
+
+The current approved checkpoint is repository implementation only of the [attended preparation foundation](docs/API-FOOTBALL-ATTENDED-PREPARATION-FOUNDATION.md): exact singleton-original admission, one no-retry secret-bearing Version submission, independent two-Version proof, one fail-closed `UNPROVISIONED -> AVAILABLE` D1 statement, and independent read-only closeout. Merge alone authorizes no dispatch. Live attended preparation requires another explicit owner approval, and the five-request attended acceptance requires a further separate approval.
 
 ## API-Football inactive collector staging — LIVE CLOSEOUT
 

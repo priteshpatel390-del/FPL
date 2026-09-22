@@ -1,6 +1,8 @@
 ## Current API-Football checkpoint
 
-Attended one-shot acceptance remediation is a repository candidate. Next steps remain separately owner-gated: review/merge, exact-main verification, one final code-plus-secrets Version upload, credential preparation, fresh content/inventory admission, separately approved live execution, independent reconciliation and later cleanup. See [attended acceptance foundation](API-FOOTBALL-ATTENDED-ACCEPTANCE-FOUNDATION.md).
+Attended one-shot acceptance foundation PR #286 is merged and post-merge verified on `fda5a45ccd86928f60d91e8e34ded79ff49064da`. The current checkpoint is the **repository-only attended preparation foundation**: exact singleton-original admission, at most one secret-bearing inactive Version creation, independent two-Version proof, exactly one fail-closed `UNPROVISIONED -> AVAILABLE` D1 statement, and independent read-only closeout. No live preparation is authorized by implementation or merge. See [attended preparation foundation](API-FOOTBALL-ATTENDED-PREPARATION-FOUNDATION.md).
+
+After merge and exact-main verification, the next decision is whether to authorize one attended preparation run. Only a reconciled `READY_FOR_SEPARATELY_APPROVED_ATTENDED_ACCEPTANCE` result can reach the later acceptance gate; the five-request attended acceptance still requires a further separate owner approval. Old staging-token cleanup is a pre-live owner action, not part of this repository checkpoint.
 
 ## Current checkpoint — inactive collector staging complete
 

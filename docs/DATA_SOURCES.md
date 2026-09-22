@@ -1,3 +1,7 @@
+## API-Football attended preparation data boundary
+
+The attended preparation foundation adds no data source and performs **zero API-Football requests**. Official FPL remains the fresh exact-20 authority and the committed 20/20 mapping remains a required admission invariant. Preparation may only prove Worker/Version metadata plus the existing production D1 control state, create one inactive secret-bearing Version under a later owner gate, and transition the runtime credential marker from `UNPROVISIONED` to `AVAILABLE` under a separate later gate. It does not ingest provider payloads, fixture workload, player data or any model input. See [attended preparation foundation](API-FOOTBALL-ATTENDED-PREPARATION-FOUNDATION.md).
+
 ## API-Football attended acceptance boundary
 
 API-Football remains shadow-only. Remediation preserves exact five-competition fixture discovery, request/response ceilings, server-side key handling, no raw-payload persistence and no model/UI path; ambiguous invocation is consumed and never retried. No provider request has been authorized by this repository work. See [attended acceptance foundation](API-FOOTBALL-ATTENDED-ACCEPTANCE-FOUNDATION.md).

@@ -1,3 +1,5 @@
+> **Successor checkpoint — 22 September 2026:** inactive staging remains the accepted live baseline from run `35645387203`. PR #286's attended-acceptance foundation is now merged, and the current repository-only successor is the [attended preparation foundation](API-FOOTBALL-ATTENDED-PREPARATION-FOUNDATION.md). No live secret-bearing Version, D1 credential transition or provider request has occurred. The temporary staging upload credential cleanup/revocation remains an outstanding pre-live owner action.
+
 # API-Football Collector — Inactive Worker Version / Production D1 Binding Staging Proposal
 
 Status: **LIVE INACTIVE STAGING COMPLETE — ZERO DEPLOYMENTS / ZERO PROVIDER EGRESS**

@@ -1,3 +1,9 @@
+## API-Football attended preparation candidate — 22 September 2026
+
+PR #286 is merged on `main` as `fda5a45ccd86928f60d91e8e34ded79ff49064da`; post-merge Verify `35699898106` and Pages `35699897564` succeeded. The attended-acceptance foundation is repository-merged, but no live attended Version/secret/D1/provider action has occurred. Current owner approval covers repository implementation only of exact singleton-original admission, one no-retry attended Version upload primitive, independent two-Version proof, one fail-closed credential-state transition and independent preparation closeout. See [attended preparation foundation](API-FOOTBALL-ATTENDED-PREPARATION-FOUNDATION.md).
+
+Latest accepted live collector evidence remains inactive-staging run `35645387203`; it is historical evidence, not a fresh observation for this checkpoint. Live attended preparation and the later five-request acceptance remain separate owner gates.
+
 ## API-Football attended acceptance candidate — 21 September 2026
 
 Repository-only remediation now requires exact module-byte identity, closed two-Version inventory, trusted Preview-host derivation, production-account fingerprinting, bounded control mutations and independent no-retry reconciliation. Shipped configuration stays inert; live collector execution remains separately owner-gated. Unrelated `teamsheet-fpl-gateway` PR previews are not collector deployment evidence. See [attended acceptance foundation](API-FOOTBALL-ATTENDED-ACCEPTANCE-FOUNDATION.md).

@@ -1,3 +1,11 @@
+## 22 September 2026 — separate attended preparation from attended acceptance
+
+**Decision:** keep preparation as a dormant manual foundation distinct from the already-merged attended-acceptance executor. Preparation may later, only after separate owner approval, create at most one exact secret-bearing inactive Version and submit at most one fail-closed `UNPROVISIONED -> AVAILABLE` D1 statement. It must independently prove the original Version's accepted module bytes before upload, independently prove the exact two-Version inventory before the D1 transition, and independently close out to `READY_FOR_SEPARATELY_APPROVED_ATTENDED_ACCEPTANCE`. Version creation, credential transition and provider acceptance retain separate mutation budgets; no automatic retry crosses an ambiguous mutation.
+
+**Security boundary:** use new narrowly scoped preparation credentials rather than assuming the old staging upload token remains appropriate. Reports contain secret names/types only. Preparation has no Preview, Deployment, Cron/route/domain or provider endpoint. Old staging-token revocation remains a separate pre-live owner action.
+
+**Approval boundary:** repository implementation and merge authorize no live preparation. The future preparation run and the later five-request acceptance each require their own explicit owner approval. See [attended preparation foundation](API-FOOTBALL-ATTENDED-PREPARATION-FOUNDATION.md).
+
 ## Decision — zero-Deployment attended API-Football acceptance
 
 Use one final secret-bearing inactive Version beside the original blocked Version and a temporary Worker-wide Versioned Preview URL; do not create a first Cloudflare Deployment. Require cryptographic module proof, exact two-Version inventory, trusted Preview derivation, fresh disabled-runtime admission, one definite invocation, cleanup and independent reconciliation; never retry automatically. Repository implementation grants no live authority. See [attended acceptance foundation](API-FOOTBALL-ATTENDED-ACCEPTANCE-FOUNDATION.md).
