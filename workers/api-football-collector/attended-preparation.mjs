@@ -17,8 +17,7 @@ import {
   MutationAmbiguousError,
   MutationRejectedError,
   WORKER_NAME,
-  extractVersionIds,
-  mutationPaths
+  extractVersionIds
 } from './stage-inactive-version.mjs';
 import {
   COLLECTOR_ATTENDED_STAGE_READY,
@@ -208,7 +207,7 @@ export async function runCredentialPreparation({env=process.env,fetchImpl=global
   });
   return safe({
     version:ATTENDED_PREPARATION_VERSION,...result,approvedSha,accountFingerprint:fingerprint,attendedVersionId:versionId,
-    providerRequests:0,versionMutations:0,deploymentMutations:0,previewMutations:0,cronRouteDomainMutations:0
+    apiFootballRequests:0,providerRequests:0,versionMutations:0,deploymentMutations:0,previewMutations:0,cronRouteDomainMutations:0
   });
 }
 
