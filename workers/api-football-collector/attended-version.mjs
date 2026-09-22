@@ -30,7 +30,7 @@ export const ORIGINAL_BLOCKED_VERSION_MODULE_SHA256=Object.freeze({
   'modules/workers/api-football-collector/semantic-validation.mjs':'9e9cdc11aea2c2dd63c700c9f7aa5b7de3e1f5a5794e5fb9fcbcdfbcfd1c0328'
 });
 export const ATTENDED_VERSION_MODULE_SHA256=Object.freeze({...ORIGINAL_BLOCKED_VERSION_MODULE_SHA256,
-  'collector.mjs':'15fef416230115fd87226a76ac02513f5d24de5bec88577c61e8ea85ee8e6f77'
+  'collector.mjs':'7cd42f9fe74a91dbd9eeeb024446409b767e4dd271f6736a8b3bb4c2f865817d'
 });
 const UUID=/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const HEX40=/^[0-9a-f]{40}$/;
