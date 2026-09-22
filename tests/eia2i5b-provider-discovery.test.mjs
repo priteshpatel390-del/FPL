@@ -651,6 +651,7 @@ test('API-Football discovery stays isolated from production, live config and mig
     'api-football-live-storage-preflight.yml',
     'api-football-collector-activation-preflight.yml',
     'api-football-collector-attended-acceptance.yml',
+    'api-football-attended-preparation-start-readonly.yml',
     'api-football-attended-preparation.yml',
     'api-football-collector-inactive-version-staging.yml',
     'api-football-migration-0004.yml',
