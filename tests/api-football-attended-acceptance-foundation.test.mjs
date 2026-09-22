@@ -14,7 +14,7 @@ import {
   ATTENDED_VERSION_APPROVED_SHA,ATTENDED_VERSION_MODULE_SHA256,ORIGINAL_BLOCKED_VERSION_ID,buildAttendedVersionUploadForm,buildImmutableAttendedVersionIdentity,buildReviewedAttendedIdentity,deriveVersionPreviewUrl,
   expectedAttendedBindings,prepareFinalAttendedVersion,validateClosedVersionInventory,validateReviewedAttendedVersion
 } from '../workers/api-football-collector/attended-version.mjs';
-import {attendedCloudflarePaths,assertAttendedCloudflareRequestAllowed,executeLiveAttendedAcceptance} from '../workers/api-football-collector/run-attended-acceptance.mjs';
+import {attendedCloudflarePaths,assertAttendedCloudflareRequestAllowed,attendedCriticalRecheckDiagnostic,executeLiveAttendedAcceptance} from '../workers/api-football-collector/run-attended-acceptance.mjs';
 import {MutationAmbiguousError,buildUploadModules,resolveModuleGraph} from '../workers/api-football-collector/stage-inactive-version.mjs';
 import {EXPECTED_D1_DATABASE_ID} from '../workers/data-platform/phase4b/live-contract.mjs';
 
@@ -131,8 +131,19 @@ test('executor fingerprints account and closes mutation endpoint surface before 
 test('executor performs fresh exact critical recheck immediately before any Preview or D1 mutation',async()=>{
   const file='/tmp/attended-admission-critical-drift.json';fs.writeFileSync(file,JSON.stringify(admission()));let networkCalls=0,criticalCalls=0;
   const env={CLOUDFLARE_ACCOUNT_ID:ACCOUNT,CLOUDFLARE_ACCOUNT_FINGERPRINT:FINGERPRINT,CLOUDFLARE_ATTENDED_MUTATION_TOKEN:'token',APPROVED_SHA:SHA,API_FOOTBALL_ATTENDED_VERSION_ID:VERSION,API_FOOTBALL_ATTENDED_VERSION_APPROVED_SHA:VERSION_PROVENANCE,API_FOOTBALL_ATTENDED_TRIGGER_SECRET:SECRET,API_FOOTBALL_ATTENDED_ADMISSION_PATH:file};
-  await assert.rejects(()=>executeLiveAttendedAcceptance({env,fetchImpl:async()=>{networkCalls++;throw new Error('must not mutate');},criticalRecheck:async()=>{criticalCalls++;return criticalAdmission({ok:false,classification:'STOP_ATTENDED_ACCEPTANCE_REVIEW_REQUIRED',reason:'attended_stage_inventory_unexpected',inventory:{versionInventoryExact:false}});}}),/attended_critical_state_drift/);
+  await assert.rejects(()=>executeLiveAttendedAcceptance({env,fetchImpl:async()=>{networkCalls++;throw new Error('must not mutate');},criticalRecheck:async()=>{criticalCalls++;return {ok:false,reason:'activation_attended_inventory_unreadable'};}}),/attended_critical_state_drift__inventory_unreadable/);
   assert.equal(criticalCalls,1);assert.equal(networkCalls,0);fs.unlinkSync(file);
+});
+
+test('critical recheck diagnostics are closed, sanitized and preserve fail-closed categories',()=>{
+  const identity={approvedSha:SHA,versionId:VERSION,versionApprovedSha:VERSION_PROVENANCE,accountFingerprint:FINGERPRINT};
+  assert.equal(attendedCriticalRecheckDiagnostic({ok:false,reason:'activation_d1_read_failed'},identity),'d1_read_failed');
+  assert.equal(attendedCriticalRecheckDiagnostic({ok:false,reason:'activation_attended_worker_identity_unavailable'},identity),'worker_identity_unavailable');
+  assert.equal(attendedCriticalRecheckDiagnostic({ok:false,reason:'cloudflare said token abc123 is forbidden'},identity),'preflight_failed_unknown');
+  assert.equal(attendedCriticalRecheckDiagnostic(criticalAdmission({inventory:{versionInventoryExact:false}}),identity),'version_inventory_mismatch');
+  assert.equal(attendedCriticalRecheckDiagnostic(criticalAdmission({inventory:{previewUrlIdentityExact:false}}),identity),'preview_identity_mismatch');
+  assert.equal(attendedCriticalRecheckDiagnostic(criticalAdmission({runtime:{credentialState:'INVALID'}}),identity),'runtime_history_mismatch');
+  assert.equal(attendedCriticalRecheckDiagnostic(criticalAdmission(),identity),null);
 });
 
 test('executor derives URL from fresh recheck, invokes once, and stays within separate control budget',async()=>{
