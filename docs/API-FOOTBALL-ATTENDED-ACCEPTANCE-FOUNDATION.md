@@ -1,3 +1,5 @@
+> **Current status — 22 September 2026:** PR #286 is merged as `fda5a45ccd86928f60d91e8e34ded79ff49064da`. Post-merge Verify `35699898106` and Pages `35699897564` succeeded. This acceptance foundation is repository-merged, but no live attended Version, secret provisioning, D1 credential transition, Preview toggle or API-Football request has occurred. The next repository checkpoint is the separately gated [attended preparation foundation](API-FOOTBALL-ATTENDED-PREPARATION-FOUNDATION.md).
+
 # API-Football Attended One-Shot Discovery Acceptance Foundation
 
 ## Approval and observed status
