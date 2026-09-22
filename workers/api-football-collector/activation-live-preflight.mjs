@@ -256,8 +256,10 @@ export async function runApiFootballActivationLivePreflight({env=process.env,fet
 
   const selectedVersionId=preparationStartStage?ORIGINAL_BLOCKED_VERSION_ID:liveVersionStage?env.API_FOOTBALL_ATTENDED_VERSION_ID:null;
   const approvedSha=liveVersionStage?env.APPROVED_SHA:null;
+  const versionApprovedSha=liveVersionStage?(env.API_FOOTBALL_ATTENDED_VERSION_APPROVED_SHA||approvedSha):null;
   if(liveVersionStage&&(typeof selectedVersionId!=='string'||!/^[0-9a-f-]{36}$/i.test(selectedVersionId)))return fail('activation_attended_version_identity_invalid');
   if(liveVersionStage&&!/^[0-9a-f]{40}$/.test(String(approvedSha||'')))return fail('activation_attended_approved_sha_invalid');
+  if(liveVersionStage&&!/^[0-9a-f]{40}$/.test(String(versionApprovedSha||'')))return fail('activation_attended_version_approved_sha_invalid');
   const collectorReads={
     settings:await readJson(boundedFetch,workerPath(accountId,EXPECTED_COLLECTOR_WORKER,liveVersionStage?'/versions/'+encodeURIComponent(selectedVersionId):'/settings'),{token}),
     schedules:await readJson(boundedFetch,workerPath(accountId,EXPECTED_COLLECTOR_WORKER,'/schedules'),{token}),
@@ -302,12 +304,12 @@ export async function runApiFootballActivationLivePreflight({env=process.env,fet
     try{
       validateOriginalBlockedVersion({stableVersion:collectorReads.originalStable.result,betaVersion:collectorReads.originalBeta.result});
       originalVersionIdentityExact=true;
-      validateClosedVersionInventory({versionIds,originalStable:collectorReads.originalStable.result,attendedVersionId:reviewedVersionId,attendedStable:collectorReads.settings.result,attendedBeta:collectorReads.attendedBeta.result,identity:buildReviewedAttendedIdentity(approvedSha)});
+      validateClosedVersionInventory({versionIds,originalStable:collectorReads.originalStable.result,attendedVersionId:reviewedVersionId,attendedStable:collectorReads.settings.result,attendedBeta:collectorReads.attendedBeta.result,identity:buildReviewedAttendedIdentity(versionApprovedSha)});
       versionIdentityExact=true;versionInventoryExact=true;
     }catch{}
   }else if(attendedStage){
     const versionIds=(Array.isArray(collectorReads.versions.result?.items)?collectorReads.versions.result.items:Array.isArray(collectorReads.versions.result)?collectorReads.versions.result:[]).map(row=>row?.id).filter(Boolean);
-    try{validateClosedVersionInventory({versionIds,originalStable:collectorReads.originalStable.result,attendedVersionId:reviewedVersionId,attendedStable:collectorReads.settings.result,attendedBeta:collectorReads.attendedBeta.result,identity:buildReviewedAttendedIdentity(approvedSha)});versionIdentityExact=true;versionInventoryExact=true;}catch{}
+    try{validateClosedVersionInventory({versionIds,originalStable:collectorReads.originalStable.result,attendedVersionId:reviewedVersionId,attendedStable:collectorReads.settings.result,attendedBeta:collectorReads.attendedBeta.result,identity:buildReviewedAttendedIdentity(versionApprovedSha)});versionIdentityExact=true;versionInventoryExact=true;}catch{}
   }
   const previewUrlIdentityExact=!attendedStage||collectorReads.subdomain.result?.preview_url_suffix===`-${EXPECTED_COLLECTOR_WORKER}.${collectorReads.accountSubdomain.result?.subdomain}.workers.dev`;
   const inventory=Object.freeze({
@@ -331,7 +333,7 @@ export async function runApiFootballActivationLivePreflight({env=process.env,fet
   return Object.freeze({
     ok:classified.ok===true,
     version:API_FOOTBALL_ACTIVATION_LIVE_PREFLIGHT_VERSION,
-    observedAt:nowIso,approvedSha:approvedSha??null,accountFingerprint,stage,
+    observedAt:nowIso,approvedSha:approvedSha??null,versionApprovedSha:versionApprovedSha??null,accountFingerprint,stage,
     classification:classified.classification,reason:classified.reason??null,
     migrationCount:built.evidence.migrations.length,
     foreignKeyViolations:built.evidence.foreignKeyViolations,
