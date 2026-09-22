@@ -132,7 +132,7 @@ export function deriveVersionPreviewUrl({versionId,previewUrlSuffix,accountSubdo
 
 export function buildAttendedVersionUploadMetadata(approvedSha,{apiKey,triggerSecret}={}){
   const identity=buildReviewedAttendedIdentity(approvedSha);
-  if(typeof apiKey!=='string'||!apiKey||typeof triggerSecret!=='string'||triggerSecret.length<32)fail('collector_attended_secret_material_invalid');
+  if(typeof apiKey!=='string'||!apiKey||typeof triggerSecret!=='string'||triggerSecret.length<32||apiKey===triggerSecret)fail('collector_attended_secret_material_invalid');
   return {
     main_module:ENTRY_MODULE,compatibility_date:EXPECTED_COMPATIBILITY_DATE,
     bindings:expectedAttendedBindings().map(binding=>binding.type==='secret_text'?{...binding,text:binding.name==='API_FOOTBALL_API_KEY'?apiKey:triggerSecret}:{...binding}),
