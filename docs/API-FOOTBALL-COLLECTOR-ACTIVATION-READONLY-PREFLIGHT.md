@@ -1,3 +1,5 @@
+> **Preparation extension — 22 September 2026:** the same bounded read-only live-observation machinery now supports separately classified attended-preparation START, VERSION_READY and CLOSEOUT observations. Preparation stages additionally pin the accepted original Version's creation SHA and 17 module-byte hashes. Repository implementation does not authorize dispatch. See [attended preparation foundation](API-FOOTBALL-ATTENDED-PREPARATION-FOUNDATION.md).
+
 ## Attended-stage remediation
 
 Live preflight selects `ATTENDED_ACCEPTANCE`, exact approved SHA and final Version ID; reads stable metadata plus Beta `include=modules`; hashes every module; validates exact annotations, runtime and six bindings; and admits only the exact inert original plus reviewed final Version. It also proves trusted Preview suffix, zero Deployments/Cron/routes/domains, disabled workers.dev/Preview URLs, exact production D1 and pristine disabled runtime. Repository stage performs exactly five Cloudflare GETs; attended stage exactly thirteen, each under its stage-specific hard ceiling. See [attended acceptance foundation](API-FOOTBALL-ATTENDED-ACCEPTANCE-FOUNDATION.md).
