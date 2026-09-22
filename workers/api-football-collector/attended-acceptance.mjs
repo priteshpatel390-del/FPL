@@ -6,6 +6,8 @@ export const ATTENDED_CONTROL_MAX_D1_CALLS=2;
 export const ATTENDED_CONTROL_MAX_D1_STATEMENTS=2;
 export const ATTENDED_CONTROL_MAX_ROWS_CHANGED=2;
 export const ATTENDED_CREDENTIAL_PREPARATION_MAX_D1_CALLS=1;
+export const ATTENDED_CREDENTIAL_PREPARATION_MAX_D1_STATEMENTS=1;
+export const ATTENDED_CREDENTIAL_PREPARATION_MAX_ROWS_CHANGED=1;
 export const ATTENDED_CREDENTIAL_CLEANUP_MAX_D1_CALLS=1;
 const safe=value=>Object.freeze(value);
 const fail=reason=>safe({ok:false,reason});
@@ -22,7 +24,7 @@ export function credentialLifecycleMutation(action,evidence={}){
   if(evidence.collectionEnabled!==0||evidence.activeLease!==false)return fail('attended_credential_lifecycle_precondition_failed');
   if(action==='MARK_AVAILABLE'){
     if(evidence.versionInventoryExact!==true||evidence.secretBearingVersionPresent!==true)return fail('attended_secret_binding_not_proven');
-    return safe({sql:"UPDATE api_football_runtime_state SET credential_state='AVAILABLE' WHERE provider='api-football' AND collection_enabled=0 AND credential_state='UNPROVISIONED' AND in_flight_attempt_id IS NULL",expectedChanges:1,maxD1Calls:ATTENDED_CREDENTIAL_PREPARATION_MAX_D1_CALLS});
+    return safe({sql:"UPDATE api_football_runtime_state SET credential_state='AVAILABLE' WHERE provider='api-football' AND collection_enabled=0 AND credential_state='UNPROVISIONED' AND in_flight_attempt_id IS NULL",expectedChanges:1,maxD1Calls:ATTENDED_CREDENTIAL_PREPARATION_MAX_D1_CALLS,maxD1Statements:ATTENDED_CREDENTIAL_PREPARATION_MAX_D1_STATEMENTS,maxRowsChanged:ATTENDED_CREDENTIAL_PREPARATION_MAX_ROWS_CHANGED});
   }
   if(action==='RESET_UNPROVISIONED'){
     if(evidence.secretBearingVersionPresent!==false)return fail('attended_secret_removal_not_proven');
