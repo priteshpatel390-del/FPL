@@ -274,5 +274,5 @@ test('dedicated attended preparation START workflow is manual read-only and cann
   assert.match(workflow,/name: data-steward-readonly/);
   assert.match(workflow,/API_FOOTBALL_PREFLIGHT_STAGE: ATTENDED_PREPARATION_START/);
   assert.match(workflow,/READY_FOR_ATTENDED_VERSION_PREPARATION/);
-  assert.match(workflow,/routeCount\?\.*/); // impossible sentinel; replaced below
+  assert.match(workflow,/r\.inventory\?\.routeCount!==0/);
 });
