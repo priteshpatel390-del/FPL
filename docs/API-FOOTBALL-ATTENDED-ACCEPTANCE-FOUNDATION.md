@@ -44,14 +44,17 @@ Read-only admission binds its sanitized artifact to exact approved SHA, final Ve
 
 Only then may the protected executor:
 
-1. verify the production account fingerprint before every Cloudflare request capability is created;
-2. read and validate exact Preview suffix/subdomain;
-3. enable Worker-wide Preview URLs;
-4. enable D1 collection;
-5. send exactly one authenticated POST to the derived exact Version URL;
-6. disable collection regardless of invocation outcome;
-7. disable Preview URLs regardless of invocation outcome;
-8. stop for independent read-only reconciliation.
+1. verify the production account fingerprint before any Cloudflare request;
+2. perform a fresh full attended read-only preflight inside the mutation-capable job using the exact approved SHA and Version, re-proving the two-Version inventory and target module bytes, original blocked Version, production D1 binding, zero Deployments/Cron/routes/domains, workers.dev/Preview disabled, pristine runtime/history and all foundational authority/mapping invariants;
+3. derive the exact Preview URL from that fresh preflight's API-returned Preview suffix and account subdomain;
+4. enable Worker-wide Preview URLs only if the fresh critical recheck still passes;
+5. enable D1 collection;
+6. send exactly one authenticated POST to the derived exact Version URL;
+7. disable collection regardless of invocation outcome;
+8. disable Preview URLs regardless of invocation outcome;
+9. stop for independent read-only reconciliation.
+
+The fresh critical recheck is the final network observation before `previews_enabled=true`; drift between the earlier artifact admission and mutation-capable execution therefore fails before any Preview mutation, D1 enablement or trigger-secret egress.
 
 A closed request allowlist admits only Worker-subdomain GET/POST, account-subdomain GET and the exact production D1 query POST. Deployment, Cron, route, domain, Access and arbitrary endpoints fail before fetch.
 
@@ -69,7 +72,7 @@ Credential preparation is a separate earlier gate, capped at one D1 call/stateme
 
 An `always()` read-only job uses the protected steward environment after execution success or failure. It re-reads exact content/inventory, routing, Deployment/Cron state and one fixed read-only D1 batch. Sanitized evidence distinguishes exact five attempt-1 successes and one committed/head-consistent generation from auth, quota, timeout, transport, schema, HTTP, reservation/lease, persistence, completion, commit, cleanup and inventory ambiguity. Every non-clean state returns `retryAuthorized=false`; no repair, provider retry or destructive cleanup occurs.
 
-Success requires collection and Preview disabled, workers.dev disabled, zero Deployments/Cron/routes/domains, credential `AVAILABLE`, no lease, exactly five attempt-1 `SUCCEEDED` rows, no attempt 2/RESERVED row, exactly one committed generation, matching head and membership, 0–2,500 fixture revisions, exact Version inventory, zero model/UI imports and no raw-payload storage surface. Artifact fields exclude account IDs, tokens, secrets, raw provider payloads and private mapping pairs.
+Success requires collection and Preview disabled, workers.dev disabled, zero Deployments/Cron/routes/domains, credential `AVAILABLE`, no lease, exactly five attempt-1 `SUCCEEDED` rows, no attempt 2/RESERVED row, exactly one committed generation, matching head and membership, 0–2,500 fixture revisions, exact Version inventory, zero model/UI imports and no raw-payload storage surface. In addition, the underlying post-run live preflight must have stopped **only** for the expected `first_acceptance_history_not_pristine` reason; migrations 0001–0006, zero foreign-key violations, fresh exact-20 Official FPL authority, committed exact 20/20 mapping and all attended infrastructure/content invariants must still be valid. A stale authority, mapping drift, migration drift, FK violation or other foundational stop can never be reclassified as success. The reconciliation artifact includes these sanitized aggregate foundation fields but excludes account IDs, tokens, secrets, raw provider payloads and private mapping pairs.
 
 ## Preserved provider/model boundary and remaining gate
 

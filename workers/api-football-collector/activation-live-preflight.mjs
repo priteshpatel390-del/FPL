@@ -276,6 +276,8 @@ export async function runApiFootballActivationLivePreflight({env=process.env,fet
     previewUrls:attended?collectorReads.subdomain.result?.previews_enabled:wrangler.previewUrls,
     configurationExact:attended&&binding('API_FOOTBALL_FPL_SEASON')?.text==='2026-27'&&String(binding('API_FOOTBALL_PROVIDER_SEASON')?.text)==='2026',
     reviewedVersionId,versionIdentityExact,versionInventoryExact,previewUrlIdentityExact,
+    previewUrlSuffix:attended?collectorReads.subdomain.result?.preview_url_suffix:null,
+    accountSubdomain:attended?collectorReads.accountSubdomain.result?.subdomain:null,
     routeCount:attended?(Array.isArray(collectorReads.scripts.result)?collectorReads.scripts.result.find(row=>row?.id===EXPECTED_COLLECTOR_WORKER)?.routes?.length:null):0,
     customDomainCount:attended?(Array.isArray(collectorReads.domains.result)?collectorReads.domains.result.filter(row=>row?.service===EXPECTED_COLLECTOR_WORKER).length:null):0
   });

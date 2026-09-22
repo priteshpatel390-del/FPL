@@ -94,48 +94,93 @@ test('credential lifecycle requires proven final secrets and defers reset until 
   assert.match(credentialLifecycleMutation('RESET_UNPROVISIONED',{...base,secretBearingVersionPresent:false}).sql,/credential_state='UNPROVISIONED'/);
 });
 
+function criticalAdmission(overrides={}){
+  const base={
+    ...admission(),migrationCount:6,foreignKeyViolations:0,officialFplAuthority:{valid:true,teamCount:20,fetchedAt:NOW},
+    mapping:{state:'COMMITTED',mappingCount:20,memberCount:20,distinctProviderIds:20,distinctFplIds:20,canonicalCoverageMatches:true,historicalAuthorityProvenancePresent:true},
+    inventory:{reviewedVersionId:VERSION,versionIdentityExact:true,versionInventoryExact:true,productionBindingProven:true,configurationExact:true,
+      previewUrlIdentityExact:true,previewUrlSuffix:'-teamsheet-api-football-shadow-collector.fpltsheet.workers.dev',accountSubdomain:'fpltsheet',
+      workerPresent:true,workersDev:false,previewUrls:false,deploymentCount:0,cronCount:0,routeCount:0,customDomainCount:0,
+      secretBindingPresent:true,secretBindingNames:['API_FOOTBALL_API_KEY','API_FOOTBALL_ATTENDED_TRIGGER_SECRET']},
+    runtime:{collectionEnabled:0,credentialState:'AVAILABLE',activeLease:false},
+    priorState:{requestAttempts:0,generations:0,fixtureRevisions:0,attempt2Count:0,reservedAttemptCount:0,stagingGenerationCount:0},
+    modelUiImportCount:0,rawPayloadStoragePresent:false
+  };
+  return {...base,...overrides,inventory:{...base.inventory,...(overrides.inventory||{})},runtime:{...base.runtime,...(overrides.runtime||{})},
+    priorState:{...base.priorState,...(overrides.priorState||{})},mapping:{...base.mapping,...(overrides.mapping||{})},evidence:{...base.evidence,...(overrides.evidence||{})}};
+}
+
 test('executor fingerprints account and closes mutation endpoint surface before fetch',async()=>{
-  const paths=attendedCloudflarePaths(ACCOUNT);assert.equal(assertAttendedCloudflareRequestAllowed('GET',paths.subdomain,{accountId:ACCOUNT}),true);assert.equal(assertAttendedCloudflareRequestAllowed('POST',paths.d1,{accountId:ACCOUNT}),true);
-  for(const path of [`/accounts/${ACCOUNT}/workers/scripts/x/deployments`,`/accounts/${ACCOUNT}/workers/scripts/x/schedules`,`/accounts/${ACCOUNT}/workers/routes`,`/accounts/${ACCOUNT}/workers/domains`])assert.throws(()=>assertAttendedCloudflareRequestAllowed('POST',path,{accountId:ACCOUNT}),/forbidden/);
+  const paths=attendedCloudflarePaths(ACCOUNT);assert.equal(assertAttendedCloudflareRequestAllowed('POST',paths.subdomain,{accountId:ACCOUNT}),true);assert.equal(assertAttendedCloudflareRequestAllowed('POST',paths.d1,{accountId:ACCOUNT}),true);
+  for(const [method,path] of [['GET',paths.subdomain],['GET',`/accounts/${ACCOUNT}/workers/subdomain`],['POST',`/accounts/${ACCOUNT}/workers/scripts/x/deployments`],['POST',`/accounts/${ACCOUNT}/workers/scripts/x/schedules`],['POST',`/accounts/${ACCOUNT}/workers/routes`],['POST',`/accounts/${ACCOUNT}/workers/domains`]])assert.throws(()=>assertAttendedCloudflareRequestAllowed(method,path,{accountId:ACCOUNT}),/forbidden/);
   let calls=0;const base={CLOUDFLARE_ACCOUNT_ID:ACCOUNT,CLOUDFLARE_ATTENDED_MUTATION_TOKEN:'token',APPROVED_SHA:SHA,API_FOOTBALL_ATTENDED_VERSION_ID:VERSION,API_FOOTBALL_ATTENDED_TRIGGER_SECRET:SECRET,API_FOOTBALL_ATTENDED_ADMISSION_PATH:'/tmp/absent'};
   for(const env of [{...base,CLOUDFLARE_ACCOUNT_FINGERPRINT:'0'.repeat(64)},base])await assert.rejects(()=>executeLiveAttendedAcceptance({env,fetchImpl:async()=>{calls++;}}));assert.equal(calls,0);
 });
 
-test('executor derives URL before secret egress, invokes once, and stays within separate control budget',async()=>{
-  const file='/tmp/attended-admission-test.json';fs.writeFileSync(file,JSON.stringify(admission()));const calls=[];
+test('executor performs fresh exact critical recheck immediately before any Preview or D1 mutation',async()=>{
+  const file='/tmp/attended-admission-critical-drift.json';fs.writeFileSync(file,JSON.stringify(admission()));let networkCalls=0,criticalCalls=0;
   const env={CLOUDFLARE_ACCOUNT_ID:ACCOUNT,CLOUDFLARE_ACCOUNT_FINGERPRINT:FINGERPRINT,CLOUDFLARE_ATTENDED_MUTATION_TOKEN:'token',APPROVED_SHA:SHA,API_FOOTBALL_ATTENDED_VERSION_ID:VERSION,API_FOOTBALL_ATTENDED_TRIGGER_SECRET:SECRET,API_FOOTBALL_ATTENDED_ADMISSION_PATH:file};
-  const fetchImpl=async(url,init={})=>{calls.push({url:String(url),init});if(String(url).endsWith('/workers/subdomain'))return new Response(JSON.stringify({success:true,result:{subdomain:'fpltsheet'}}));if(String(url).endsWith('/subdomain')&&(init.method||'GET')==='GET')return new Response(JSON.stringify({success:true,result:{enabled:false,previews_enabled:false,preview_url_suffix:'-teamsheet-api-football-shadow-collector.fpltsheet.workers.dev'}}));if(String(url).includes('workers.dev'))return new Response('',{status:202});if(String(url).includes('/query'))return new Response(JSON.stringify({success:true,result:[{success:true,meta:{changes:1}}]}));return new Response(JSON.stringify({success:true,result:{}}));};
-  const result=await executeLiveAttendedAcceptance({env,fetchImpl});assert.equal(result.ok,true);assert.equal(result.providerInvocations,1);assert.deepEqual(result.controlBudget,{d1Calls:2,d1Statements:2,d1RowsChanged:2});assert.deepEqual([ATTENDED_CONTROL_MAX_D1_CALLS,ATTENDED_CONTROL_MAX_D1_STATEMENTS,ATTENDED_CONTROL_MAX_ROWS_CHANGED],[2,2,2]);
+  await assert.rejects(()=>executeLiveAttendedAcceptance({env,fetchImpl:async()=>{networkCalls++;throw new Error('must not mutate');},criticalRecheck:async()=>{criticalCalls++;return criticalAdmission({ok:false,classification:'STOP_ATTENDED_ACCEPTANCE_REVIEW_REQUIRED',reason:'attended_stage_inventory_unexpected',inventory:{versionInventoryExact:false}});}}),/attended_critical_state_drift/);
+  assert.equal(criticalCalls,1);assert.equal(networkCalls,0);fs.unlinkSync(file);
+});
+
+test('executor derives URL from fresh recheck, invokes once, and stays within separate control budget',async()=>{
+  const file='/tmp/attended-admission-test.json';fs.writeFileSync(file,JSON.stringify(admission()));const calls=[];let criticalCalls=0;
+  const env={CLOUDFLARE_ACCOUNT_ID:ACCOUNT,CLOUDFLARE_ACCOUNT_FINGERPRINT:FINGERPRINT,CLOUDFLARE_ATTENDED_MUTATION_TOKEN:'token',APPROVED_SHA:SHA,API_FOOTBALL_ATTENDED_VERSION_ID:VERSION,API_FOOTBALL_ATTENDED_TRIGGER_SECRET:SECRET,API_FOOTBALL_ATTENDED_ADMISSION_PATH:file};
+  const fetchImpl=async(url,init={})=>{calls.push({url:String(url),init});if(String(url).includes('workers.dev'))return new Response('',{status:202});if(String(url).includes('/query'))return new Response(JSON.stringify({success:true,result:[{success:true,meta:{changes:1}}]}));return new Response(JSON.stringify({success:true,result:{}}));};
+  const result=await executeLiveAttendedAcceptance({env,fetchImpl,criticalRecheck:async()=>{criticalCalls++;return criticalAdmission();}});
+  assert.equal(criticalCalls,1);assert.equal(result.ok,true);assert.equal(result.providerInvocations,1);assert.deepEqual(result.controlBudget,{d1Calls:2,d1Statements:2,d1RowsChanged:2});assert.deepEqual([ATTENDED_CONTROL_MAX_D1_CALLS,ATTENDED_CONTROL_MAX_D1_STATEMENTS,ATTENDED_CONTROL_MAX_ROWS_CHANGED],[2,2,2]);
   assert.equal(calls.filter(row=>row.init.headers?.['x-teamsheet-attended-trigger']).length,1);fs.unlinkSync(file);
 });
 
 test('executor transport ambiguity invokes exactly once, cleans up, returns failure and never retries',async()=>{
   const file='/tmp/attended-admission-ambiguous.json';fs.writeFileSync(file,JSON.stringify(admission()));let previewCalls=0,previewDisable=0;
   const env={CLOUDFLARE_ACCOUNT_ID:ACCOUNT,CLOUDFLARE_ACCOUNT_FINGERPRINT:FINGERPRINT,CLOUDFLARE_ATTENDED_MUTATION_TOKEN:'token',APPROVED_SHA:SHA,API_FOOTBALL_ATTENDED_VERSION_ID:VERSION,API_FOOTBALL_ATTENDED_TRIGGER_SECRET:SECRET,API_FOOTBALL_ATTENDED_ADMISSION_PATH:file};
-  const result=await executeLiveAttendedAcceptance({env,fetchImpl:async(url,init={})=>{const value=String(url);if(value.endsWith('/workers/subdomain'))return new Response(JSON.stringify({success:true,result:{subdomain:'fpltsheet'}}));if(value.endsWith('/subdomain')&&(init.method||'GET')==='GET')return new Response(JSON.stringify({success:true,result:{enabled:false,previews_enabled:false,preview_url_suffix:'-teamsheet-api-football-shadow-collector.fpltsheet.workers.dev'}}));if(value.includes('workers.dev')){previewCalls++;throw new Error('unknown delivery');}if(value.includes('/query'))return new Response(JSON.stringify({success:true,result:[{success:true,meta:{changes:1}}]}));if(value.endsWith('/subdomain')&&JSON.parse(init.body).previews_enabled===false)previewDisable++;return new Response(JSON.stringify({success:true,result:{}}));}});
+  const result=await executeLiveAttendedAcceptance({env,criticalRecheck:async()=>criticalAdmission(),fetchImpl:async(url,init={})=>{const value=String(url);if(value.includes('workers.dev')){previewCalls++;throw new Error('unknown delivery');}if(value.includes('/query'))return new Response(JSON.stringify({success:true,result:[{success:true,meta:{changes:1}}]}));if(value.endsWith('/subdomain')&&JSON.parse(init.body).previews_enabled===false)previewDisable++;return new Response(JSON.stringify({success:true,result:{}}));}});
   assert.equal(result.ok,false);assert.equal(result.retryAuthorized,false);assert.equal(result.providerInvocations,1);assert.equal(previewCalls,1);assert.equal(previewDisable,1);fs.unlinkSync(file);
 });
 
-test('bad Preview suffix prevents enablement and trigger-secret egress',async()=>{
-  const file='/tmp/attended-admission-bad-preview.json';fs.writeFileSync(file,JSON.stringify(admission()));const calls=[];
+test('bad fresh Preview identity prevents enablement and trigger-secret egress',async()=>{
+  const file='/tmp/attended-admission-bad-preview.json';fs.writeFileSync(file,JSON.stringify(admission()));let calls=0;
   const env={CLOUDFLARE_ACCOUNT_ID:ACCOUNT,CLOUDFLARE_ACCOUNT_FINGERPRINT:FINGERPRINT,CLOUDFLARE_ATTENDED_MUTATION_TOKEN:'token',APPROVED_SHA:SHA,API_FOOTBALL_ATTENDED_VERSION_ID:VERSION,API_FOOTBALL_ATTENDED_TRIGGER_SECRET:SECRET,API_FOOTBALL_ATTENDED_ADMISSION_PATH:file};
-  await assert.rejects(()=>executeLiveAttendedAcceptance({env,fetchImpl:async(url,init={})=>{calls.push({url:String(url),init});const result=String(url).endsWith('/workers/subdomain')?{subdomain:'fpltsheet'}:{enabled:false,previews_enabled:false,preview_url_suffix:'-teamsheet-api-football-shadow-collector.evil.example'};return new Response(JSON.stringify({success:true,result}));}}),/preview_identity/);
-  assert.equal(calls.length,2);assert.equal(calls.some(row=>row.init.headers?.['x-teamsheet-attended-trigger']),false);fs.unlinkSync(file);
+  await assert.rejects(()=>executeLiveAttendedAcceptance({env,fetchImpl:async()=>{calls++;},criticalRecheck:async()=>criticalAdmission({inventory:{previewUrlSuffix:'-teamsheet-api-football-shadow-collector.evil.example'}})}),/preview_identity/);
+  assert.equal(calls,0);fs.unlinkSync(file);
 });
 
-function reconciliation(overrides={}){return {runtime:{collectionEnabled:0,credentialState:'AVAILABLE',activeLease:false},inventory:{previewUrls:false,versionInventoryExact:true,versionIdentityExact:true,workersDev:false,deploymentCount:0,cronCount:0,routeCount:0,customDomainCount:0},priorState:{requestAttempts:5,attempt1Count:5,attempt2Count:0,succeededAttemptCount:5,authFailureCount:0,quotaBlockedCount:0,timeoutCount:0,transportUnknownCount:0,schemaFailureCount:0,httpFailureCount:0,reservedAttemptCount:0,stagingGenerationCount:0,generations:1,committedGenerationCount:1,failedGenerationCount:0,persistenceUncertainCount:0,completionUncertainCount:0,membershipConsistentCount:1,headMatchCount:1,fixtureRevisions:10},modelUiImportCount:0,rawPayloadStoragePresent:false,...overrides};}
+function reconciliation(overrides={}){
+  const base={ok:false,stage:'ATTENDED_ACCEPTANCE',classification:'STOP_ATTENDED_ACCEPTANCE_REVIEW_REQUIRED',reason:'first_acceptance_history_not_pristine',
+    migrationCount:6,foreignKeyViolations:0,officialFplAuthority:{valid:true,teamCount:20,fetchedAt:NOW},
+    mapping:{state:'COMMITTED',mappingCount:20,memberCount:20,distinctProviderIds:20,distinctFplIds:20,canonicalCoverageMatches:true,historicalAuthorityProvenancePresent:true},
+    runtime:{collectionEnabled:0,credentialState:'AVAILABLE',activeLease:false},
+    inventory:{previewUrls:false,versionInventoryExact:true,versionIdentityExact:true,productionBindingProven:true,configurationExact:true,previewUrlIdentityExact:true,
+      secretBindingPresent:true,secretBindingNames:['API_FOOTBALL_API_KEY','API_FOOTBALL_ATTENDED_TRIGGER_SECRET'],workersDev:false,deploymentCount:0,cronCount:0,routeCount:0,customDomainCount:0},
+    priorState:{requestAttempts:5,attempt1Count:5,attempt2Count:0,succeededAttemptCount:5,authFailureCount:0,quotaBlockedCount:0,timeoutCount:0,transportUnknownCount:0,schemaFailureCount:0,httpFailureCount:0,reservedAttemptCount:0,stagingGenerationCount:0,generations:1,committedGenerationCount:1,failedGenerationCount:0,persistenceUncertainCount:0,completionUncertainCount:0,membershipConsistentCount:1,headMatchCount:1,fixtureRevisions:10},
+    modelUiImportCount:0,rawPayloadStoragePresent:false,evidence:{productionMutations:0,apiFootballRequests:0,secretValuesRead:0}};
+  return {...base,...overrides,runtime:{...base.runtime,...(overrides.runtime||{})},inventory:{...base.inventory,...(overrides.inventory||{})},
+    priorState:{...base.priorState,...(overrides.priorState||{})},mapping:{...base.mapping,...(overrides.mapping||{})},officialFplAuthority:{...base.officialFplAuthority,...(overrides.officialFplAuthority||{})},evidence:{...base.evidence,...(overrides.evidence||{})}};
+}
 test('independent reconciliation classifies success and every important terminal stop without retry',()=>{
   assert.equal(classifyAttendedReconciliation(reconciliation()).classification,'ATTENDED_ACCEPTANCE_RECONCILED_SUCCESS');
   const cases=[
-    {runtime:{collectionEnabled:1,credentialState:'AVAILABLE',activeLease:false}},{inventory:{...reconciliation().inventory,previewUrls:true}},
-    {runtime:{collectionEnabled:0,credentialState:'INVALID',activeLease:false}},{priorState:{...reconciliation().priorState,authFailureCount:1,succeededAttemptCount:0}},
-    {priorState:{...reconciliation().priorState,quotaBlockedCount:1}},{priorState:{...reconciliation().priorState,timeoutCount:1}},
-    {priorState:{...reconciliation().priorState,transportUnknownCount:1}},{priorState:{...reconciliation().priorState,schemaFailureCount:1}},
-    {priorState:{...reconciliation().priorState,httpFailureCount:1}},{priorState:{...reconciliation().priorState,reservedAttemptCount:1}},
-    {priorState:{...reconciliation().priorState,persistenceUncertainCount:1}},{priorState:{...reconciliation().priorState,completionUncertainCount:1}},
-    {priorState:{...reconciliation().priorState,stagingGenerationCount:1,committedGenerationCount:0}},{inventory:{...reconciliation().inventory,versionInventoryExact:false}}
+    {runtime:{collectionEnabled:1}},{inventory:{previewUrls:true}},{runtime:{credentialState:'INVALID'}},{priorState:{authFailureCount:1,succeededAttemptCount:0}},
+    {priorState:{quotaBlockedCount:1}},{priorState:{timeoutCount:1}},{priorState:{transportUnknownCount:1}},{priorState:{schemaFailureCount:1}},
+    {priorState:{httpFailureCount:1}},{priorState:{reservedAttemptCount:1}},{priorState:{persistenceUncertainCount:1}},{priorState:{completionUncertainCount:1}},
+    {priorState:{stagingGenerationCount:1,committedGenerationCount:0}},{inventory:{versionInventoryExact:false}},{runtime:{activeLease:true}}
   ];
   for(const value of cases){const result=classifyAttendedReconciliation(reconciliation(value));assert.equal(result.ok,false);assert.equal(result.retryAuthorized,false);}
+});
+
+test('reconciliation success is impossible when the underlying post-run preflight stopped for any foundational reason',()=>{
+  for(const value of [
+    {reason:'foreign_key_violations',foreignKeyViolations:1},
+    {reason:'migration_ledger_unexpected',migrationCount:5},
+    {reason:'official_fpl_authority_stale',officialFplAuthority:{teamCount:19}},
+    {reason:'qualified_mapping_unavailable',mapping:{canonicalCoverageMatches:false}},
+    {reason:'active_request_lease',runtime:{activeLease:true}},
+    {ok:true,classification:'READY_FOR_SEPARATELY_APPROVED_ATTENDED_ACCEPTANCE',reason:null}
+  ]){
+    const result=classifyAttendedReconciliation(reconciliation(value));assert.equal(result.ok,false);assert.equal(result.retryAuthorized,false);
+  }
 });
 
 test('abstract attended admission, shipped config, provider contract and model isolation remain pinned',()=>{
