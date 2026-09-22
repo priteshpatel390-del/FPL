@@ -1,3 +1,7 @@
+## 22 September 2026 — prove attended Preview suffix from Get Worker metadata
+
+**Decision:** during `ATTENDED_ACCEPTANCE`, keep the legacy Script Subdomain GET solely for `enabled=false` and `previews_enabled=false`, and obtain `preview_url_suffix` from Cloudflare's modern Get Worker metadata for the exact discovered collector worker ID/name. The read-only Cloudflare ceiling increases from 13 to 14 only for attended acceptance. The exact expected hostname remains `<version-prefix>-teamsheet-api-football-shadow-collector.<account-subdomain>.workers.dev`; no suffix is inferred from an absent legacy field, no mutation is introduced, and a wrong/missing modern suffix fails closed.
+
 ## 22 September 2026 — immutable attended Version provenance is separate from execution SHA
 
 **Decision:** validate the already-created API-Football attended Worker Version against its immutable creation identity, not the repository SHA executing a later workflow. Version `04d79556-3070-429f-9944-b5b53d799842` is bound to creation/provenance SHA `69bb84fadbcce94e9fece3ff438d985866cce183`, exact message/tag, main module, compatibility date, bindings and historical 17-module SHA-256 manifest. Current `main` remains a separate workflow-admission identity. Admission, the final pre-mutation critical recheck and independent reconciliation must carry both identities and fail closed on mismatch. This does not authorize live acceptance, provider egress, model/data use, token cleanup or activation.
