@@ -15,7 +15,7 @@ import {
   PREFLIGHT_REPOSITORY_CLOUDFLARE_GETS,
   PREFLIGHT_MAX_D1_QUERY_CALLS,
   productionModelUiImportCount,
-  runApiFootballActivationLivePreflight
+  runApiFootballActivationLivePreflight,scriptRouteCount
 } from '../workers/api-football-collector/activation-live-preflight.mjs';
 import {
   COLLECTOR_PREFLIGHT_REPOSITORY_STAGE,
@@ -257,4 +257,14 @@ test('workflow is manual exact-main read-only and contains no provider or mutati
   assert.doesNotMatch(source,/OWNER_CROSSWALK|DEPLOY_TOKEN|WORKER_UPLOAD_TOKEN|wrangler\s+deploy|d1\s+execute|v3\.football\.api-sports\.io/);
   assert.doesNotMatch(source,/schedule:/);
   assert.doesNotMatch(source,/push:/);
+});
+
+
+test('script route decoder normalizes Cloudflare no-route encodings without weakening route admission',()=>{
+  assert.equal(scriptRouteCount([{id:'teamsheet-api-football-shadow-collector',routes:null}]),0);
+  assert.equal(scriptRouteCount([{id:'teamsheet-api-football-shadow-collector'}]),0);
+  assert.equal(scriptRouteCount([{id:'teamsheet-api-football-shadow-collector',routes:[]}]),0);
+  assert.equal(scriptRouteCount([{id:'teamsheet-api-football-shadow-collector',routes:[{pattern:'example/*'}]}]),1);
+  assert.equal(scriptRouteCount([{id:'teamsheet-api-football-shadow-collector',routes:{pattern:'malformed'}}]),null);
+  assert.equal(scriptRouteCount(null),null);
 });
