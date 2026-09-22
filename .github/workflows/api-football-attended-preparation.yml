@@ -1,0 +1,385 @@
+# Dormant owner-gated preparation only. Repository presence does not authorize dispatch.
+name: API-Football Collector Attended Preparation
+
+on:
+  workflow_dispatch:
+    inputs:
+      approved_sha:
+        description: Exact current main SHA separately approved for attended preparation
+        required: true
+        type: string
+
+permissions:
+  contents: read
+  actions: read
+  checks: read
+
+concurrency:
+  group: api-football-collector-attended-preparation
+  cancel-in-progress: false
+
+jobs:
+  repository-gate:
+    if: github.event_name == 'workflow_dispatch' && github.run_attempt == 1
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    outputs:
+      approved_sha: ${{ steps.identity.outputs.approved_sha }}
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          ref: ${{ inputs.approved_sha }}
+          fetch-depth: 0
+          persist-credentials: false
+      - id: identity
+        env:
+          APPROVED_SHA: ${{ inputs.approved_sha }}
+          EVENT_NAME: ${{ github.event_name }}
+          EVENT_REF: ${{ github.ref }}
+          EVENT_REPOSITORY: ${{ github.repository }}
+          EVENT_SHA: ${{ github.sha }}
+          EVENT_RUN_ATTEMPT: ${{ github.run_attempt }}
+        run: |
+          set -euo pipefail
+          test "$EVENT_NAME" = workflow_dispatch
+          test "$EVENT_RUN_ATTEMPT" = 1
+          test "$EVENT_REF" = refs/heads/main
+          test "$EVENT_REPOSITORY" = priteshpatel390-del/FPL
+          printf '%s' "$APPROVED_SHA" | grep -Eq '^[0-9a-f]{40}$'
+          test "$EVENT_SHA" = "$APPROVED_SHA"
+          test "$(git rev-parse HEAD)" = "$APPROVED_SHA"
+          test "$(git ls-remote https://github.com/priteshpatel390-del/FPL.git refs/heads/main | cut -f1)" = "$APPROVED_SHA"
+          test -z "$(git status --porcelain --untracked-files=all)"
+          echo "approved_sha=$APPROVED_SHA" >> "$GITHUB_OUTPUT"
+      - name: Require exact-head Verify Teamsheet success
+        env:
+          GH_TOKEN: ${{ github.token }}
+          APPROVED_SHA: ${{ steps.identity.outputs.approved_sha }}
+        run: |
+          set -euo pipefail
+          response="$RUNNER_TEMP/check-runs.json"
+          gh api "repos/${{ github.repository }}/commits/$APPROVED_SHA/check-runs" > "$response"
+          node --input-type=module - "$response" <<'NODE'
+          import fs from 'node:fs';
+          const body=JSON.parse(fs.readFileSync(process.argv[2],'utf8'));
+          if(!(body.check_runs??[]).some(row=>row.name==='Tests and deterministic build'&&row.status==='completed'&&row.conclusion==='success'&&row.head_sha===process.env.APPROVED_SHA&&row.app?.slug==='github-actions'&&row.details_url?.startsWith('https://github.com/priteshpatel390-del/FPL/actions/runs/')))throw new Error('exact-head Verify Teamsheet success is absent');
+          NODE
+          rm -f "$response"
+      - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
+        with:
+          node-version: 24.19.0
+      - name: Run focused preparation tests before protected environments
+        run: |
+          node --test tests/api-football-attended-preparation-foundation.test.mjs tests/api-football-attended-acceptance-foundation.test.mjs tests/api-football-collector-activation-live-preflight.test.mjs
+          test -z "$(git status --porcelain --untracked-files=all)"
+
+  fresh-readonly-starting-admission:
+    if: github.event_name == 'workflow_dispatch' && github.run_attempt == 1
+    needs: repository-gate
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    environment:
+      name: data-steward-readonly
+      deployment: false
+    outputs:
+      classification: ${{ steps.handoff.outputs.classification }}
+      artifact_sha256: ${{ steps.handoff.outputs.artifact_sha256 }}
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          ref: ${{ needs.repository-gate.outputs.approved_sha }}
+          persist-credentials: false
+      - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
+        with:
+          node-version: 24.19.0
+      - name: Reconfirm exact protected main after read-only environment admission
+        env:
+          APPROVED_SHA: ${{ needs.repository-gate.outputs.approved_sha }}
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "$APPROVED_SHA"
+          test "$(git ls-remote https://github.com/priteshpatel390-del/FPL.git refs/heads/main | cut -f1)" = "$APPROVED_SHA"
+          test -z "$(git status --porcelain --untracked-files=all)"
+      - name: Establish exact singleton-original preparation admission
+        env:
+          APPROVED_SHA: ${{ needs.repository-gate.outputs.approved_sha }}
+          API_FOOTBALL_PREFLIGHT_STAGE: ATTENDED_PREPARATION_START
+          DATA_STEWARD_CLOUDFLARE_ACCOUNT_ID: ${{ secrets.DATA_STEWARD_CLOUDFLARE_ACCOUNT_ID }}
+          DATA_STEWARD_CLOUDFLARE_ACCOUNT_FINGERPRINT: ${{ vars.DATA_STEWARD_CLOUDFLARE_ACCOUNT_FINGERPRINT }}
+          DATA_STEWARD_CLOUDFLARE_READ_TOKEN: ${{ secrets.DATA_STEWARD_CLOUDFLARE_READ_TOKEN }}
+          API_FOOTBALL_ACTIVATION_PREFLIGHT_REPORT_PATH: ${{ runner.temp }}/attended-preparation-start.json
+        run: node workers/api-football-collector/activation-live-preflight.mjs
+      - name: Bind sanitized starting admission
+        id: handoff
+        env:
+          REPORT: ${{ runner.temp }}/attended-preparation-start.json
+          APPROVED_SHA: ${{ needs.repository-gate.outputs.approved_sha }}
+          ACCOUNT_FINGERPRINT: ${{ vars.DATA_STEWARD_CLOUDFLARE_ACCOUNT_FINGERPRINT }}
+        run: |
+          set -euo pipefail
+          node --input-type=module - <<'NODE'
+          import fs from 'node:fs';import {createHash} from 'node:crypto';
+          const bytes=fs.readFileSync(process.env.REPORT),r=JSON.parse(bytes);
+          if(r.ok!==true||r.approvedSha!==process.env.APPROVED_SHA||r.accountFingerprint!==process.env.ACCOUNT_FINGERPRINT||
+            r.stage!=='ATTENDED_PREPARATION_START'||r.classification!=='READY_FOR_ATTENDED_VERSION_PREPARATION'||
+            r.inventory?.originalVersionIdentityExact!==true||r.inventory?.versionInventoryExact!==true||
+            r.inventory?.deploymentCount!==0||r.inventory?.previewUrls!==false||r.runtime?.credentialState!=='UNPROVISIONED'||
+            r.evidence?.productionMutations!==0||r.evidence?.apiFootballRequests!==0||r.evidence?.secretValuesRead!==0)throw new Error('starting preparation admission invalid');
+          fs.appendFileSync(process.env.GITHUB_OUTPUT,`classification=${r.classification}\nartifact_sha256=${createHash('sha256').update(bytes).digest('hex')}\n`);
+          NODE
+      - uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6
+        with:
+          name: api-football-attended-preparation-start
+          path: ${{ runner.temp }}/attended-preparation-start.json
+          retention-days: 7
+
+  protected-version-preparation:
+    if: github.event_name == 'workflow_dispatch' && github.run_attempt == 1 && needs.fresh-readonly-starting-admission.outputs.classification == 'READY_FOR_ATTENDED_VERSION_PREPARATION'
+    needs: [repository-gate, fresh-readonly-starting-admission]
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    environment:
+      name: api-football-attended-preparation-version
+      deployment: false
+    outputs:
+      attended_version_id: ${{ steps.handoff.outputs.attended_version_id }}
+      artifact_sha256: ${{ steps.handoff.outputs.artifact_sha256 }}
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          ref: ${{ needs.repository-gate.outputs.approved_sha }}
+          persist-credentials: false
+      - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
+        with:
+          node-version: 24.19.0
+      - uses: actions/download-artifact@95815c38cf2ff2164869cbab79da8d1f422bc89e # v4
+        with:
+          name: api-football-attended-preparation-start
+          path: ${{ runner.temp }}/preparation-start
+      - name: Reconfirm exact protected main and admission immediately before Version mutation
+        env:
+          APPROVED_SHA: ${{ needs.repository-gate.outputs.approved_sha }}
+          REPORT: ${{ runner.temp }}/preparation-start/attended-preparation-start.json
+          EXPECTED_ARTIFACT_SHA256: ${{ needs.fresh-readonly-starting-admission.outputs.artifact_sha256 }}
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "$APPROVED_SHA"
+          test "$(git ls-remote https://github.com/priteshpatel390-del/FPL.git refs/heads/main | cut -f1)" = "$APPROVED_SHA"
+          test "$(sha256sum "$REPORT" | cut -d' ' -f1)" = "$EXPECTED_ARTIFACT_SHA256"
+          test -z "$(git status --porcelain --untracked-files=all)"
+      - name: Submit exactly one attended Version creation
+        env:
+          API_FOOTBALL_ATTENDED_PREPARATION_OPERATION: VERSION
+          APPROVED_SHA: ${{ needs.repository-gate.outputs.approved_sha }}
+          API_FOOTBALL_PREPARATION_ADMISSION_PATH: ${{ runner.temp }}/preparation-start/attended-preparation-start.json
+          API_FOOTBALL_ATTENDED_VERSION_PREPARATION_REPORT_PATH: ${{ runner.temp }}/attended-version-preparation.json
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          CLOUDFLARE_ACCOUNT_FINGERPRINT: ${{ vars.CLOUDFLARE_ACCOUNT_FINGERPRINT }}
+          CLOUDFLARE_ATTENDED_VERSION_UPLOAD_TOKEN: ${{ secrets.CLOUDFLARE_ATTENDED_VERSION_UPLOAD_TOKEN }}
+          API_FOOTBALL_API_KEY: ${{ secrets.API_FOOTBALL_API_KEY }}
+          API_FOOTBALL_ATTENDED_TRIGGER_SECRET: ${{ secrets.API_FOOTBALL_ATTENDED_TRIGGER_SECRET }}
+        run: node workers/api-football-collector/attended-preparation.mjs
+      - name: Export sanitized Version identity
+        id: handoff
+        env:
+          REPORT: ${{ runner.temp }}/attended-version-preparation.json
+          APPROVED_SHA: ${{ needs.repository-gate.outputs.approved_sha }}
+        run: |
+          set -euo pipefail
+          node --input-type=module - <<'NODE'
+          import fs from 'node:fs';import {createHash} from 'node:crypto';
+          const bytes=fs.readFileSync(process.env.REPORT),r=JSON.parse(bytes);
+          if(r.ok!==true||r.approvedSha!==process.env.APPROVED_SHA||r.classification!=='ATTENDED_VERSION_PREPARED_RECONCILIATION_REQUIRED'||
+            !/^[0-9a-f-]{36}$/i.test(r.attendedVersionId)||r.versionMutationSubmissions!==1||r.versionInventoryCount!==2||
+            r.deploymentMutations!==0||r.previewMutations!==0||r.cronRouteDomainMutations!==0||r.d1Mutations!==0||r.apiFootballRequests!==0||
+            JSON.stringify(r.secretBindingNames)!==JSON.stringify(['API_FOOTBALL_API_KEY','API_FOOTBALL_ATTENDED_TRIGGER_SECRET']))throw new Error('Version preparation report invalid');
+          fs.appendFileSync(process.env.GITHUB_OUTPUT,`attended_version_id=${r.attendedVersionId}\nartifact_sha256=${createHash('sha256').update(bytes).digest('hex')}\n`);
+          NODE
+      - uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6
+        with:
+          name: api-football-attended-version-preparation
+          path: ${{ runner.temp }}/attended-version-preparation.json
+          retention-days: 7
+
+  independent-version-readonly-proof:
+    if: github.event_name == 'workflow_dispatch' && github.run_attempt == 1
+    needs: [repository-gate, protected-version-preparation]
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    environment:
+      name: data-steward-readonly
+      deployment: false
+    outputs:
+      classification: ${{ steps.handoff.outputs.classification }}
+      attended_version_id: ${{ steps.handoff.outputs.attended_version_id }}
+      artifact_sha256: ${{ steps.handoff.outputs.artifact_sha256 }}
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          ref: ${{ needs.repository-gate.outputs.approved_sha }}
+          persist-credentials: false
+      - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
+        with:
+          node-version: 24.19.0
+      - name: Reconfirm exact protected main after independent read-only admission
+        env:
+          APPROVED_SHA: ${{ needs.repository-gate.outputs.approved_sha }}
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "$APPROVED_SHA"
+          test "$(git ls-remote https://github.com/priteshpatel390-del/FPL.git refs/heads/main | cut -f1)" = "$APPROVED_SHA"
+          test -z "$(git status --porcelain --untracked-files=all)"
+      - name: Prove exact two-Version secret-bearing inventory before D1 mutation
+        env:
+          APPROVED_SHA: ${{ needs.repository-gate.outputs.approved_sha }}
+          API_FOOTBALL_PREFLIGHT_STAGE: ATTENDED_PREPARATION_VERSION_READY
+          API_FOOTBALL_ATTENDED_VERSION_ID: ${{ needs.protected-version-preparation.outputs.attended_version_id }}
+          DATA_STEWARD_CLOUDFLARE_ACCOUNT_ID: ${{ secrets.DATA_STEWARD_CLOUDFLARE_ACCOUNT_ID }}
+          DATA_STEWARD_CLOUDFLARE_ACCOUNT_FINGERPRINT: ${{ vars.DATA_STEWARD_CLOUDFLARE_ACCOUNT_FINGERPRINT }}
+          DATA_STEWARD_CLOUDFLARE_READ_TOKEN: ${{ secrets.DATA_STEWARD_CLOUDFLARE_READ_TOKEN }}
+          API_FOOTBALL_ACTIVATION_PREFLIGHT_REPORT_PATH: ${{ runner.temp }}/attended-version-proof.json
+        run: node workers/api-football-collector/activation-live-preflight.mjs
+      - name: Bind exact Version proof
+        id: handoff
+        env:
+          REPORT: ${{ runner.temp }}/attended-version-proof.json
+          APPROVED_SHA: ${{ needs.repository-gate.outputs.approved_sha }}
+          ATTENDED_VERSION_ID: ${{ needs.protected-version-preparation.outputs.attended_version_id }}
+          ACCOUNT_FINGERPRINT: ${{ vars.DATA_STEWARD_CLOUDFLARE_ACCOUNT_FINGERPRINT }}
+        run: |
+          set -euo pipefail
+          node --input-type=module - <<'NODE'
+          import fs from 'node:fs';import {createHash} from 'node:crypto';
+          const bytes=fs.readFileSync(process.env.REPORT),r=JSON.parse(bytes);
+          if(r.ok!==true||r.approvedSha!==process.env.APPROVED_SHA||r.accountFingerprint!==process.env.ACCOUNT_FINGERPRINT||
+            r.stage!=='ATTENDED_PREPARATION_VERSION_READY'||r.classification!=='READY_FOR_ATTENDED_CREDENTIAL_PREPARATION'||
+            r.inventory?.reviewedVersionId!==process.env.ATTENDED_VERSION_ID||r.inventory?.originalVersionIdentityExact!==true||
+            r.inventory?.versionIdentityExact!==true||r.inventory?.versionInventoryExact!==true||r.inventory?.deploymentCount!==0||
+            r.inventory?.previewUrls!==false||r.runtime?.collectionEnabled!==0||r.runtime?.credentialState!=='UNPROVISIONED'||
+            r.priorState?.requestAttempts!==0||r.priorState?.generations!==0||r.priorState?.fixtureRevisions!==0||
+            r.evidence?.productionMutations!==0||r.evidence?.apiFootballRequests!==0||r.evidence?.secretValuesRead!==0)throw new Error('independent Version proof invalid');
+          fs.appendFileSync(process.env.GITHUB_OUTPUT,`classification=${r.classification}\nattended_version_id=${r.inventory.reviewedVersionId}\nartifact_sha256=${createHash('sha256').update(bytes).digest('hex')}\n`);
+          NODE
+      - uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6
+        with:
+          name: api-football-attended-version-readonly-proof
+          path: ${{ runner.temp }}/attended-version-proof.json
+          retention-days: 7
+
+  protected-credential-preparation:
+    if: github.event_name == 'workflow_dispatch' && github.run_attempt == 1 && needs.independent-version-readonly-proof.outputs.classification == 'READY_FOR_ATTENDED_CREDENTIAL_PREPARATION'
+    needs: [repository-gate, independent-version-readonly-proof]
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    environment:
+      name: api-football-attended-preparation-credential
+      deployment: false
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          ref: ${{ needs.repository-gate.outputs.approved_sha }}
+          persist-credentials: false
+      - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
+        with:
+          node-version: 24.19.0
+      - uses: actions/download-artifact@95815c38cf2ff2164869cbab79da8d1f422bc89e # v4
+        with:
+          name: api-football-attended-version-readonly-proof
+          path: ${{ runner.temp }}/version-proof
+      - name: Reconfirm exact protected main and Version proof immediately before D1 mutation
+        env:
+          APPROVED_SHA: ${{ needs.repository-gate.outputs.approved_sha }}
+          REPORT: ${{ runner.temp }}/version-proof/attended-version-proof.json
+          EXPECTED_ARTIFACT_SHA256: ${{ needs.independent-version-readonly-proof.outputs.artifact_sha256 }}
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "$APPROVED_SHA"
+          test "$(git ls-remote https://github.com/priteshpatel390-del/FPL.git refs/heads/main | cut -f1)" = "$APPROVED_SHA"
+          test "$(sha256sum "$REPORT" | cut -d' ' -f1)" = "$EXPECTED_ARTIFACT_SHA256"
+          test -z "$(git status --porcelain --untracked-files=all)"
+      - name: Submit one fail-closed UNPROVISIONED to AVAILABLE transition
+        id: credential
+        continue-on-error: true
+        env:
+          API_FOOTBALL_ATTENDED_PREPARATION_OPERATION: CREDENTIAL
+          APPROVED_SHA: ${{ needs.repository-gate.outputs.approved_sha }}
+          API_FOOTBALL_ATTENDED_VERSION_ID: ${{ needs.independent-version-readonly-proof.outputs.attended_version_id }}
+          API_FOOTBALL_PREPARATION_ADMISSION_PATH: ${{ runner.temp }}/version-proof/attended-version-proof.json
+          API_FOOTBALL_ATTENDED_CREDENTIAL_PREPARATION_REPORT_PATH: ${{ runner.temp }}/attended-credential-preparation.json
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          CLOUDFLARE_ACCOUNT_FINGERPRINT: ${{ vars.CLOUDFLARE_ACCOUNT_FINGERPRINT }}
+          CLOUDFLARE_ATTENDED_D1_MUTATION_TOKEN: ${{ secrets.CLOUDFLARE_ATTENDED_D1_MUTATION_TOKEN }}
+        run: node workers/api-football-collector/attended-preparation.mjs
+      - uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6
+        if: always()
+        with:
+          name: api-football-attended-credential-preparation
+          path: ${{ runner.temp }}/attended-credential-preparation.json
+          if-no-files-found: warn
+          retention-days: 7
+
+  final-readonly-preparation-closeout:
+    if: ${{ always() && github.event_name == 'workflow_dispatch' && github.run_attempt == 1 && needs.repository-gate.result == 'success' && needs.independent-version-readonly-proof.result == 'success' }}
+    needs: [repository-gate, independent-version-readonly-proof, protected-credential-preparation]
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    environment:
+      name: data-steward-readonly
+      deployment: false
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          ref: ${{ needs.repository-gate.outputs.approved_sha }}
+          persist-credentials: false
+      - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
+        with:
+          node-version: 24.19.0
+      - name: Reconfirm exact protected main before independent closeout
+        env:
+          APPROVED_SHA: ${{ needs.repository-gate.outputs.approved_sha }}
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "$APPROVED_SHA"
+          test "$(git ls-remote https://github.com/priteshpatel390-del/FPL.git refs/heads/main | cut -f1)" = "$APPROVED_SHA"
+          test -z "$(git status --porcelain --untracked-files=all)"
+      - name: Collect independent preparation closeout
+        id: closeout
+        continue-on-error: true
+        env:
+          APPROVED_SHA: ${{ needs.repository-gate.outputs.approved_sha }}
+          API_FOOTBALL_PREFLIGHT_STAGE: ATTENDED_PREPARATION_CLOSEOUT
+          API_FOOTBALL_ATTENDED_VERSION_ID: ${{ needs.independent-version-readonly-proof.outputs.attended_version_id }}
+          DATA_STEWARD_CLOUDFLARE_ACCOUNT_ID: ${{ secrets.DATA_STEWARD_CLOUDFLARE_ACCOUNT_ID }}
+          DATA_STEWARD_CLOUDFLARE_ACCOUNT_FINGERPRINT: ${{ vars.DATA_STEWARD_CLOUDFLARE_ACCOUNT_FINGERPRINT }}
+          DATA_STEWARD_CLOUDFLARE_READ_TOKEN: ${{ secrets.DATA_STEWARD_CLOUDFLARE_READ_TOKEN }}
+          API_FOOTBALL_ACTIVATION_PREFLIGHT_REPORT_PATH: ${{ runner.temp }}/attended-preparation-closeout.json
+        run: node workers/api-football-collector/activation-live-preflight.mjs
+      - uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6
+        if: always()
+        with:
+          name: api-football-attended-preparation-closeout
+          path: ${{ runner.temp }}/attended-preparation-closeout.json
+          if-no-files-found: error
+          retention-days: 7
+      - name: Require READY_FOR_SEPARATELY_APPROVED_ATTENDED_ACCEPTANCE
+        if: steps.closeout.outcome == 'success'
+        env:
+          REPORT: ${{ runner.temp }}/attended-preparation-closeout.json
+          APPROVED_SHA: ${{ needs.repository-gate.outputs.approved_sha }}
+          ATTENDED_VERSION_ID: ${{ needs.independent-version-readonly-proof.outputs.attended_version_id }}
+        run: |
+          set -euo pipefail
+          node --input-type=module - <<'NODE'
+          import fs from 'node:fs';
+          const r=JSON.parse(fs.readFileSync(process.env.REPORT,'utf8'));
+          if(r.ok!==true||r.approvedSha!==process.env.APPROVED_SHA||r.stage!=='ATTENDED_PREPARATION_CLOSEOUT'||
+            r.classification!=='READY_FOR_SEPARATELY_APPROVED_ATTENDED_ACCEPTANCE'||r.inventory?.reviewedVersionId!==process.env.ATTENDED_VERSION_ID||
+            r.inventory?.originalVersionIdentityExact!==true||r.inventory?.versionIdentityExact!==true||r.inventory?.versionInventoryExact!==true||
+            r.inventory?.deploymentCount!==0||r.inventory?.previewUrls!==false||r.inventory?.workersDev!==false||r.inventory?.cronCount!==0||
+            r.inventory?.routeCount!==0||r.inventory?.customDomainCount!==0||r.runtime?.collectionEnabled!==0||r.runtime?.credentialState!=='AVAILABLE'||
+            r.runtime?.activeLease!==false||r.priorState?.requestAttempts!==0||r.priorState?.generations!==0||r.priorState?.fixtureRevisions!==0||
+            r.evidence?.productionMutations!==0||r.evidence?.apiFootballRequests!==0||r.evidence?.secretValuesRead!==0)throw new Error('preparation closeout invalid');
+          NODE
+      - name: Fail closed when independent closeout is not ready
+        if: steps.closeout.outcome != 'success'
+        run: exit 1
