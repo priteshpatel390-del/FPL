@@ -1,3 +1,7 @@
+## API-Football attended preparation remains model-isolated
+
+Attended preparation is control-plane/security plumbing only. It changes no expected minutes, fixture model, projected points, squad, XI, captaincy, transfer, simulation, rank, Mini-League, rival or strategy logic and creates no production read path from API-Football into the model. Its provider-egress budget is zero. A future preparation PASS would make no accuracy claim and would not authorize model influence.
+
 ## API-Football post-20/20 runtime completion remains model-isolated
 
 The qualified team-mapping persistence and pre-egress planner are **shadow infrastructure only**. They do not change expected minutes, fixture inputs, projected points, XI selection, captaincy, transfers, simulations, rank, Mini Leagues, rival analysis or strategy. Workload detail remains explicitly blocked in the planner. No accuracy claim follows from repository readiness; API-Football still requires prospective shadow evidence and separately approved out-of-sample/ablation evaluation before any model influence. Historical r=0.80 remains method-flattered.
