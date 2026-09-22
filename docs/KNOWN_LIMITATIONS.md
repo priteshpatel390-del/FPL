@@ -1,3 +1,9 @@
+## Attended acceptance critical-recheck failure remains unclassified until diagnostic code is live
+
+Run `35751021431` proved that the protected environment values were present and that the live state before and after protected execution remained pristine, but current main reports the executor's fresh critical-preflight failure only as `attended_critical_state_drift`. The exact failing invariant therefore cannot be claimed from that run. The difference between read-only admission/reconciliation and the protected executor's credential is a useful investigation clue, not proof of a token-scope defect.
+
+The repository remediation adds closed diagnostic categories for a future separately approved run. CI can prove mapping/sanitization and zero-mutation fail-closed behaviour, but only a future attended live preflight can identify the real failing category. Run `35751021431` is consumed and must not be rerun.
+
 ## Attended acceptance run 35748566087 consumed before provider egress
 
 Run `35748566087` must not be rerun. It failed safely before protected execution because Preview URL identity was read from the wrong Cloudflare metadata endpoint. Reconciliation recorded 0 API-Football requests, 0 request-attempt rows, 0 discovery generations, 0 fixture revisions and no production mutation. A new attended acceptance dispatch remains blocked until the Preview-identity repository remediation is merged, exact-main verification succeeds, and the owner separately approves a new live dispatch.
