@@ -1,3 +1,7 @@
+## API-Football attended acceptance immutable-provenance coverage — 22 September 2026
+
+`tests/api-football-attended-acceptance-foundation.test.mjs` and `tests/api-football-collector-activation-live-preflight.test.mjs` pin the existing attended Version's immutable provenance independently from current workflow execution SHA. Coverage requires the exact provenance SHA `69bb84fadbcce94e9fece3ff438d985866cce183`, the historical 17-module SHA-256 manifest (including attended `collector.mjs` SHA-256 `15fef416230115fd87226a76ac02513f5d24de5bec88577c61e8ea85ee8e6f77`), exact Version inventory/bindings, and explicit provenance handoff through admission, critical recheck and reconciliation. Malformed and different-but-well-formed provenance values fail closed. Existing five-request/no-retry/provider-isolation/D1-budget tests remain authoritative and unweakened.
+
 ## API-Football attended preparation regression coverage
 
 `tests/api-football-attended-preparation-foundation.test.mjs` covers singleton-original admission, accepted original creation SHA/module-hash pinning, Version construction, exact binding sets, secret separation/non-retention, one-submission Version ambiguity reconciliation, closed Version/D1 endpoint allowlists, exact one-call/one-statement/one-row credential transition, no-resubmit D1 ambiguity, exact AVAILABLE closeout, immutable/manual workflow gates, separate protected environments, zero provider/Deployment/Preview/Cron/route/domain authority and model/UI isolation.
