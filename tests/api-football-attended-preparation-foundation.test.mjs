@@ -276,3 +276,24 @@ test('dedicated attended preparation START workflow is manual read-only and cann
   assert.match(workflow,/READY_FOR_ATTENDED_VERSION_PREPARATION/);
   assert.match(workflow,/r\.inventory\?\.routeCount!==0/);
 });
+
+
+test('credential recovery workflow resumes only from exact proved Version state and has no Version-upload or provider capability',()=>{
+  const workflow=fs.readFileSync(path.join(root,'.github/workflows/api-football-attended-credential-recovery.yml'),'utf8');
+  assert.match(workflow,/workflow_dispatch:/);
+  assert.match(workflow,/github\.run_attempt == 1/);
+  assert.match(workflow,/refs\/heads\/main/);
+  assert.match(workflow,/attended_version_id:/);
+  assert.match(workflow,/API_FOOTBALL_PREFLIGHT_STAGE: ATTENDED_PREPARATION_VERSION_READY/);
+  assert.match(workflow,/READY_FOR_ATTENDED_CREDENTIAL_PREPARATION/);
+  assert.match(workflow,/name: api-football-attended-preparation-credential/);
+  assert.match(workflow,/CLOUDFLARE_ATTENDED_D1_MUTATION_TOKEN/);
+  assert.match(workflow,/ATTENDED_PREPARATION_CLOSEOUT/);
+  assert.match(workflow,/READY_FOR_SEPARATELY_APPROVED_ATTENDED_ACCEPTANCE/);
+  assert.match(workflow,/credentialState!=='UNPROVISIONED'/);
+  assert.match(workflow,/credentialState!=='AVAILABLE'/);
+  assert.doesNotMatch(workflow,/CLOUDFLARE_ATTENDED_VERSION_UPLOAD_TOKEN|API_FOOTBALL_API_KEY|API_FOOTBALL_ATTENDED_TRIGGER_SECRET/);
+  assert.doesNotMatch(workflow,/ATTENDED_PREPARATION_START|run-attended-acceptance|attended-one-shot|v3\.football\.api-sports\.io|wrangler\s+deploy|\/deployments(?:['"\s]|$)/);
+  assert.doesNotMatch(workflow,/^\s{2}(?:schedule|push):/m);
+  for(const match of workflow.matchAll(/uses:\s+[^@\s]+@([^\s#]+)/g))assert.match(match[1],/^[0-9a-f]{40}$/);
+});

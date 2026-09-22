@@ -653,6 +653,7 @@ test('API-Football discovery stays isolated from production, live config and mig
     'api-football-collector-attended-acceptance.yml',
     'api-football-attended-preparation-start-readonly.yml',
     'api-football-attended-preparation.yml',
+    'api-football-attended-credential-recovery.yml',
     'api-football-collector-inactive-version-staging.yml',
     'api-football-migration-0004.yml',
     'api-football-migration-0005.yml',
@@ -737,6 +738,18 @@ test('API-Football discovery stays isolated from production, live config and mig
       assert.match(source,/github\.run_attempt == 1/);
       assert.match(source,/Tests and deterministic build/);
       assert.doesNotMatch(source,/CLOUDFLARE_ATTENDED_VERSION_UPLOAD_TOKEN|CLOUDFLARE_ATTENDED_D1_MUTATION_TOKEN|secrets\.API_FOOTBALL_API_KEY|API_FOOTBALL_ATTENDED_TRIGGER_SECRET|attended-preparation\.mjs|run-attended-acceptance|attended-one-shot|x-apisports-key|v3\.football\.api-sports\.io|wrangler\s+deploy|\/deployments|^\s{2}(?:schedule|push):/im);
+      continue;
+    }
+    if(file==='api-football-attended-credential-recovery.yml'){
+      assert.match(source,/name: api-football-attended-preparation-credential/);
+      assert.match(source,/name: data-steward-readonly/);
+      assert.match(source,/CLOUDFLARE_ATTENDED_D1_MUTATION_TOKEN/);
+      assert.match(source,/API_FOOTBALL_PREFLIGHT_STAGE: ATTENDED_PREPARATION_VERSION_READY/);
+      assert.match(source,/READY_FOR_ATTENDED_CREDENTIAL_PREPARATION/);
+      assert.match(source,/READY_FOR_SEPARATELY_APPROVED_ATTENDED_ACCEPTANCE/);
+      assert.match(source,/github\.run_attempt == 1/);
+      assert.match(source,/Tests and deterministic build/);
+      assert.doesNotMatch(source,/CLOUDFLARE_ATTENDED_VERSION_UPLOAD_TOKEN|secrets\.API_FOOTBALL_API_KEY|API_FOOTBALL_ATTENDED_TRIGGER_SECRET|ATTENDED_PREPARATION_START|run-attended-acceptance|attended-one-shot|x-apisports-key|v3\.football\.api-sports\.io|wrangler\s+deploy|\/deployments|^\s{2}(?:schedule|push):/im);
       continue;
     }
     if(file==='api-football-attended-preparation.yml'){
