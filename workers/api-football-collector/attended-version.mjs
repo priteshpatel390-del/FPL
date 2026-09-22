@@ -8,6 +8,8 @@ import {EXPECTED_D1_DATABASE_ID} from '../data-platform/phase4b/live-contract.mj
 export const ORIGINAL_BLOCKED_VERSION_ID='e49ac8f2-4289-46bc-9f0b-87a20cd7be62';
 export const ORIGINAL_BLOCKED_VERSION_ACTIVATION='REPOSITORY_ONLY_BLOCKED';
 export const ORIGINAL_BLOCKED_VERSION_APPROVED_SHA='302dc21cc4b821ac8b224d176765a29c0724a244';
+export const ATTENDED_VERSION_ID='04d79556-3070-429f-9944-b5b53d799842';
+export const ATTENDED_VERSION_APPROVED_SHA='69bb84fadbcce94e9fece3ff438d985866cce183';
 export const ORIGINAL_BLOCKED_VERSION_MODULE_SHA256=Object.freeze({
   'modules/src/decision-intelligence/api-football-discovery.mjs':'e4da37d8e222223d9e4c34941b03acf4db22940c7bc5d6d44b798b7d650c7d3f',
   'modules/src/decision-intelligence/api-football-foundation.mjs':'fecb1e70137c6a6cfda0a63f91f595497a973806a95e6ff500ac3124c29a2b9d',
@@ -26,6 +28,9 @@ export const ORIGINAL_BLOCKED_VERSION_MODULE_SHA256=Object.freeze({
   'modules/workers/api-football-collector/runtime-contracts.mjs':'b4b4991622c22f0888f88717dee58c4bcad75010c737a01ca5622bcac41eccb6',
   'modules/workers/api-football-collector/scheduler.mjs':'ab90effc98e4eac704acfdbebc70828411ab0152b9df7f88ed1654cb56f3a6c8',
   'modules/workers/api-football-collector/semantic-validation.mjs':'9e9cdc11aea2c2dd63c700c9f7aa5b7de3e1f5a5794e5fb9fcbcdfbcfd1c0328'
+});
+export const ATTENDED_VERSION_MODULE_SHA256=Object.freeze({...ORIGINAL_BLOCKED_VERSION_MODULE_SHA256,
+  'collector.mjs':'7cd42f9fe74a91dbd9eeeb024446409b767e4dd271f6736a8b3bb4c2f865817d'
 });
 const UUID=/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const HEX40=/^[0-9a-f]{40}$/;
@@ -50,6 +55,15 @@ export function buildReviewedAttendedIdentity(approvedSha,{readFile}={}){
     message:'API-Football attended acceptance from '+approvedSha,
     tag:'api-football-attended-'+approvedSha.slice(0,12),
     moduleSha256:Object.freeze(Object.fromEntries([...modules].map(([name,source])=>[name,sha256(source)])))
+  });
+}
+
+export function buildImmutableAttendedVersionIdentity(versionApprovedSha=ATTENDED_VERSION_APPROVED_SHA){
+  if(versionApprovedSha!==ATTENDED_VERSION_APPROVED_SHA)fail('collector_attended_version_provenance_invalid');
+  return Object.freeze({
+    approvedSha:ATTENDED_VERSION_APPROVED_SHA,mainModule:ENTRY_MODULE,compatibilityDate:EXPECTED_COMPATIBILITY_DATE,
+    message:'API-Football attended acceptance from '+ATTENDED_VERSION_APPROVED_SHA,
+    tag:'api-football-attended-'+ATTENDED_VERSION_APPROVED_SHA.slice(0,12),moduleSha256:ATTENDED_VERSION_MODULE_SHA256
   });
 }
 

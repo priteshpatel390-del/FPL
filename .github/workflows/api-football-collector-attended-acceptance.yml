@@ -38,6 +38,7 @@ jobs:
       - id: identity
         env:
           APPROVED_SHA: ${{ inputs.approved_sha }}
+          ATTENDED_VERSION_ID: ${{ inputs.attended_version_id }}
           EVENT_NAME: ${{ github.event_name }}
           EVENT_REF: ${{ github.ref }}
           EVENT_REPOSITORY: ${{ github.repository }}
@@ -50,6 +51,8 @@ jobs:
           test "$EVENT_REF" = refs/heads/main
           test "$EVENT_REPOSITORY" = priteshpatel390-del/FPL
           printf '%s' "$APPROVED_SHA" | grep -Eq '^[0-9a-f]{40}$'
+          printf '%s' "$ATTENDED_VERSION_ID" | grep -Eiq '^[0-9a-f-]{36}$'
+          test "$ATTENDED_VERSION_ID" = "04d79556-3070-429f-9944-b5b53d799842"
           test "$EVENT_SHA" = "$APPROVED_SHA"
           test "$(git rev-parse HEAD)" = "$APPROVED_SHA"
           test "$(git ls-remote https://github.com/priteshpatel390-del/FPL.git refs/heads/main | cut -f1)" = "$APPROVED_SHA"
@@ -106,6 +109,7 @@ jobs:
           APPROVED_SHA: ${{ needs.repository-gate.outputs.approved_sha }}
           API_FOOTBALL_PREFLIGHT_STAGE: ATTENDED_ACCEPTANCE
           API_FOOTBALL_ATTENDED_VERSION_ID: ${{ inputs.attended_version_id }}
+          API_FOOTBALL_ATTENDED_VERSION_APPROVED_SHA: 69bb84fadbcce94e9fece3ff438d985866cce183
           DATA_STEWARD_CLOUDFLARE_ACCOUNT_ID: ${{ secrets.DATA_STEWARD_CLOUDFLARE_ACCOUNT_ID }}
           DATA_STEWARD_CLOUDFLARE_ACCOUNT_FINGERPRINT: ${{ vars.DATA_STEWARD_CLOUDFLARE_ACCOUNT_FINGERPRINT }}
           DATA_STEWARD_CLOUDFLARE_READ_TOKEN: ${{ secrets.DATA_STEWARD_CLOUDFLARE_READ_TOKEN }}
@@ -117,6 +121,7 @@ jobs:
           REPORT: ${{ runner.temp }}/attended-admission.json
           APPROVED_SHA: ${{ needs.repository-gate.outputs.approved_sha }}
           ATTENDED_VERSION_ID: ${{ inputs.attended_version_id }}
+          VERSION_APPROVED_SHA: 69bb84fadbcce94e9fece3ff438d985866cce183
           ACCOUNT_FINGERPRINT: ${{ vars.DATA_STEWARD_CLOUDFLARE_ACCOUNT_FINGERPRINT }}
         run: |
           set -euo pipefail
@@ -124,7 +129,7 @@ jobs:
           import fs from 'node:fs';
           import {createHash} from 'node:crypto';
           const bytes=fs.readFileSync(process.env.REPORT),report=JSON.parse(bytes);
-          if(report.ok!==true||report.approvedSha!==process.env.APPROVED_SHA||report.stage!=='ATTENDED_ACCEPTANCE'||report.classification!=='READY_FOR_SEPARATELY_APPROVED_ATTENDED_ACCEPTANCE'||report.inventory?.reviewedVersionId!==process.env.ATTENDED_VERSION_ID||report.inventory?.versionIdentityExact!==true||report.inventory?.versionInventoryExact!==true||report.accountFingerprint!==process.env.ACCOUNT_FINGERPRINT||report.evidence?.productionMutations!==0||report.evidence?.apiFootballRequests!==0||report.evidence?.secretValuesRead!==0)throw new Error('attended admission handoff invalid');
+          if(report.ok!==true||report.approvedSha!==process.env.APPROVED_SHA||report.versionApprovedSha!==process.env.VERSION_APPROVED_SHA||report.stage!=='ATTENDED_ACCEPTANCE'||report.classification!=='READY_FOR_SEPARATELY_APPROVED_ATTENDED_ACCEPTANCE'||report.inventory?.reviewedVersionId!==process.env.ATTENDED_VERSION_ID||report.inventory?.versionIdentityExact!==true||report.inventory?.versionInventoryExact!==true||report.accountFingerprint!==process.env.ACCOUNT_FINGERPRINT||report.evidence?.productionMutations!==0||report.evidence?.apiFootballRequests!==0||report.evidence?.secretValuesRead!==0)throw new Error('attended admission handoff invalid');
           fs.appendFileSync(process.env.GITHUB_OUTPUT,`classification=${report.classification}\nattended_version_id=${report.inventory.reviewedVersionId}\nartifact_sha256=${createHash('sha256').update(bytes).digest('hex')}\n`);
           NODE
       - uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6
@@ -165,6 +170,7 @@ jobs:
         env:
           APPROVED_SHA: ${{ needs.repository-gate.outputs.approved_sha }}
           API_FOOTBALL_ATTENDED_VERSION_ID: ${{ inputs.attended_version_id }}
+          API_FOOTBALL_ATTENDED_VERSION_APPROVED_SHA: 69bb84fadbcce94e9fece3ff438d985866cce183
           API_FOOTBALL_ATTENDED_TRIGGER_SECRET: ${{ secrets.API_FOOTBALL_ATTENDED_TRIGGER_SECRET }}
           API_FOOTBALL_ATTENDED_ADMISSION_PATH: ${{ runner.temp }}/attended-admission/attended-admission.json
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
@@ -210,6 +216,7 @@ jobs:
           APPROVED_SHA: ${{ needs.repository-gate.outputs.approved_sha }}
           API_FOOTBALL_PREFLIGHT_STAGE: ATTENDED_ACCEPTANCE
           API_FOOTBALL_ATTENDED_VERSION_ID: ${{ inputs.attended_version_id }}
+          API_FOOTBALL_ATTENDED_VERSION_APPROVED_SHA: 69bb84fadbcce94e9fece3ff438d985866cce183
           DATA_STEWARD_CLOUDFLARE_ACCOUNT_ID: ${{ secrets.DATA_STEWARD_CLOUDFLARE_ACCOUNT_ID }}
           DATA_STEWARD_CLOUDFLARE_ACCOUNT_FINGERPRINT: ${{ vars.DATA_STEWARD_CLOUDFLARE_ACCOUNT_FINGERPRINT }}
           DATA_STEWARD_CLOUDFLARE_READ_TOKEN: ${{ secrets.DATA_STEWARD_CLOUDFLARE_READ_TOKEN }}

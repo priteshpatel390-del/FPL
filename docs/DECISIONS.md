@@ -1,3 +1,7 @@
+## 22 September 2026 — immutable attended Version provenance is separate from execution SHA
+
+**Decision:** validate the already-created API-Football attended Worker Version against its immutable creation identity, not the repository SHA executing a later workflow. Version `04d79556-3070-429f-9944-b5b53d799842` is bound to creation/provenance SHA `69bb84fadbcce94e9fece3ff438d985866cce183`, exact message/tag, main module, compatibility date, bindings and historical 17-module SHA-256 manifest. Current `main` remains a separate workflow-admission identity. Admission, the final pre-mutation critical recheck and independent reconciliation must carry both identities and fail closed on mismatch. This does not authorize live acceptance, provider egress, model/data use, token cleanup or activation.
+
 ## 2026-09-22 — Immutable Worker Version provenance is distinct from workflow execution identity
 
 For attended API-Football recovery and later read-only Version validation, the exact current `main` SHA remains the workflow execution/admission identity, while an already-created Cloudflare Version is validated against the SHA that created its immutable bytes and annotations. Recovery must not reinterpret that historical Version as if it were created by a later repository-only workflow commit. The current recovery anchor is Version `04d79556-3070-429f-9944-b5b53d799842` with creation/provenance SHA `69bb84fadbcce94e9fece3ff438d985866cce183`. Both anchors are pinned and exact module/binding/two-Version validation remains mandatory.

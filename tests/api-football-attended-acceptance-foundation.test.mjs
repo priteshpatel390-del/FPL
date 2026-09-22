@@ -11,7 +11,7 @@ import {
 } from '../workers/api-football-collector/attended-acceptance.mjs';
 import {classifyAttendedReconciliation} from '../workers/api-football-collector/attended-reconciliation.mjs';
 import {
-  ORIGINAL_BLOCKED_VERSION_ID,buildAttendedVersionUploadForm,buildReviewedAttendedIdentity,deriveVersionPreviewUrl,
+  ATTENDED_VERSION_APPROVED_SHA,ATTENDED_VERSION_MODULE_SHA256,ORIGINAL_BLOCKED_VERSION_ID,buildAttendedVersionUploadForm,buildImmutableAttendedVersionIdentity,buildReviewedAttendedIdentity,deriveVersionPreviewUrl,
   expectedAttendedBindings,prepareFinalAttendedVersion,validateClosedVersionInventory,validateReviewedAttendedVersion
 } from '../workers/api-football-collector/attended-version.mjs';
 import {attendedCloudflarePaths,assertAttendedCloudflareRequestAllowed,executeLiveAttendedAcceptance} from '../workers/api-football-collector/run-attended-acceptance.mjs';
@@ -19,7 +19,7 @@ import {MutationAmbiguousError,buildUploadModules,resolveModuleGraph} from '../w
 import {EXPECTED_D1_DATABASE_ID} from '../workers/data-platform/phase4b/live-contract.mjs';
 
 const root=path.resolve(import.meta.dirname,'..');
-const NOW='2026-09-21T12:00:00.000Z',SHA='a'.repeat(40),VERSION='11111111-1111-4111-8111-111111111111';
+const NOW='2026-09-21T12:00:00.000Z',SHA='a'.repeat(40),VERSION='11111111-1111-4111-8111-111111111111',VERSION_PROVENANCE=ATTENDED_VERSION_APPROVED_SHA;
 const ACCOUNT='production-account',FINGERPRINT=createHash('sha256').update(ACCOUNT).digest('hex'),SECRET='x'.repeat(64);
 const request=(method='POST',route=ATTENDED_ACCEPTANCE_PATH,secret=SECRET)=>new Request('https://preview.invalid'+route,{method,headers:{'x-teamsheet-attended-trigger':secret}});
 const identity=buildReviewedAttendedIdentity(SHA),modules=buildUploadModules(resolveModuleGraph());
@@ -28,7 +28,7 @@ function attendedBeta(){return {id:VERSION,main_module:identity.mainModule,compa
 function originalStable(){return {id:ORIGINAL_BLOCKED_VERSION_ID,resources:{bindings:[
   {name:'TEAMSHEET_DATA_DB',type:'d1',database_id:EXPECTED_D1_DATABASE_ID},{name:'API_FOOTBALL_FPL_SEASON',type:'plain_text',text:'2026-27'},
   {name:'API_FOOTBALL_PROVIDER_SEASON',type:'plain_text',text:'2026'},{name:'EIA_2I5D_ACTIVATION',type:'plain_text',text:'REPOSITORY_ONLY_BLOCKED'}]}};}
-function admission(){return {ok:true,approvedSha:SHA,accountFingerprint:FINGERPRINT,observedAt:NOW,stage:'ATTENDED_ACCEPTANCE',classification:'READY_FOR_SEPARATELY_APPROVED_ATTENDED_ACCEPTANCE',inventory:{reviewedVersionId:VERSION,versionIdentityExact:true,versionInventoryExact:true},runtime:{collectionEnabled:0,credentialState:'AVAILABLE',activeLease:false},evidence:{observedAt:NOW,productionMutations:0,apiFootballRequests:0,secretValuesRead:0}};}
+function admission(){return {ok:true,approvedSha:SHA,versionApprovedSha:VERSION_PROVENANCE,accountFingerprint:FINGERPRINT,observedAt:NOW,stage:'ATTENDED_ACCEPTANCE',classification:'READY_FOR_SEPARATELY_APPROVED_ATTENDED_ACCEPTANCE',inventory:{reviewedVersionId:VERSION,versionIdentityExact:true,versionInventoryExact:true},runtime:{collectionEnabled:0,credentialState:'AVAILABLE',activeLease:false},evidence:{observedAt:NOW,productionMutations:0,apiFootballRequests:0,secretValuesRead:0}};}
 
 test('attended HTTP path is exact, secret-gated, generic, and reuses collector composition',async()=>{
   let calls=0;const run=async()=>{calls++;return {ok:true};},env={EIA_2I5D_ACTIVATION:'ATTENDED_ONE_SHOT_DISCOVERY',API_FOOTBALL_ATTENDED_TRIGGER_SECRET:SECRET};
@@ -45,6 +45,15 @@ test('reviewed Version proof pins UUID, commit annotations, modules, runtime and
     value=>value.beta.modules.pop(),value=>value.beta.modules.push({name:'unexpected.mjs',content_base64:Buffer.from('x').toString('base64')})
   ];
   for(const mutate of cases){const value={stable:attendedStable(),beta:attendedBeta()};mutate(value);assert.throws(()=>validateReviewedAttendedVersion({stableVersion:value.stable,betaVersion:value.beta,versionId:VERSION,identity}));}
+});
+
+test('immutable attended Version identity is pinned independently of current execution SHA',()=>{
+  const historical=buildImmutableAttendedVersionIdentity(VERSION_PROVENANCE);
+  assert.equal(historical.approvedSha,VERSION_PROVENANCE);
+  assert.equal(Object.keys(historical.moduleSha256).length,17);
+  assert.equal(historical.moduleSha256['collector.mjs'],'7cd42f9fe74a91dbd9eeeb024446409b767e4dd271f6736a8b3bb4c2f865817d');
+  assert.equal(historical.moduleSha256,ATTENDED_VERSION_MODULE_SHA256);
+  assert.throws(()=>buildImmutableAttendedVersionIdentity(SHA),/version_provenance_invalid/);
 });
 
 test('closed Worker-wide Preview inventory admits only original inert plus reviewed attended Version',()=>{
@@ -115,20 +124,20 @@ function criticalAdmission(overrides={}){
 test('executor fingerprints account and closes mutation endpoint surface before fetch',async()=>{
   const paths=attendedCloudflarePaths(ACCOUNT);assert.equal(assertAttendedCloudflareRequestAllowed('POST',paths.subdomain,{accountId:ACCOUNT}),true);assert.equal(assertAttendedCloudflareRequestAllowed('POST',paths.d1,{accountId:ACCOUNT}),true);
   for(const [method,path] of [['GET',paths.subdomain],['GET',`/accounts/${ACCOUNT}/workers/subdomain`],['POST',`/accounts/${ACCOUNT}/workers/scripts/x/deployments`],['POST',`/accounts/${ACCOUNT}/workers/scripts/x/schedules`],['POST',`/accounts/${ACCOUNT}/workers/routes`],['POST',`/accounts/${ACCOUNT}/workers/domains`]])assert.throws(()=>assertAttendedCloudflareRequestAllowed(method,path,{accountId:ACCOUNT}),/forbidden/);
-  let calls=0;const base={CLOUDFLARE_ACCOUNT_ID:ACCOUNT,CLOUDFLARE_ATTENDED_MUTATION_TOKEN:'token',APPROVED_SHA:SHA,API_FOOTBALL_ATTENDED_VERSION_ID:VERSION,API_FOOTBALL_ATTENDED_TRIGGER_SECRET:SECRET,API_FOOTBALL_ATTENDED_ADMISSION_PATH:'/tmp/absent'};
+  let calls=0;const base={CLOUDFLARE_ACCOUNT_ID:ACCOUNT,CLOUDFLARE_ATTENDED_MUTATION_TOKEN:'token',APPROVED_SHA:SHA,API_FOOTBALL_ATTENDED_VERSION_ID:VERSION,API_FOOTBALL_ATTENDED_VERSION_APPROVED_SHA:VERSION_PROVENANCE,API_FOOTBALL_ATTENDED_TRIGGER_SECRET:SECRET,API_FOOTBALL_ATTENDED_ADMISSION_PATH:'/tmp/absent'};
   for(const env of [{...base,CLOUDFLARE_ACCOUNT_FINGERPRINT:'0'.repeat(64)},base])await assert.rejects(()=>executeLiveAttendedAcceptance({env,fetchImpl:async()=>{calls++;}}));assert.equal(calls,0);
 });
 
 test('executor performs fresh exact critical recheck immediately before any Preview or D1 mutation',async()=>{
   const file='/tmp/attended-admission-critical-drift.json';fs.writeFileSync(file,JSON.stringify(admission()));let networkCalls=0,criticalCalls=0;
-  const env={CLOUDFLARE_ACCOUNT_ID:ACCOUNT,CLOUDFLARE_ACCOUNT_FINGERPRINT:FINGERPRINT,CLOUDFLARE_ATTENDED_MUTATION_TOKEN:'token',APPROVED_SHA:SHA,API_FOOTBALL_ATTENDED_VERSION_ID:VERSION,API_FOOTBALL_ATTENDED_TRIGGER_SECRET:SECRET,API_FOOTBALL_ATTENDED_ADMISSION_PATH:file};
+  const env={CLOUDFLARE_ACCOUNT_ID:ACCOUNT,CLOUDFLARE_ACCOUNT_FINGERPRINT:FINGERPRINT,CLOUDFLARE_ATTENDED_MUTATION_TOKEN:'token',APPROVED_SHA:SHA,API_FOOTBALL_ATTENDED_VERSION_ID:VERSION,API_FOOTBALL_ATTENDED_VERSION_APPROVED_SHA:VERSION_PROVENANCE,API_FOOTBALL_ATTENDED_TRIGGER_SECRET:SECRET,API_FOOTBALL_ATTENDED_ADMISSION_PATH:file};
   await assert.rejects(()=>executeLiveAttendedAcceptance({env,fetchImpl:async()=>{networkCalls++;throw new Error('must not mutate');},criticalRecheck:async()=>{criticalCalls++;return criticalAdmission({ok:false,classification:'STOP_ATTENDED_ACCEPTANCE_REVIEW_REQUIRED',reason:'attended_stage_inventory_unexpected',inventory:{versionInventoryExact:false}});}}),/attended_critical_state_drift/);
   assert.equal(criticalCalls,1);assert.equal(networkCalls,0);fs.unlinkSync(file);
 });
 
 test('executor derives URL from fresh recheck, invokes once, and stays within separate control budget',async()=>{
   const file='/tmp/attended-admission-test.json';fs.writeFileSync(file,JSON.stringify(admission()));const calls=[];let criticalCalls=0;
-  const env={CLOUDFLARE_ACCOUNT_ID:ACCOUNT,CLOUDFLARE_ACCOUNT_FINGERPRINT:FINGERPRINT,CLOUDFLARE_ATTENDED_MUTATION_TOKEN:'token',APPROVED_SHA:SHA,API_FOOTBALL_ATTENDED_VERSION_ID:VERSION,API_FOOTBALL_ATTENDED_TRIGGER_SECRET:SECRET,API_FOOTBALL_ATTENDED_ADMISSION_PATH:file};
+  const env={CLOUDFLARE_ACCOUNT_ID:ACCOUNT,CLOUDFLARE_ACCOUNT_FINGERPRINT:FINGERPRINT,CLOUDFLARE_ATTENDED_MUTATION_TOKEN:'token',APPROVED_SHA:SHA,API_FOOTBALL_ATTENDED_VERSION_ID:VERSION,API_FOOTBALL_ATTENDED_VERSION_APPROVED_SHA:VERSION_PROVENANCE,API_FOOTBALL_ATTENDED_TRIGGER_SECRET:SECRET,API_FOOTBALL_ATTENDED_ADMISSION_PATH:file};
   const fetchImpl=async(url,init={})=>{calls.push({url:String(url),init});if(String(url).includes('workers.dev'))return new Response('',{status:202});if(String(url).includes('/query'))return new Response(JSON.stringify({success:true,result:[{success:true,meta:{changes:1}}]}));return new Response(JSON.stringify({success:true,result:{}}));};
   const result=await executeLiveAttendedAcceptance({env,fetchImpl,criticalRecheck:async()=>{criticalCalls++;return criticalAdmission();}});
   assert.equal(criticalCalls,1);assert.equal(result.ok,true);assert.equal(result.providerInvocations,1);assert.deepEqual(result.controlBudget,{d1Calls:2,d1Statements:2,d1RowsChanged:2});assert.deepEqual([ATTENDED_CONTROL_MAX_D1_CALLS,ATTENDED_CONTROL_MAX_D1_STATEMENTS,ATTENDED_CONTROL_MAX_ROWS_CHANGED],[2,2,2]);
@@ -137,14 +146,14 @@ test('executor derives URL from fresh recheck, invokes once, and stays within se
 
 test('executor transport ambiguity invokes exactly once, cleans up, returns failure and never retries',async()=>{
   const file='/tmp/attended-admission-ambiguous.json';fs.writeFileSync(file,JSON.stringify(admission()));let previewCalls=0,previewDisable=0;
-  const env={CLOUDFLARE_ACCOUNT_ID:ACCOUNT,CLOUDFLARE_ACCOUNT_FINGERPRINT:FINGERPRINT,CLOUDFLARE_ATTENDED_MUTATION_TOKEN:'token',APPROVED_SHA:SHA,API_FOOTBALL_ATTENDED_VERSION_ID:VERSION,API_FOOTBALL_ATTENDED_TRIGGER_SECRET:SECRET,API_FOOTBALL_ATTENDED_ADMISSION_PATH:file};
+  const env={CLOUDFLARE_ACCOUNT_ID:ACCOUNT,CLOUDFLARE_ACCOUNT_FINGERPRINT:FINGERPRINT,CLOUDFLARE_ATTENDED_MUTATION_TOKEN:'token',APPROVED_SHA:SHA,API_FOOTBALL_ATTENDED_VERSION_ID:VERSION,API_FOOTBALL_ATTENDED_VERSION_APPROVED_SHA:VERSION_PROVENANCE,API_FOOTBALL_ATTENDED_TRIGGER_SECRET:SECRET,API_FOOTBALL_ATTENDED_ADMISSION_PATH:file};
   const result=await executeLiveAttendedAcceptance({env,criticalRecheck:async()=>criticalAdmission(),fetchImpl:async(url,init={})=>{const value=String(url);if(value.includes('workers.dev')){previewCalls++;throw new Error('unknown delivery');}if(value.includes('/query'))return new Response(JSON.stringify({success:true,result:[{success:true,meta:{changes:1}}]}));if(value.endsWith('/subdomain')&&JSON.parse(init.body).previews_enabled===false)previewDisable++;return new Response(JSON.stringify({success:true,result:{}}));}});
   assert.equal(result.ok,false);assert.equal(result.retryAuthorized,false);assert.equal(result.providerInvocations,1);assert.equal(previewCalls,1);assert.equal(previewDisable,1);fs.unlinkSync(file);
 });
 
 test('bad fresh Preview identity prevents enablement and trigger-secret egress',async()=>{
   const file='/tmp/attended-admission-bad-preview.json';fs.writeFileSync(file,JSON.stringify(admission()));let calls=0;
-  const env={CLOUDFLARE_ACCOUNT_ID:ACCOUNT,CLOUDFLARE_ACCOUNT_FINGERPRINT:FINGERPRINT,CLOUDFLARE_ATTENDED_MUTATION_TOKEN:'token',APPROVED_SHA:SHA,API_FOOTBALL_ATTENDED_VERSION_ID:VERSION,API_FOOTBALL_ATTENDED_TRIGGER_SECRET:SECRET,API_FOOTBALL_ATTENDED_ADMISSION_PATH:file};
+  const env={CLOUDFLARE_ACCOUNT_ID:ACCOUNT,CLOUDFLARE_ACCOUNT_FINGERPRINT:FINGERPRINT,CLOUDFLARE_ATTENDED_MUTATION_TOKEN:'token',APPROVED_SHA:SHA,API_FOOTBALL_ATTENDED_VERSION_ID:VERSION,API_FOOTBALL_ATTENDED_VERSION_APPROVED_SHA:VERSION_PROVENANCE,API_FOOTBALL_ATTENDED_TRIGGER_SECRET:SECRET,API_FOOTBALL_ATTENDED_ADMISSION_PATH:file};
   await assert.rejects(()=>executeLiveAttendedAcceptance({env,fetchImpl:async()=>{calls++;},criticalRecheck:async()=>criticalAdmission({inventory:{previewUrlSuffix:'-teamsheet-api-football-shadow-collector.evil.example'}})}),/preview_identity/);
   assert.equal(calls,0);fs.unlinkSync(file);
 });
@@ -195,7 +204,7 @@ test('abstract attended admission, shipped config, provider contract and model i
 
 test('workflow pins exact-main provenance, artifact identity, protected execution and always-run closeout',()=>{
   const workflow=fs.readFileSync(path.join(root,'.github/workflows/api-football-collector-attended-acceptance.yml'),'utf8');
-  for(const required of ["row.name==='Tests and deterministic build'","row.status==='completed'","row.conclusion==='success'","row.head_sha===process.env.APPROVED_SHA","row.app?.slug==='github-actions'","https://github.com/priteshpatel390-del/FPL/actions/runs/",'github.run_attempt == 1','git ls-remote','git status --porcelain --untracked-files=all','EXPECTED_ARTIFACT_SHA256','sha256sum','$API_FOOTBALL_ATTENDED_ADMISSION_PATH','final-readonly-reconciliation:','continue-on-error: true','attended-reconciliation.mjs'])assert.match(workflow,new RegExp(required.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')));
-  assert.ok((workflow.match(/git ls-remote/g)||[]).length>=4);assert.ok((workflow.match(/refs\/heads\/main/g)||[]).length>=4);
+  for(const required of ['API_FOOTBALL_ATTENDED_VERSION_APPROVED_SHA','69bb84fadbcce94e9fece3ff438d985866cce183',"row.name==='Tests and deterministic build'","row.status==='completed'","row.conclusion==='success'","row.head_sha===process.env.APPROVED_SHA","row.app?.slug==='github-actions'","https://github.com/priteshpatel390-del/FPL/actions/runs/",'github.run_attempt == 1','git ls-remote','git status --porcelain --untracked-files=all','EXPECTED_ARTIFACT_SHA256','sha256sum','$API_FOOTBALL_ATTENDED_ADMISSION_PATH','final-readonly-reconciliation:','continue-on-error: true','attended-reconciliation.mjs'])assert.match(workflow,new RegExp(required.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')));
+  assert.ok((workflow.match(/API_FOOTBALL_ATTENDED_VERSION_APPROVED_SHA/g)||[]).length>=3);assert.ok((workflow.match(/git ls-remote/g)||[]).length>=4);assert.ok((workflow.match(/refs\/heads\/main/g)||[]).length>=4);
   assert.doesNotMatch(workflow,/API_FOOTBALL_ATTENDED_VERSION_PREVIEW_URL|wrangler\s+deploy|\/deployments|^\s{2}schedule:/m);
 });
