@@ -1,3 +1,11 @@
+## Protected credential separation after run 35777295834
+
+Run `35777295834` on exact main `cdcd0ed1ad2a2906b2a3c20aecd125ae3d711e4b` passed fresh read-only admission but the mutation-capable executor's critical preflight stopped as `attended_critical_state_drift__data_platform_binding_mismatch`. Independent read-only reconciliation preserved pristine zero-egress state. The failure therefore identified a credential-capability mismatch in the executor's reuse of its mutation token for a broader read-only proof, not evidence that the production binding itself changed.
+
+The executor now requires two distinct protected credentials. `CLOUDFLARE_ATTENDED_READ_TOKEN` is passed only to the full activation preflight that re-proves production D1 identity, data-platform binding, attended Worker/Version inventory, routing and pristine runtime/history. `CLOUDFLARE_ATTENDED_MUTATION_TOKEN` is passed only to the closed control helper for the exact collector Script Subdomain POST and production D1 query POST. Equality between the two token values fails before network. No success criterion, mutation/provider budget, endpoint allowlist, cleanup rule or no-retry boundary changes.
+
+The new read secret is a future protected-environment provisioning requirement; repository work does not create or copy it. A fresh live acceptance dispatch remains separately owner-gated after merge and exact-main verification.
+
 ## Protected critical-recheck diagnostic remediation after run 35751021431
 
 Run `35751021431` on exact main `1981871d30315ad31cf5274f3f88529592b36856` passed fresh read-only attended admission and entered the protected execution environment with all required values present. The executor's second full read-only preflight then stopped as `attended_critical_state_drift` before Preview enablement, D1 collection enablement or trigger-secret egress. Independent reconciliation recorded 0 provider attempts, 0 generations, 0 fixture revisions, 0 production mutations and 0 API-Football requests while preserving disabled runtime/Preview and exact Version inventory.
