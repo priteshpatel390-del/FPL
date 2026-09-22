@@ -36,7 +36,7 @@ export const EXPECTED_MIGRATIONS=Object.freeze([
 ]);
 export const PREFLIGHT_TIMEOUT_MS=15_000;
 export const PREFLIGHT_REPOSITORY_CLOUDFLARE_GETS=5;
-export const PREFLIGHT_ATTENDED_CLOUDFLARE_GETS=13;
+export const PREFLIGHT_ATTENDED_CLOUDFLARE_GETS=14;
 export const PREFLIGHT_PREPARATION_START_CLOUDFLARE_GETS=11;
 export const PREFLIGHT_PREPARATION_VERSION_CLOUDFLARE_GETS=13;
 export const PREFLIGHT_MAX_CLOUDFLARE_GETS=Math.max(PREFLIGHT_ATTENDED_CLOUDFLARE_GETS,PREFLIGHT_PREPARATION_VERSION_CLOUDFLARE_GETS);
@@ -275,6 +275,7 @@ export async function runApiFootballActivationLivePreflight({env=process.env,fet
     collectorReads.betaWorkers=await readJson(boundedFetch,apiPath(accountId,'/workers/workers?per_page=100&order_by=name&order=asc'),{token});
     const worker=Array.isArray(collectorReads.betaWorkers.result)?collectorReads.betaWorkers.result.find(row=>row?.name===EXPECTED_COLLECTOR_WORKER):null;
     if(!worker?.id)return fail('activation_attended_worker_identity_unavailable');
+    if(attendedStage)collectorReads.betaWorker=await readJson(boundedFetch,apiPath(accountId,'/workers/workers/'+encodeURIComponent(worker.id)),{token});
     if(preparationStage){
       collectorReads.originalBeta=await readJson(boundedFetch,apiPath(accountId,'/workers/workers/'+encodeURIComponent(worker.id)+'/versions/'+ORIGINAL_BLOCKED_VERSION_ID+'?include=modules'),{token});
       collectorReads.attendedBeta=preparationStartStage?collectorReads.originalBeta:await readJson(boundedFetch,apiPath(accountId,'/workers/workers/'+encodeURIComponent(worker.id)+'/versions/'+encodeURIComponent(selectedVersionId)+'?include=modules'),{token});
@@ -282,7 +283,7 @@ export async function runApiFootballActivationLivePreflight({env=process.env,fet
       collectorReads.attendedBeta=await readJson(boundedFetch,apiPath(accountId,'/workers/workers/'+encodeURIComponent(worker.id)+'/versions/'+encodeURIComponent(selectedVersionId)+'?include=modules'),{token});
     }
     const required=[collectorReads.subdomain,collectorReads.domains,collectorReads.scripts,collectorReads.versions,collectorReads.originalStable,collectorReads.betaWorkers,collectorReads.attendedBeta];
-    if(attendedStage)required.push(collectorReads.accountSubdomain);
+    if(attendedStage)required.push(collectorReads.accountSubdomain,collectorReads.betaWorker);
     if(preparationStage)required.push(collectorReads.originalBeta);
     if(required.some(read=>!read?.ok))return fail('activation_attended_inventory_unreadable');
   }
@@ -311,7 +312,11 @@ export async function runApiFootballActivationLivePreflight({env=process.env,fet
     const versionIds=(Array.isArray(collectorReads.versions.result?.items)?collectorReads.versions.result.items:Array.isArray(collectorReads.versions.result)?collectorReads.versions.result:[]).map(row=>row?.id).filter(Boolean);
     try{validateClosedVersionInventory({versionIds,originalStable:collectorReads.originalStable.result,attendedVersionId:reviewedVersionId,attendedStable:collectorReads.settings.result,attendedBeta:collectorReads.attendedBeta.result,identity:buildImmutableAttendedVersionIdentity(versionApprovedSha)});versionIdentityExact=true;versionInventoryExact=true;}catch{}
   }
-  const previewUrlIdentityExact=!attendedStage||collectorReads.subdomain.result?.preview_url_suffix===`-${EXPECTED_COLLECTOR_WORKER}.${collectorReads.accountSubdomain.result?.subdomain}.workers.dev`;
+  const previewUrlIdentityExact=!attendedStage||(
+    collectorReads.betaWorker.result?.id===collectorReads.betaWorkers.result?.find?.(row=>row?.name===EXPECTED_COLLECTOR_WORKER)?.id&&
+    collectorReads.betaWorker.result?.name===EXPECTED_COLLECTOR_WORKER&&
+    collectorReads.betaWorker.result?.subdomain?.preview_url_suffix===`-${EXPECTED_COLLECTOR_WORKER}.${collectorReads.accountSubdomain.result?.subdomain}.workers.dev`
+  );
   const inventory=Object.freeze({
     activation:liveVersionStage?binding('EIA_2I5D_ACTIVATION')?.text:wrangler.activation,databaseIdPlaceholder:liveVersionStage?false:wrangler.databaseIdPlaceholder,
     productionBindingProven:liveVersionStage&&binding(EXPECTED_COLLECTOR_BINDING)?.type==='d1'&&binding(EXPECTED_COLLECTOR_BINDING)?.database_id===EXPECTED_D1_DATABASE_ID,
@@ -321,7 +326,7 @@ export async function runApiFootballActivationLivePreflight({env=process.env,fet
     previewUrls:liveVersionStage?collectorReads.subdomain.result?.previews_enabled:wrangler.previewUrls,
     configurationExact:liveVersionStage&&binding('API_FOOTBALL_FPL_SEASON')?.text==='2026-27'&&String(binding('API_FOOTBALL_PROVIDER_SEASON')?.text)==='2026',
     reviewedVersionId,versionIdentityExact,versionInventoryExact,originalVersionIdentityExact,previewUrlIdentityExact,
-    previewUrlSuffix:attendedStage?collectorReads.subdomain.result?.preview_url_suffix:null,
+    previewUrlSuffix:attendedStage?collectorReads.betaWorker.result?.subdomain?.preview_url_suffix:null,
     accountSubdomain:attendedStage?collectorReads.accountSubdomain.result?.subdomain:null,
     routeCount:liveVersionStage?scriptRouteCount(collectorReads.scripts.result):0,
     customDomainCount:liveVersionStage?(Array.isArray(collectorReads.domains.result)?collectorReads.domains.result.filter(row=>row?.service===EXPECTED_COLLECTOR_WORKER).length:null):0
