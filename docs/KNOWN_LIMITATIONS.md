@@ -1,3 +1,7 @@
+## Attended credential recovery is paused pending provenance remediation
+
+Run `35735507066` safely stopped before D1 mutation because the repository coupled immutable attended-Version annotation provenance to the newer recovery execution SHA. No production mutation or provider request occurred. Until the provenance remediation is merged and exact-main verification passes, do not rerun the consumed workflow attempt and do not use the full attended-preparation workflow. The existing attended Version must not be recreated or deleted.
+
 ## Attended preparation remains repository-only and unexecuted
 
 The preparation foundation does not prove current live Cloudflare state, secret availability, token permissions, real Version-upload acceptance, real D1 mutation semantics, or successful transition to `AVAILABLE`. The last accepted live collector evidence remains inactive-staging run `35645387203`; no fresh preparation observation has been executed in this checkpoint.
