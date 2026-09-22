@@ -89,8 +89,9 @@ export function validateCriticalRecheck(report,{approvedSha,versionId,versionApp
 
 export async function executeLiveAttendedAcceptance({env=process.env,fetchImpl=globalThis.fetch,criticalRecheck=runApiFootballActivationLivePreflight}={}){
   const account=required(env,'CLOUDFLARE_ACCOUNT_ID'),fingerprint=required(env,'CLOUDFLARE_ACCOUNT_FINGERPRINT');
-  const token=required(env,'CLOUDFLARE_ATTENDED_MUTATION_TOKEN'),approvedSha=required(env,'APPROVED_SHA');
+  const readToken=required(env,'CLOUDFLARE_ATTENDED_READ_TOKEN'),mutationToken=required(env,'CLOUDFLARE_ATTENDED_MUTATION_TOKEN'),approvedSha=required(env,'APPROVED_SHA');
   const versionId=required(env,'API_FOOTBALL_ATTENDED_VERSION_ID'),versionApprovedSha=required(env,'API_FOOTBALL_ATTENDED_VERSION_APPROVED_SHA'),trigger=required(env,'API_FOOTBALL_ATTENDED_TRIGGER_SECRET');
+  if(readToken===mutationToken)fail('attended_credential_separation_required');
   if(!HEX64.test(fingerprint)||digest(account)!==fingerprint)fail('attended_production_account_identity_mismatch');
   const admission=JSON.parse(fs.readFileSync(required(env,'API_FOOTBALL_ATTENDED_ADMISSION_PATH'),'utf8'));
   validateAdmissionHandoff(admission,{approvedSha,versionId,versionApprovedSha,accountFingerprint:fingerprint});
@@ -99,7 +100,7 @@ export async function executeLiveAttendedAcceptance({env=process.env,fetchImpl=g
     env:{
       DATA_STEWARD_CLOUDFLARE_ACCOUNT_ID:account,
       DATA_STEWARD_CLOUDFLARE_ACCOUNT_FINGERPRINT:fingerprint,
-      DATA_STEWARD_CLOUDFLARE_READ_TOKEN:token,
+      DATA_STEWARD_CLOUDFLARE_READ_TOKEN:readToken,
       API_FOOTBALL_PREFLIGHT_STAGE:'ATTENDED_ACCEPTANCE',
       API_FOOTBALL_ATTENDED_VERSION_ID:versionId,
       API_FOOTBALL_ATTENDED_VERSION_APPROVED_SHA:versionApprovedSha,
@@ -110,7 +111,7 @@ export async function executeLiveAttendedAcceptance({env=process.env,fetchImpl=g
   const previewIdentity=validateCriticalRecheck(critical,{approvedSha,versionId,versionApprovedSha,accountFingerprint:fingerprint});
   const previewUrl=deriveVersionPreviewUrl({versionId,previewUrlSuffix:previewIdentity.previewUrlSuffix,accountSubdomain:previewIdentity.accountSubdomain,path:ATTENDED_ACCEPTANCE_PATH});
 
-  const headers={Authorization:'Bearer '+token,'content-type':'application/json'};
+  const headers={Authorization:'Bearer '+mutationToken,'content-type':'application/json'};
   const paths=attendedCloudflarePaths(account);let providerInvocations=0,d1Calls=0,d1Statements=0,d1RowsChanged=0;
   const cloudflare=async(requestPath,init={})=>{
     const method=init.method||'GET';assertAttendedCloudflareRequestAllowed(method,requestPath,{accountId:account});

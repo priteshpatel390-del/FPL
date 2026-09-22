@@ -124,13 +124,42 @@ function criticalAdmission(overrides={}){
 test('executor fingerprints account and closes mutation endpoint surface before fetch',async()=>{
   const paths=attendedCloudflarePaths(ACCOUNT);assert.equal(assertAttendedCloudflareRequestAllowed('POST',paths.subdomain,{accountId:ACCOUNT}),true);assert.equal(assertAttendedCloudflareRequestAllowed('POST',paths.d1,{accountId:ACCOUNT}),true);
   for(const [method,path] of [['GET',paths.subdomain],['GET',`/accounts/${ACCOUNT}/workers/subdomain`],['POST',`/accounts/${ACCOUNT}/workers/scripts/x/deployments`],['POST',`/accounts/${ACCOUNT}/workers/scripts/x/schedules`],['POST',`/accounts/${ACCOUNT}/workers/routes`],['POST',`/accounts/${ACCOUNT}/workers/domains`]])assert.throws(()=>assertAttendedCloudflareRequestAllowed(method,path,{accountId:ACCOUNT}),/forbidden/);
-  let calls=0;const base={CLOUDFLARE_ACCOUNT_ID:ACCOUNT,CLOUDFLARE_ATTENDED_MUTATION_TOKEN:'token',APPROVED_SHA:SHA,API_FOOTBALL_ATTENDED_VERSION_ID:VERSION,API_FOOTBALL_ATTENDED_VERSION_APPROVED_SHA:VERSION_PROVENANCE,API_FOOTBALL_ATTENDED_TRIGGER_SECRET:SECRET,API_FOOTBALL_ATTENDED_ADMISSION_PATH:'/tmp/absent'};
+  let calls=0;const base={CLOUDFLARE_ACCOUNT_ID:ACCOUNT,CLOUDFLARE_ATTENDED_READ_TOKEN:'read-token',CLOUDFLARE_ATTENDED_MUTATION_TOKEN:'mutation-token',APPROVED_SHA:SHA,API_FOOTBALL_ATTENDED_VERSION_ID:VERSION,API_FOOTBALL_ATTENDED_VERSION_APPROVED_SHA:VERSION_PROVENANCE,API_FOOTBALL_ATTENDED_TRIGGER_SECRET:SECRET,API_FOOTBALL_ATTENDED_ADMISSION_PATH:'/tmp/absent'};
   for(const env of [{...base,CLOUDFLARE_ACCOUNT_FINGERPRINT:'0'.repeat(64)},base])await assert.rejects(()=>executeLiveAttendedAcceptance({env,fetchImpl:async()=>{calls++;}}));assert.equal(calls,0);
+});
+
+test('executor separates read-only critical preflight from mutation credential',async()=>{
+  const file='/tmp/attended-admission-split-token.json';fs.writeFileSync(file,JSON.stringify(admission()));
+  let criticalToken=null;const authorizations=[];
+  const env={CLOUDFLARE_ACCOUNT_ID:ACCOUNT,CLOUDFLARE_ACCOUNT_FINGERPRINT:FINGERPRINT,CLOUDFLARE_ATTENDED_READ_TOKEN:'read-token',CLOUDFLARE_ATTENDED_MUTATION_TOKEN:'mutation-token',APPROVED_SHA:SHA,API_FOOTBALL_ATTENDED_VERSION_ID:VERSION,API_FOOTBALL_ATTENDED_VERSION_APPROVED_SHA:VERSION_PROVENANCE,API_FOOTBALL_ATTENDED_TRIGGER_SECRET:SECRET,API_FOOTBALL_ATTENDED_ADMISSION_PATH:file};
+  const result=await executeLiveAttendedAcceptance({
+    env,
+    criticalRecheck:async({env:criticalEnv})=>{criticalToken=criticalEnv.DATA_STEWARD_CLOUDFLARE_READ_TOKEN;return criticalAdmission();},
+    fetchImpl:async(url,init={})=>{
+      const value=String(url);
+      if(value.includes('workers.dev'))return new Response('',{status:202});
+      authorizations.push(init.headers?.Authorization??init.headers?.authorization??null);
+      if(value.includes('/query'))return new Response(JSON.stringify({success:true,result:[{success:true,meta:{changes:1}}]}));
+      return new Response(JSON.stringify({success:true,result:{}}));
+    }
+  });
+  assert.equal(result.ok,true);
+  assert.equal(criticalToken,'read-token');
+  assert.ok(authorizations.length>=4);
+  assert.ok(authorizations.every(value=>value==='Bearer mutation-token'));
+  fs.unlinkSync(file);
+});
+
+test('executor rejects identical read and mutation credentials before network',async()=>{
+  const file='/tmp/attended-admission-same-token.json';fs.writeFileSync(file,JSON.stringify(admission()));let calls=0;
+  const env={CLOUDFLARE_ACCOUNT_ID:ACCOUNT,CLOUDFLARE_ACCOUNT_FINGERPRINT:FINGERPRINT,CLOUDFLARE_ATTENDED_READ_TOKEN:'same-token',CLOUDFLARE_ATTENDED_MUTATION_TOKEN:'same-token',APPROVED_SHA:SHA,API_FOOTBALL_ATTENDED_VERSION_ID:VERSION,API_FOOTBALL_ATTENDED_VERSION_APPROVED_SHA:VERSION_PROVENANCE,API_FOOTBALL_ATTENDED_TRIGGER_SECRET:SECRET,API_FOOTBALL_ATTENDED_ADMISSION_PATH:file};
+  await assert.rejects(()=>executeLiveAttendedAcceptance({env,fetchImpl:async()=>{calls++;}}),/attended_credential_separation_required/);
+  assert.equal(calls,0);fs.unlinkSync(file);
 });
 
 test('executor performs fresh exact critical recheck immediately before any Preview or D1 mutation',async()=>{
   const file='/tmp/attended-admission-critical-drift.json';fs.writeFileSync(file,JSON.stringify(admission()));let networkCalls=0,criticalCalls=0;
-  const env={CLOUDFLARE_ACCOUNT_ID:ACCOUNT,CLOUDFLARE_ACCOUNT_FINGERPRINT:FINGERPRINT,CLOUDFLARE_ATTENDED_MUTATION_TOKEN:'token',APPROVED_SHA:SHA,API_FOOTBALL_ATTENDED_VERSION_ID:VERSION,API_FOOTBALL_ATTENDED_VERSION_APPROVED_SHA:VERSION_PROVENANCE,API_FOOTBALL_ATTENDED_TRIGGER_SECRET:SECRET,API_FOOTBALL_ATTENDED_ADMISSION_PATH:file};
+  const env={CLOUDFLARE_ACCOUNT_ID:ACCOUNT,CLOUDFLARE_ACCOUNT_FINGERPRINT:FINGERPRINT,CLOUDFLARE_ATTENDED_READ_TOKEN:'read-token',CLOUDFLARE_ATTENDED_MUTATION_TOKEN:'mutation-token',APPROVED_SHA:SHA,API_FOOTBALL_ATTENDED_VERSION_ID:VERSION,API_FOOTBALL_ATTENDED_VERSION_APPROVED_SHA:VERSION_PROVENANCE,API_FOOTBALL_ATTENDED_TRIGGER_SECRET:SECRET,API_FOOTBALL_ATTENDED_ADMISSION_PATH:file};
   await assert.rejects(()=>executeLiveAttendedAcceptance({env,fetchImpl:async()=>{networkCalls++;throw new Error('must not mutate');},criticalRecheck:async()=>{criticalCalls++;return {ok:false,reason:'activation_attended_inventory_unreadable'};}}),/attended_critical_state_drift__inventory_unreadable/);
   assert.equal(criticalCalls,1);assert.equal(networkCalls,0);fs.unlinkSync(file);
 });
@@ -148,7 +177,7 @@ test('critical recheck diagnostics are closed, sanitized and preserve fail-close
 
 test('executor derives URL from fresh recheck, invokes once, and stays within separate control budget',async()=>{
   const file='/tmp/attended-admission-test.json';fs.writeFileSync(file,JSON.stringify(admission()));const calls=[];let criticalCalls=0;
-  const env={CLOUDFLARE_ACCOUNT_ID:ACCOUNT,CLOUDFLARE_ACCOUNT_FINGERPRINT:FINGERPRINT,CLOUDFLARE_ATTENDED_MUTATION_TOKEN:'token',APPROVED_SHA:SHA,API_FOOTBALL_ATTENDED_VERSION_ID:VERSION,API_FOOTBALL_ATTENDED_VERSION_APPROVED_SHA:VERSION_PROVENANCE,API_FOOTBALL_ATTENDED_TRIGGER_SECRET:SECRET,API_FOOTBALL_ATTENDED_ADMISSION_PATH:file};
+  const env={CLOUDFLARE_ACCOUNT_ID:ACCOUNT,CLOUDFLARE_ACCOUNT_FINGERPRINT:FINGERPRINT,CLOUDFLARE_ATTENDED_READ_TOKEN:'read-token',CLOUDFLARE_ATTENDED_MUTATION_TOKEN:'mutation-token',APPROVED_SHA:SHA,API_FOOTBALL_ATTENDED_VERSION_ID:VERSION,API_FOOTBALL_ATTENDED_VERSION_APPROVED_SHA:VERSION_PROVENANCE,API_FOOTBALL_ATTENDED_TRIGGER_SECRET:SECRET,API_FOOTBALL_ATTENDED_ADMISSION_PATH:file};
   const fetchImpl=async(url,init={})=>{calls.push({url:String(url),init});if(String(url).includes('workers.dev'))return new Response('',{status:202});if(String(url).includes('/query'))return new Response(JSON.stringify({success:true,result:[{success:true,meta:{changes:1}}]}));return new Response(JSON.stringify({success:true,result:{}}));};
   const result=await executeLiveAttendedAcceptance({env,fetchImpl,criticalRecheck:async()=>{criticalCalls++;return criticalAdmission();}});
   assert.equal(criticalCalls,1);assert.equal(result.ok,true);assert.equal(result.providerInvocations,1);assert.deepEqual(result.controlBudget,{d1Calls:2,d1Statements:2,d1RowsChanged:2});assert.deepEqual([ATTENDED_CONTROL_MAX_D1_CALLS,ATTENDED_CONTROL_MAX_D1_STATEMENTS,ATTENDED_CONTROL_MAX_ROWS_CHANGED],[2,2,2]);
@@ -157,14 +186,14 @@ test('executor derives URL from fresh recheck, invokes once, and stays within se
 
 test('executor transport ambiguity invokes exactly once, cleans up, returns failure and never retries',async()=>{
   const file='/tmp/attended-admission-ambiguous.json';fs.writeFileSync(file,JSON.stringify(admission()));let previewCalls=0,previewDisable=0;
-  const env={CLOUDFLARE_ACCOUNT_ID:ACCOUNT,CLOUDFLARE_ACCOUNT_FINGERPRINT:FINGERPRINT,CLOUDFLARE_ATTENDED_MUTATION_TOKEN:'token',APPROVED_SHA:SHA,API_FOOTBALL_ATTENDED_VERSION_ID:VERSION,API_FOOTBALL_ATTENDED_VERSION_APPROVED_SHA:VERSION_PROVENANCE,API_FOOTBALL_ATTENDED_TRIGGER_SECRET:SECRET,API_FOOTBALL_ATTENDED_ADMISSION_PATH:file};
+  const env={CLOUDFLARE_ACCOUNT_ID:ACCOUNT,CLOUDFLARE_ACCOUNT_FINGERPRINT:FINGERPRINT,CLOUDFLARE_ATTENDED_READ_TOKEN:'read-token',CLOUDFLARE_ATTENDED_MUTATION_TOKEN:'mutation-token',APPROVED_SHA:SHA,API_FOOTBALL_ATTENDED_VERSION_ID:VERSION,API_FOOTBALL_ATTENDED_VERSION_APPROVED_SHA:VERSION_PROVENANCE,API_FOOTBALL_ATTENDED_TRIGGER_SECRET:SECRET,API_FOOTBALL_ATTENDED_ADMISSION_PATH:file};
   const result=await executeLiveAttendedAcceptance({env,criticalRecheck:async()=>criticalAdmission(),fetchImpl:async(url,init={})=>{const value=String(url);if(value.includes('workers.dev')){previewCalls++;throw new Error('unknown delivery');}if(value.includes('/query'))return new Response(JSON.stringify({success:true,result:[{success:true,meta:{changes:1}}]}));if(value.endsWith('/subdomain')&&JSON.parse(init.body).previews_enabled===false)previewDisable++;return new Response(JSON.stringify({success:true,result:{}}));}});
   assert.equal(result.ok,false);assert.equal(result.retryAuthorized,false);assert.equal(result.providerInvocations,1);assert.equal(previewCalls,1);assert.equal(previewDisable,1);fs.unlinkSync(file);
 });
 
 test('bad fresh Preview identity prevents enablement and trigger-secret egress',async()=>{
   const file='/tmp/attended-admission-bad-preview.json';fs.writeFileSync(file,JSON.stringify(admission()));let calls=0;
-  const env={CLOUDFLARE_ACCOUNT_ID:ACCOUNT,CLOUDFLARE_ACCOUNT_FINGERPRINT:FINGERPRINT,CLOUDFLARE_ATTENDED_MUTATION_TOKEN:'token',APPROVED_SHA:SHA,API_FOOTBALL_ATTENDED_VERSION_ID:VERSION,API_FOOTBALL_ATTENDED_VERSION_APPROVED_SHA:VERSION_PROVENANCE,API_FOOTBALL_ATTENDED_TRIGGER_SECRET:SECRET,API_FOOTBALL_ATTENDED_ADMISSION_PATH:file};
+  const env={CLOUDFLARE_ACCOUNT_ID:ACCOUNT,CLOUDFLARE_ACCOUNT_FINGERPRINT:FINGERPRINT,CLOUDFLARE_ATTENDED_READ_TOKEN:'read-token',CLOUDFLARE_ATTENDED_MUTATION_TOKEN:'mutation-token',APPROVED_SHA:SHA,API_FOOTBALL_ATTENDED_VERSION_ID:VERSION,API_FOOTBALL_ATTENDED_VERSION_APPROVED_SHA:VERSION_PROVENANCE,API_FOOTBALL_ATTENDED_TRIGGER_SECRET:SECRET,API_FOOTBALL_ATTENDED_ADMISSION_PATH:file};
   await assert.rejects(()=>executeLiveAttendedAcceptance({env,fetchImpl:async()=>{calls++;},criticalRecheck:async()=>criticalAdmission({inventory:{previewUrlSuffix:'-teamsheet-api-football-shadow-collector.evil.example'}})}),/preview_identity/);
   assert.equal(calls,0);fs.unlinkSync(file);
 });
@@ -215,7 +244,7 @@ test('abstract attended admission, shipped config, provider contract and model i
 
 test('workflow pins exact-main provenance, artifact identity, protected execution and always-run closeout',()=>{
   const workflow=fs.readFileSync(path.join(root,'.github/workflows/api-football-collector-attended-acceptance.yml'),'utf8');
-  for(const required of ['API_FOOTBALL_ATTENDED_VERSION_APPROVED_SHA','69bb84fadbcce94e9fece3ff438d985866cce183',"row.name==='Tests and deterministic build'","row.status==='completed'","row.conclusion==='success'","row.head_sha===process.env.APPROVED_SHA","row.app?.slug==='github-actions'","https://github.com/priteshpatel390-del/FPL/actions/runs/",'github.run_attempt == 1','git ls-remote','git status --porcelain --untracked-files=all','EXPECTED_ARTIFACT_SHA256','sha256sum','$API_FOOTBALL_ATTENDED_ADMISSION_PATH','final-readonly-reconciliation:','continue-on-error: true','attended-reconciliation.mjs'])assert.match(workflow,new RegExp(required.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')));
+  for(const required of ['CLOUDFLARE_ATTENDED_READ_TOKEN','CLOUDFLARE_ATTENDED_MUTATION_TOKEN','API_FOOTBALL_ATTENDED_VERSION_APPROVED_SHA','69bb84fadbcce94e9fece3ff438d985866cce183',"row.name==='Tests and deterministic build'","row.status==='completed'","row.conclusion==='success'","row.head_sha===process.env.APPROVED_SHA","row.app?.slug==='github-actions'","https://github.com/priteshpatel390-del/FPL/actions/runs/",'github.run_attempt == 1','git ls-remote','git status --porcelain --untracked-files=all','EXPECTED_ARTIFACT_SHA256','sha256sum','$API_FOOTBALL_ATTENDED_ADMISSION_PATH','final-readonly-reconciliation:','continue-on-error: true','attended-reconciliation.mjs'])assert.match(workflow,new RegExp(required.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')));
   assert.ok((workflow.match(/API_FOOTBALL_ATTENDED_VERSION_APPROVED_SHA/g)||[]).length>=3);assert.ok((workflow.match(/git ls-remote/g)||[]).length>=4);assert.ok((workflow.match(/refs\/heads\/main/g)||[]).length>=4);
   assert.doesNotMatch(workflow,/API_FOOTBALL_ATTENDED_VERSION_PREVIEW_URL|wrangler\s+deploy|\/deployments|^\s{2}schedule:/m);
 });

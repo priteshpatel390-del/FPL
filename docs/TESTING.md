@@ -1,3 +1,9 @@
+## Attended protected credential-separation coverage — 22 September 2026
+
+Following run `35777295834`, acceptance-foundation tests require the final critical preflight to receive only `CLOUDFLARE_ATTENDED_READ_TOKEN`, while every executor-owned Cloudflare control request carries only `CLOUDFLARE_ATTENDED_MUTATION_TOKEN`. A dedicated regression proves identical read/mutation secret values fail before any network request. Existing tests continue to pin the exact two POST mutation endpoints, no second provider invocation, two-statement/two-row control budget, cleanup and independent reconciliation.
+
+The workflow test also requires both protected secret names. CI does not prove external secret provisioning or scope; a future separately approved attended run remains necessary for live validation.
+
 ## Attended critical-recheck sanitized diagnostic coverage — 22 September 2026
 
 Following zero-egress run `35751021431`, permanent acceptance-foundation tests require the protected executor's final pre-mutation recheck to retain the `attended_critical_state_drift` hard-stop prefix while exposing only a closed diagnostic suffix. Known read failures such as `activation_d1_read_failed` and `activation_attended_inventory_unreadable` map to bounded repository enums; arbitrary/unrecognized reason text maps to `preflight_failed_unknown`. Structural successful-report mismatches are separately classified for Version inventory, Preview identity and runtime/history. Regression coverage also proves the diagnostic stop occurs before Preview/D1 mutation or trigger-secret egress.

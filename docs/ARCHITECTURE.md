@@ -1,3 +1,9 @@
+## Attended acceptance protected credential split
+
+The attended acceptance protected executor uses two Cloudflare credentials with different capabilities. `CLOUDFLARE_ATTENDED_READ_TOKEN` feeds the full final critical preflight and is mapped internally to the existing read-only activation-preflight contract. `CLOUDFLARE_ATTENDED_MUTATION_TOKEN` is never passed to that preflight; it is used only by the executor's closed POST allowlist for the collector Preview toggle and the production D1 collection enable/disable statements. The shared account ID and SHA-256 fingerprint bind both credentials to one approved production account, and identical token values fail before network.
+
+This split was introduced after run `35777295834` showed that a mutation credential restricted for the attended control surface could not prove the separate `teamsheet-data-platform` Worker binding even though the dedicated read-only steward path could. The architecture therefore does not broaden write authority merely to satisfy a read check.
+
 ## Attended API-Football preparation boundary
 
 Preparation now has its own dormant control-plane path before attended acceptance. Read-only state moves through `ATTENDED_PREPARATION_START` (one exact original Version, credential `UNPROVISIONED`), `ATTENDED_PREPARATION_VERSION_READY` (exact original plus reviewed attended Version, still `UNPROVISIONED`) and `ATTENDED_PREPARATION_CLOSEOUT` (same exact inventory, credential `AVAILABLE`). The original Version is pinned by accepted creation SHA and exact 17-module hashes, not by UUID alone.

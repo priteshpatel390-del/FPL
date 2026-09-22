@@ -1,3 +1,9 @@
+## Attended acceptance now requires a separately provisioned protected read token
+
+Run `35777295834` identified the executor's reuse of the attended mutation credential as the failing read boundary: the critical preflight could not prove the separate data-platform Worker binding, while admission and reconciliation using the established steward read token could. The repository remediation requires a new `CLOUDFLARE_ATTENDED_READ_TOKEN` in the `api-football-attended-acceptance` GitHub environment and rejects use of the same value as the mutation token.
+
+Repository tests cannot prove that this future secret exists, is correctly scoped, or can read current live Cloudflare state. Until the owner provisions it and a separately approved live run passes the critical preflight, attended acceptance remains incomplete. Run `35777295834` is consumed and must not be rerun.
+
 ## Attended acceptance critical-recheck failure remains unclassified until diagnostic code is live
 
 Run `35751021431` proved that the protected environment values were present and that the live state before and after protected execution remained pristine, but current main reports the executor's fresh critical-preflight failure only as `attended_critical_state_drift`. The exact failing invariant therefore cannot be claimed from that run. The difference between read-only admission/reconciliation and the protected executor's credential is a useful investigation clue, not proof of a token-scope defect.

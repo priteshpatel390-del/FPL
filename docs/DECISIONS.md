@@ -1,3 +1,11 @@
+## Decision — split attended critical-preflight reads from control mutations
+
+**Context:** attended run `35777295834` passed the dedicated read-only admission but the protected executor's critical preflight stopped as `data_platform_binding_mismatch` when it reused `CLOUDFLARE_ATTENDED_MUTATION_TOKEN` as its read credential. Independent reconciliation proved the binding and live state remained valid, so broadening the mutation token's Worker access would weaken least privilege merely to satisfy a read-only proof.
+
+**Decision:** protected execution requires a distinct `CLOUDFLARE_ATTENDED_READ_TOKEN` for the complete critical preflight. The mutation token is restricted in code to the two existing allowlisted POST surfaces. Identical token values are rejected before network. The shared account fingerprint remains the identity binding for both credentials.
+
+**Operational boundary:** repository merge does not provision the new token. The future protected environment must receive a read-only credential capable of the exact Worker/D1 reads already proven by `data-steward-readonly`; provisioning and any subsequent live acceptance run are separately owner-approved.
+
 ## Decision — attended critical recheck exposes only closed sanitized diagnostics
 
 **Context:** run `35751021431` passed fresh read-only admission but the mutation-capable executor's second read-only preflight collapsed every possible failure into `attended_critical_state_drift`, leaving no safe way to distinguish unreadable inventory/D1 from an actual invariant mismatch.
