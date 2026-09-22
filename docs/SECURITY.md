@@ -1,3 +1,11 @@
+## Attended protected read/mutation credential separation
+
+Run `35777295834` safely stopped before mutation with sanitized reason `data_platform_binding_mismatch`: the protected executor had reused `CLOUDFLARE_ATTENDED_MUTATION_TOKEN` for its broad final read-only preflight, while the established steward read credential successfully proved the same live foundation immediately before and after. The security response is credential separation, not broader mutation authority.
+
+The protected `api-football-attended-acceptance` environment now has a repository contract for a new `CLOUDFLARE_ATTENDED_READ_TOKEN`. It must be a read-only Cloudflare credential capable of the exact Worker metadata/settings and D1 reads required by the activation preflight (the same capability class already used by `data-steward-readonly`: Workers Scripts Read plus D1 Read on the approved account). The existing `CLOUDFLARE_ATTENDED_MUTATION_TOKEN` remains dedicated to the exact collector Preview-subdomain POST and bounded D1 runtime-state POSTs. Code refuses identical read and mutation token values before any network request.
+
+The repository does not provision, copy or reveal either credential. Account identity remains bound by `CLOUDFLARE_ACCOUNT_ID` plus its reviewed fingerprint. Trigger/API-Football secrets, exact Version provenance, endpoint allowlists, one-shot/no-retry semantics and independent reconciliation remain unchanged. A later owner action must provision the new read secret before any separately approved live attempt.
+
 ## Attended critical-recheck diagnostic security boundary
 
 Run `35751021431` reached the mutation-capable environment but failed during its final read-only critical preflight before any Preview/D1 mutation or provider egress. The remediation deliberately does not log Cloudflare HTTP responses, status bodies, tokens, account IDs, D1 identifiers, trigger secrets or arbitrary remote error strings. Instead, only repository-owned preflight reasons are translated through a closed allowlist to bounded diagnostic enums, with every unknown value reduced to `preflight_failed_unknown`.
