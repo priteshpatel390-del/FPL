@@ -48,7 +48,7 @@ export async function runAttendedReconciliation(options={}){
 
 export async function main(){
   const {report,result}=await runAttendedReconciliation();
-  const output=safe({version:result.version,observedAt:report.observedAt,approvedSha:report.approvedSha,stage:report.stage,
+  const output=safe({version:result.version,observedAt:report.observedAt,approvedSha:report.approvedSha,versionApprovedSha:report.versionApprovedSha,stage:report.stage,
     classification:result.classification,reason:result.reason??null,retryAuthorized:false,migrationCount:report.migrationCount,
     foreignKeyViolations:report.foreignKeyViolations,officialFplAuthority:report.officialFplAuthority,mapping:report.mapping,
     runtime:report.runtime,priorState:report.priorState,inventory:report.inventory,modelUiImportCount:report.modelUiImportCount,rawPayloadStoragePresent:report.rawPayloadStoragePresent,
