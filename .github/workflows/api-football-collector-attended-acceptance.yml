@@ -38,6 +38,7 @@ jobs:
       - id: identity
         env:
           APPROVED_SHA: ${{ inputs.approved_sha }}
+          ATTENDED_VERSION_ID: ${{ inputs.attended_version_id }}
           EVENT_NAME: ${{ github.event_name }}
           EVENT_REF: ${{ github.ref }}
           EVENT_REPOSITORY: ${{ github.repository }}
@@ -49,7 +50,363 @@ jobs:
           test "$EVENT_RUN_ATTEMPT" = 1
           test "$EVENT_REF" = refs/heads/main
           test "$EVENT_REPOSITORY" = priteshpatel390-del/FPL
-          printf '%s' "$APPROVED_SHA" | grep -Eq '^[0-9a-f]{40}$'
+          printf '%s' "$APPROVED_SHA" | grep -Eq '^[0-9a-f]{40}
+          test "$(git rev-parse HEAD)" = "$APPROVED_SHA"
+          test "$(git ls-remote https://github.com/priteshpatel390-del/FPL.git refs/heads/main | cut -f1)" = "$APPROVED_SHA"
+          test -z "$(git status --porcelain)"
+          echo "approved_sha=$APPROVED_SHA" >> "$GITHUB_OUTPUT"
+      - name: Require exact-head Verify Teamsheet success
+        env:
+          GH_TOKEN: ${{ github.token }}
+          APPROVED_SHA: ${{ steps.identity.outputs.approved_sha }}
+        run: |
+          set -euo pipefail
+          response="$RUNNER_TEMP/check-runs.json"
+          gh api "repos/${{ github.repository }}/commits/$APPROVED_SHA/check-runs" > "$response"
+          node --input-type=module - "$response" <<'NODE'
+          import fs from 'node:fs';
+          const body=JSON.parse(fs.readFileSync(process.argv[2],'utf8'));
+          if(!(body.check_runs??[]).some(row=>row.name==='Tests and deterministic build'&&row.status==='completed'&&row.conclusion==='success'&&row.head_sha===process.env.APPROVED_SHA&&row.app?.slug==='github-actions'&&row.details_url?.startsWith('https://github.com/priteshpatel390-del/FPL/actions/runs/')))throw new Error('exact-head Verify Teamsheet success is absent');
+          NODE
+          rm -f "$response"
+
+  fresh-readonly-attended-admission:
+    if: github.event_name == 'workflow_dispatch' && github.run_attempt == 1
+    needs: repository-gate
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    environment:
+      name: data-steward-readonly
+      deployment: false
+    outputs:
+      classification: ${{ steps.handoff.outputs.classification }}
+      attended_version_id: ${{ steps.handoff.outputs.attended_version_id }}
+      artifact_sha256: ${{ steps.handoff.outputs.artifact_sha256 }}
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          ref: ${{ needs.repository-gate.outputs.approved_sha }}
+          persist-credentials: false
+      - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
+        with:
+          node-version: 24.19.0
+      - name: Reconfirm exact protected main after read-only environment admission
+        env:
+          APPROVED_SHA: ${{ needs.repository-gate.outputs.approved_sha }}
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "$APPROVED_SHA"
+          test "$(git ls-remote https://github.com/priteshpatel390-del/FPL.git refs/heads/main | cut -f1)" = "$APPROVED_SHA"
+          test -z "$(git status --porcelain --untracked-files=all)"
+      - run: |
+          node --test tests/api-football-attended-acceptance-foundation.test.mjs tests/api-football-collector-activation-live-preflight.test.mjs
+          test -z "$(git status --porcelain --untracked-files=all)"
+      - name: Establish fresh disabled-runtime admission
+        env:
+          APPROVED_SHA: ${{ needs.repository-gate.outputs.approved_sha }}
+          API_FOOTBALL_PREFLIGHT_STAGE: ATTENDED_ACCEPTANCE
+          API_FOOTBALL_ATTENDED_VERSION_ID: ${{ inputs.attended_version_id }}
+          API_FOOTBALL_ATTENDED_VERSION_APPROVED_SHA: 69bb84fadbcce94e9fece3ff438d985866cce183
+          DATA_STEWARD_CLOUDFLARE_ACCOUNT_ID: ${{ secrets.DATA_STEWARD_CLOUDFLARE_ACCOUNT_ID }}
+          DATA_STEWARD_CLOUDFLARE_ACCOUNT_FINGERPRINT: ${{ vars.DATA_STEWARD_CLOUDFLARE_ACCOUNT_FINGERPRINT }}
+          DATA_STEWARD_CLOUDFLARE_READ_TOKEN: ${{ secrets.DATA_STEWARD_CLOUDFLARE_READ_TOKEN }}
+          API_FOOTBALL_ACTIVATION_PREFLIGHT_REPORT_PATH: ${{ runner.temp }}/attended-admission.json
+        run: node workers/api-football-collector/activation-live-preflight.mjs
+      - name: Bind sanitized admission handoff to exact identities
+        id: handoff
+        env:
+          REPORT: ${{ runner.temp }}/attended-admission.json
+          APPROVED_SHA: ${{ needs.repository-gate.outputs.approved_sha }}
+          ATTENDED_VERSION_ID: ${{ inputs.attended_version_id }}
+          VERSION_APPROVED_SHA: 69bb84fadbcce94e9fece3ff438d985866cce183
+          ACCOUNT_FINGERPRINT: ${{ vars.DATA_STEWARD_CLOUDFLARE_ACCOUNT_FINGERPRINT }}
+        run: |
+          set -euo pipefail
+          node --input-type=module - <<'NODE'
+          import fs from 'node:fs';
+          import {createHash} from 'node:crypto';
+          const bytes=fs.readFileSync(process.env.REPORT),report=JSON.parse(bytes);
+          if(report.ok!==true||report.approvedSha!==process.env.APPROVED_SHA||report.versionApprovedSha!==process.env.VERSION_APPROVED_SHA||report.stage!=='ATTENDED_ACCEPTANCE'||report.classification!=='READY_FOR_SEPARATELY_APPROVED_ATTENDED_ACCEPTANCE'||report.inventory?.reviewedVersionId!==process.env.ATTENDED_VERSION_ID||report.inventory?.versionIdentityExact!==true||report.inventory?.versionInventoryExact!==true||report.accountFingerprint!==process.env.ACCOUNT_FINGERPRINT||report.evidence?.productionMutations!==0||report.evidence?.apiFootballRequests!==0||report.evidence?.secretValuesRead!==0)throw new Error('attended admission handoff invalid');
+          fs.appendFileSync(process.env.GITHUB_OUTPUT,`classification=${report.classification}\nattended_version_id=${report.inventory.reviewedVersionId}\nartifact_sha256=${createHash('sha256').update(bytes).digest('hex')}\n`);
+          NODE
+      - uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6
+        with:
+          name: api-football-attended-readonly-admission
+          path: ${{ runner.temp }}/attended-admission.json
+          retention-days: 7
+
+  protected-attended-execution:
+    if: github.event_name == 'workflow_dispatch' && github.run_attempt == 1 && needs.fresh-readonly-attended-admission.outputs.classification == 'READY_FOR_SEPARATELY_APPROVED_ATTENDED_ACCEPTANCE' && needs.fresh-readonly-attended-admission.outputs.attended_version_id == inputs.attended_version_id
+    needs: [repository-gate, fresh-readonly-attended-admission]
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    environment:
+      name: api-football-attended-acceptance
+      deployment: false
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          ref: ${{ needs.repository-gate.outputs.approved_sha }}
+          persist-credentials: false
+      - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
+        with:
+          node-version: 24.19.0
+      - name: Reconfirm exact protected main after mutation environment admission
+        env:
+          APPROVED_SHA: ${{ needs.repository-gate.outputs.approved_sha }}
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "$APPROVED_SHA"
+          test "$(git ls-remote https://github.com/priteshpatel390-del/FPL.git refs/heads/main | cut -f1)" = "$APPROVED_SHA"
+          test -z "$(git status --porcelain --untracked-files=all)"
+      - uses: actions/download-artifact@95815c38cf2ff2164869cbab79da8d1f422bc89e # v4
+        with:
+          name: api-football-attended-readonly-admission
+          path: ${{ runner.temp }}/attended-admission
+      - name: Invoke exact Version once; cleanup runs inside executor regardless of outcome
+        env:
+          APPROVED_SHA: ${{ needs.repository-gate.outputs.approved_sha }}
+          API_FOOTBALL_ATTENDED_VERSION_ID: ${{ inputs.attended_version_id }}
+          API_FOOTBALL_ATTENDED_VERSION_APPROVED_SHA: 69bb84fadbcce94e9fece3ff438d985866cce183
+          API_FOOTBALL_ATTENDED_TRIGGER_SECRET: ${{ secrets.API_FOOTBALL_ATTENDED_TRIGGER_SECRET }}
+          API_FOOTBALL_ATTENDED_ADMISSION_PATH: ${{ runner.temp }}/attended-admission/attended-admission.json
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          CLOUDFLARE_ACCOUNT_FINGERPRINT: ${{ vars.CLOUDFLARE_ACCOUNT_FINGERPRINT }}
+          CLOUDFLARE_ATTENDED_MUTATION_TOKEN: ${{ secrets.CLOUDFLARE_ATTENDED_MUTATION_TOKEN }}
+          EXPECTED_ARTIFACT_SHA256: ${{ needs.fresh-readonly-attended-admission.outputs.artifact_sha256 }}
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "$APPROVED_SHA"
+          test "$(git ls-remote https://github.com/priteshpatel390-del/FPL.git refs/heads/main | cut -f1)" = "$APPROVED_SHA"
+          test "$(sha256sum "$API_FOOTBALL_ATTENDED_ADMISSION_PATH" | cut -d' ' -f1)" = "$EXPECTED_ARTIFACT_SHA256"
+          test -z "$(git status --porcelain --untracked-files=all)"
+          node workers/api-football-collector/run-attended-acceptance.mjs
+
+  final-readonly-reconciliation:
+    if: ${{ always() && github.event_name == 'workflow_dispatch' && github.run_attempt == 1 && needs.repository-gate.result == 'success' }}
+    needs: [repository-gate, fresh-readonly-attended-admission, protected-attended-execution]
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    environment:
+      name: data-steward-readonly
+      deployment: false
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          ref: ${{ needs.repository-gate.outputs.approved_sha }}
+          persist-credentials: false
+      - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
+        with:
+          node-version: 24.19.0
+      - name: Reconfirm exact protected main before independent closeout
+        env:
+          APPROVED_SHA: ${{ needs.repository-gate.outputs.approved_sha }}
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "$APPROVED_SHA"
+          test "$(git ls-remote https://github.com/priteshpatel390-del/FPL.git refs/heads/main | cut -f1)" = "$APPROVED_SHA"
+          test -z "$(git status --porcelain --untracked-files=all)"
+      - name: Collect sanitized read-only reconciliation
+        id: reconcile
+        continue-on-error: true
+        env:
+          APPROVED_SHA: ${{ needs.repository-gate.outputs.approved_sha }}
+          API_FOOTBALL_PREFLIGHT_STAGE: ATTENDED_ACCEPTANCE
+          API_FOOTBALL_ATTENDED_VERSION_ID: ${{ inputs.attended_version_id }}
+          API_FOOTBALL_ATTENDED_VERSION_APPROVED_SHA: 69bb84fadbcce94e9fece3ff438d985866cce183
+          DATA_STEWARD_CLOUDFLARE_ACCOUNT_ID: ${{ secrets.DATA_STEWARD_CLOUDFLARE_ACCOUNT_ID }}
+          DATA_STEWARD_CLOUDFLARE_ACCOUNT_FINGERPRINT: ${{ vars.DATA_STEWARD_CLOUDFLARE_ACCOUNT_FINGERPRINT }}
+          DATA_STEWARD_CLOUDFLARE_READ_TOKEN: ${{ secrets.DATA_STEWARD_CLOUDFLARE_READ_TOKEN }}
+          API_FOOTBALL_ATTENDED_RECONCILIATION_REPORT_PATH: ${{ runner.temp }}/attended-reconciliation.json
+        run: node workers/api-football-collector/attended-reconciliation.mjs
+      - uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6
+        if: always()
+        with:
+          name: api-football-attended-readonly-reconciliation
+          path: ${{ runner.temp }}/attended-reconciliation.json
+          if-no-files-found: error
+          retention-days: 7
+      - name: Require independently reconciled success
+        if: steps.reconcile.outcome != 'success'
+        run: exit 1
+
+          printf '%s' "$ATTENDED_VERSION_ID" | grep -Eiq '^[0-9a-f-]{36}
+          test "$(git rev-parse HEAD)" = "$APPROVED_SHA"
+          test "$(git ls-remote https://github.com/priteshpatel390-del/FPL.git refs/heads/main | cut -f1)" = "$APPROVED_SHA"
+          test -z "$(git status --porcelain)"
+          echo "approved_sha=$APPROVED_SHA" >> "$GITHUB_OUTPUT"
+      - name: Require exact-head Verify Teamsheet success
+        env:
+          GH_TOKEN: ${{ github.token }}
+          APPROVED_SHA: ${{ steps.identity.outputs.approved_sha }}
+        run: |
+          set -euo pipefail
+          response="$RUNNER_TEMP/check-runs.json"
+          gh api "repos/${{ github.repository }}/commits/$APPROVED_SHA/check-runs" > "$response"
+          node --input-type=module - "$response" <<'NODE'
+          import fs from 'node:fs';
+          const body=JSON.parse(fs.readFileSync(process.argv[2],'utf8'));
+          if(!(body.check_runs??[]).some(row=>row.name==='Tests and deterministic build'&&row.status==='completed'&&row.conclusion==='success'&&row.head_sha===process.env.APPROVED_SHA&&row.app?.slug==='github-actions'&&row.details_url?.startsWith('https://github.com/priteshpatel390-del/FPL/actions/runs/')))throw new Error('exact-head Verify Teamsheet success is absent');
+          NODE
+          rm -f "$response"
+
+  fresh-readonly-attended-admission:
+    if: github.event_name == 'workflow_dispatch' && github.run_attempt == 1
+    needs: repository-gate
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    environment:
+      name: data-steward-readonly
+      deployment: false
+    outputs:
+      classification: ${{ steps.handoff.outputs.classification }}
+      attended_version_id: ${{ steps.handoff.outputs.attended_version_id }}
+      artifact_sha256: ${{ steps.handoff.outputs.artifact_sha256 }}
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          ref: ${{ needs.repository-gate.outputs.approved_sha }}
+          persist-credentials: false
+      - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
+        with:
+          node-version: 24.19.0
+      - name: Reconfirm exact protected main after read-only environment admission
+        env:
+          APPROVED_SHA: ${{ needs.repository-gate.outputs.approved_sha }}
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "$APPROVED_SHA"
+          test "$(git ls-remote https://github.com/priteshpatel390-del/FPL.git refs/heads/main | cut -f1)" = "$APPROVED_SHA"
+          test -z "$(git status --porcelain --untracked-files=all)"
+      - run: |
+          node --test tests/api-football-attended-acceptance-foundation.test.mjs tests/api-football-collector-activation-live-preflight.test.mjs
+          test -z "$(git status --porcelain --untracked-files=all)"
+      - name: Establish fresh disabled-runtime admission
+        env:
+          APPROVED_SHA: ${{ needs.repository-gate.outputs.approved_sha }}
+          API_FOOTBALL_PREFLIGHT_STAGE: ATTENDED_ACCEPTANCE
+          API_FOOTBALL_ATTENDED_VERSION_ID: ${{ inputs.attended_version_id }}
+          DATA_STEWARD_CLOUDFLARE_ACCOUNT_ID: ${{ secrets.DATA_STEWARD_CLOUDFLARE_ACCOUNT_ID }}
+          DATA_STEWARD_CLOUDFLARE_ACCOUNT_FINGERPRINT: ${{ vars.DATA_STEWARD_CLOUDFLARE_ACCOUNT_FINGERPRINT }}
+          DATA_STEWARD_CLOUDFLARE_READ_TOKEN: ${{ secrets.DATA_STEWARD_CLOUDFLARE_READ_TOKEN }}
+          API_FOOTBALL_ACTIVATION_PREFLIGHT_REPORT_PATH: ${{ runner.temp }}/attended-admission.json
+        run: node workers/api-football-collector/activation-live-preflight.mjs
+      - name: Bind sanitized admission handoff to exact identities
+        id: handoff
+        env:
+          REPORT: ${{ runner.temp }}/attended-admission.json
+          APPROVED_SHA: ${{ needs.repository-gate.outputs.approved_sha }}
+          ATTENDED_VERSION_ID: ${{ inputs.attended_version_id }}
+          ACCOUNT_FINGERPRINT: ${{ vars.DATA_STEWARD_CLOUDFLARE_ACCOUNT_FINGERPRINT }}
+        run: |
+          set -euo pipefail
+          node --input-type=module - <<'NODE'
+          import fs from 'node:fs';
+          import {createHash} from 'node:crypto';
+          const bytes=fs.readFileSync(process.env.REPORT),report=JSON.parse(bytes);
+          if(report.ok!==true||report.approvedSha!==process.env.APPROVED_SHA||report.stage!=='ATTENDED_ACCEPTANCE'||report.classification!=='READY_FOR_SEPARATELY_APPROVED_ATTENDED_ACCEPTANCE'||report.inventory?.reviewedVersionId!==process.env.ATTENDED_VERSION_ID||report.inventory?.versionIdentityExact!==true||report.inventory?.versionInventoryExact!==true||report.accountFingerprint!==process.env.ACCOUNT_FINGERPRINT||report.evidence?.productionMutations!==0||report.evidence?.apiFootballRequests!==0||report.evidence?.secretValuesRead!==0)throw new Error('attended admission handoff invalid');
+          fs.appendFileSync(process.env.GITHUB_OUTPUT,`classification=${report.classification}\nattended_version_id=${report.inventory.reviewedVersionId}\nartifact_sha256=${createHash('sha256').update(bytes).digest('hex')}\n`);
+          NODE
+      - uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6
+        with:
+          name: api-football-attended-readonly-admission
+          path: ${{ runner.temp }}/attended-admission.json
+          retention-days: 7
+
+  protected-attended-execution:
+    if: github.event_name == 'workflow_dispatch' && github.run_attempt == 1 && needs.fresh-readonly-attended-admission.outputs.classification == 'READY_FOR_SEPARATELY_APPROVED_ATTENDED_ACCEPTANCE' && needs.fresh-readonly-attended-admission.outputs.attended_version_id == inputs.attended_version_id
+    needs: [repository-gate, fresh-readonly-attended-admission]
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    environment:
+      name: api-football-attended-acceptance
+      deployment: false
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          ref: ${{ needs.repository-gate.outputs.approved_sha }}
+          persist-credentials: false
+      - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
+        with:
+          node-version: 24.19.0
+      - name: Reconfirm exact protected main after mutation environment admission
+        env:
+          APPROVED_SHA: ${{ needs.repository-gate.outputs.approved_sha }}
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "$APPROVED_SHA"
+          test "$(git ls-remote https://github.com/priteshpatel390-del/FPL.git refs/heads/main | cut -f1)" = "$APPROVED_SHA"
+          test -z "$(git status --porcelain --untracked-files=all)"
+      - uses: actions/download-artifact@95815c38cf2ff2164869cbab79da8d1f422bc89e # v4
+        with:
+          name: api-football-attended-readonly-admission
+          path: ${{ runner.temp }}/attended-admission
+      - name: Invoke exact Version once; cleanup runs inside executor regardless of outcome
+        env:
+          APPROVED_SHA: ${{ needs.repository-gate.outputs.approved_sha }}
+          API_FOOTBALL_ATTENDED_VERSION_ID: ${{ inputs.attended_version_id }}
+          API_FOOTBALL_ATTENDED_TRIGGER_SECRET: ${{ secrets.API_FOOTBALL_ATTENDED_TRIGGER_SECRET }}
+          API_FOOTBALL_ATTENDED_ADMISSION_PATH: ${{ runner.temp }}/attended-admission/attended-admission.json
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          CLOUDFLARE_ACCOUNT_FINGERPRINT: ${{ vars.CLOUDFLARE_ACCOUNT_FINGERPRINT }}
+          CLOUDFLARE_ATTENDED_MUTATION_TOKEN: ${{ secrets.CLOUDFLARE_ATTENDED_MUTATION_TOKEN }}
+          EXPECTED_ARTIFACT_SHA256: ${{ needs.fresh-readonly-attended-admission.outputs.artifact_sha256 }}
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "$APPROVED_SHA"
+          test "$(git ls-remote https://github.com/priteshpatel390-del/FPL.git refs/heads/main | cut -f1)" = "$APPROVED_SHA"
+          test "$(sha256sum "$API_FOOTBALL_ATTENDED_ADMISSION_PATH" | cut -d' ' -f1)" = "$EXPECTED_ARTIFACT_SHA256"
+          test -z "$(git status --porcelain --untracked-files=all)"
+          node workers/api-football-collector/run-attended-acceptance.mjs
+
+  final-readonly-reconciliation:
+    if: ${{ always() && github.event_name == 'workflow_dispatch' && github.run_attempt == 1 && needs.repository-gate.result == 'success' }}
+    needs: [repository-gate, fresh-readonly-attended-admission, protected-attended-execution]
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    environment:
+      name: data-steward-readonly
+      deployment: false
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          ref: ${{ needs.repository-gate.outputs.approved_sha }}
+          persist-credentials: false
+      - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
+        with:
+          node-version: 24.19.0
+      - name: Reconfirm exact protected main before independent closeout
+        env:
+          APPROVED_SHA: ${{ needs.repository-gate.outputs.approved_sha }}
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "$APPROVED_SHA"
+          test "$(git ls-remote https://github.com/priteshpatel390-del/FPL.git refs/heads/main | cut -f1)" = "$APPROVED_SHA"
+          test -z "$(git status --porcelain --untracked-files=all)"
+      - name: Collect sanitized read-only reconciliation
+        id: reconcile
+        continue-on-error: true
+        env:
+          APPROVED_SHA: ${{ needs.repository-gate.outputs.approved_sha }}
+          API_FOOTBALL_PREFLIGHT_STAGE: ATTENDED_ACCEPTANCE
+          API_FOOTBALL_ATTENDED_VERSION_ID: ${{ inputs.attended_version_id }}
+          DATA_STEWARD_CLOUDFLARE_ACCOUNT_ID: ${{ secrets.DATA_STEWARD_CLOUDFLARE_ACCOUNT_ID }}
+          DATA_STEWARD_CLOUDFLARE_ACCOUNT_FINGERPRINT: ${{ vars.DATA_STEWARD_CLOUDFLARE_ACCOUNT_FINGERPRINT }}
+          DATA_STEWARD_CLOUDFLARE_READ_TOKEN: ${{ secrets.DATA_STEWARD_CLOUDFLARE_READ_TOKEN }}
+          API_FOOTBALL_ATTENDED_RECONCILIATION_REPORT_PATH: ${{ runner.temp }}/attended-reconciliation.json
+        run: node workers/api-football-collector/attended-reconciliation.mjs
+      - uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6
+        if: always()
+        with:
+          name: api-football-attended-readonly-reconciliation
+          path: ${{ runner.temp }}/attended-reconciliation.json
+          if-no-files-found: error
+          retention-days: 7
+      - name: Require independently reconciled success
+        if: steps.reconcile.outcome != 'success'
+        run: exit 1
+
+          test "$ATTENDED_VERSION_ID" = "04d79556-3070-429f-9944-b5b53d799842"
           test "$EVENT_SHA" = "$APPROVED_SHA"
           test "$(git rev-parse HEAD)" = "$APPROVED_SHA"
           test "$(git ls-remote https://github.com/priteshpatel390-del/FPL.git refs/heads/main | cut -f1)" = "$APPROVED_SHA"
