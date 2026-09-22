@@ -1,3 +1,9 @@
+## Attended critical-recheck diagnostic security boundary
+
+Run `35751021431` reached the mutation-capable environment but failed during its final read-only critical preflight before any Preview/D1 mutation or provider egress. The remediation deliberately does not log Cloudflare HTTP responses, status bodies, tokens, account IDs, D1 identifiers, trigger secrets or arbitrary remote error strings. Instead, only repository-owned preflight reasons are translated through a closed allowlist to bounded diagnostic enums, with every unknown value reduced to `preflight_failed_unknown`.
+
+The existing fail-closed `attended_critical_state_drift` prefix, exact-main/provenance gates, endpoint allowlists, control-mutation budget, one-shot provider boundary, cleanup rules and independent reconciliation remain unchanged. Diagnostic visibility does not authorize retry or broaden the attended mutation credential.
+
 ## Attended acceptance immutable-provenance remediation
 
 The live secret-bearing attended Version is immutable: Version `04d79556-3070-429f-9944-b5b53d799842` was created from SHA `69bb84fadbcce94e9fece3ff438d985866cce183`. Acceptance must therefore keep current workflow execution SHA separate from Version provenance. The remediation pins the historical 17-module SHA-256 manifest and exact Version provenance, requires that provenance during initial read-only admission, the last critical pre-mutation recheck and final independent reconciliation, and retains it only as non-secret sanitized evidence. A later current `main` may not lend its annotation or source identity to the existing Version. Wrong or missing provenance fails before Preview enablement, D1 collection enablement or trigger-secret egress. Existing no-retry, two-control-mutation, exact-five-provider-request and secret-value non-disclosure boundaries are unchanged.
