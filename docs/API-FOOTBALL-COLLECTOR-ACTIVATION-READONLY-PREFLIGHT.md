@@ -1,6 +1,6 @@
-## Attended-stage extension
+## Attended-stage remediation
 
-Live preflight can now select `ATTENDED_ACCEPTANCE` and an exact reviewed Version ID. It reads binding metadata without secret values and requires zero Deployments, Cron, routes and custom domains, disabled workers.dev/Preview URLs, exact production D1 and pristine disabled runtime before admission. See [attended acceptance foundation](API-FOOTBALL-ATTENDED-ACCEPTANCE-FOUNDATION.md).
+Live preflight selects `ATTENDED_ACCEPTANCE`, exact approved SHA and final Version ID; reads stable metadata plus Beta `include=modules`; hashes every module; validates exact annotations, runtime and six bindings; and admits only the exact inert original plus reviewed final Version. It also proves trusted Preview suffix, zero Deployments/Cron/routes/domains, disabled workers.dev/Preview URLs, exact production D1 and pristine disabled runtime. Repository stage performs exactly five Cloudflare GETs; attended stage exactly thirteen, each under its stage-specific hard ceiling. See [attended acceptance foundation](API-FOOTBALL-ATTENDED-ACCEPTANCE-FOUNDATION.md).
 
 ## Post-staging terminology correction — 21 September 2026
 

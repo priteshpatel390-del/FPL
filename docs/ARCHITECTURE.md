@@ -1,6 +1,6 @@
 ## Attended API-Football execution boundary
 
-A future attended inactive Version may expose one exact authenticated POST path through a temporary Versioned Preview URL. It reuses collector planning/execution, permits no general API, creates no Deployment or Cron, and must disable collection and Preview URLs after one invocation. See [attended acceptance foundation](API-FOOTBALL-ATTENDED-ACCEPTANCE-FOUNDATION.md).
+A future attended inactive Version may expose one exact authenticated POST path through a temporary Versioned Preview URL. Exact module bytes and a closed original-plus-attended inventory are admitted before Worker-wide Preview enablement; hostname derives from trusted Cloudflare subdomain metadata. It reuses collector planning/execution, permits no general API, creates no Deployment/Cron, and always disables collection and Preview before independent reconciliation. See [attended acceptance foundation](API-FOOTBALL-ATTENDED-ACCEPTANCE-FOUNDATION.md).
 
 ## Current API-Football collector infrastructure state
 

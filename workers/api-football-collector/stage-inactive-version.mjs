@@ -150,17 +150,6 @@ export function buildVersionMetadata(approvedSha){
     }
   };
 }
-export function buildAttendedVersionMetadata(approvedSha){
-  const metadata=buildVersionMetadata(approvedSha);
-  metadata.bindings=metadata.bindings.map(binding=>binding.name==='EIA_2I5D_ACTIVATION'?{...binding,text:ATTENDED_ACTIVATION}:binding);
-  metadata.bindings.push(...ATTENDED_SECRET_BINDINGS.map(name=>({name,type:'secret_text'})));
-  metadata.annotations={
-    'workers/commit_sha':approvedSha,
-    'workers/message':'API-Football attended acceptance candidate from '+approvedSha,
-    'workers/tag':'api-football-attended-'+approvedSha.slice(0,12)
-  };
-  return metadata;
-}
 function canonical(value){
   if(value===null||typeof value==='string'||typeof value==='boolean')return value;
   if(typeof value==='number'){if(!Number.isFinite(value))fail('collector_staging_identity_non_finite');return Object.is(value,-0)?0:value;}
@@ -284,17 +273,6 @@ function bindingMap(bindings){
     map.set(binding.name,binding);
   }
   return map;
-}
-export function validateAttendedVersionDetail(detail,{versionId,approvedSha,identity}={}){
-  if(detail?.id!==versionId||!HEX40.test(String(approvedSha||'')))fail('collector_attended_version_identity_drift');
-  const bindings=bindingMap(detail.resources?.bindings);if(bindings.size!==6)fail('collector_attended_version_bindings_invalid');
-  const d1=bindings.get(EXPECTED_BINDING_NAME);
-  if(d1?.type!=='d1'||d1.database_id!==EXPECTED_D1_DATABASE_ID)fail('collector_attended_version_d1_drift');
-  const expected={...EXPECTED_PLAIN_TEXT_VARS,EIA_2I5D_ACTIVATION:ATTENDED_ACTIVATION};
-  for(const [name,text] of Object.entries(expected))if(bindings.get(name)?.type!=='plain_text'||String(bindings.get(name)?.text)!==String(text))fail('collector_attended_version_plain_text_drift');
-  for(const name of ATTENDED_SECRET_BINDINGS)if(bindings.get(name)?.type!=='secret_text')fail('collector_attended_version_secret_binding_drift');
-  if(identity&&detail.metadata_sha256!==identity.metadataSha256)fail('collector_attended_version_identity_drift');
-  return true;
 }
 export function validateStableVersionDetail(detail,{versionId}={}){
   if(!detail||detail.id!==versionId||!UUID.test(String(versionId||'')))fail('collector_staging_version_identity_invalid');

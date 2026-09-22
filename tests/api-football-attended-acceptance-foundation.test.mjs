@@ -1,100 +1,154 @@
 import assert from 'node:assert/strict';
+import {createHash} from 'node:crypto';
 import fs from 'node:fs';
 import path from 'node:path';
 import test from 'node:test';
 import {classifyCollectorActivationPreflight,COLLECTOR_ACTIVATION_PREFLIGHT_VERSION} from '../workers/api-football-collector/activation-preflight.mjs';
 import {ATTENDED_ACCEPTANCE_PATH,runAttendedHttpRequest} from '../workers/api-football-collector/collector.mjs';
-import {buildAttendedVersionMetadata,buildUploadModules,deterministicIdentity,resolveModuleGraph,validateAttendedVersionDetail} from '../workers/api-football-collector/stage-inactive-version.mjs';
-import {classifyAcceptanceReconciliation,runAttendedAcceptance,runtimeMutationContract} from '../workers/api-football-collector/attended-acceptance.mjs';
+import {
+  ATTENDED_CONTROL_MAX_D1_CALLS,ATTENDED_CONTROL_MAX_D1_STATEMENTS,ATTENDED_CONTROL_MAX_ROWS_CHANGED,
+  credentialLifecycleMutation,runAttendedAcceptance
+} from '../workers/api-football-collector/attended-acceptance.mjs';
+import {classifyAttendedReconciliation} from '../workers/api-football-collector/attended-reconciliation.mjs';
+import {
+  ORIGINAL_BLOCKED_VERSION_ID,buildAttendedVersionUploadForm,buildReviewedAttendedIdentity,deriveVersionPreviewUrl,
+  expectedAttendedBindings,prepareFinalAttendedVersion,validateClosedVersionInventory,validateReviewedAttendedVersion
+} from '../workers/api-football-collector/attended-version.mjs';
+import {attendedCloudflarePaths,assertAttendedCloudflareRequestAllowed,executeLiveAttendedAcceptance} from '../workers/api-football-collector/run-attended-acceptance.mjs';
+import {MutationAmbiguousError,buildUploadModules,resolveModuleGraph} from '../workers/api-football-collector/stage-inactive-version.mjs';
 import {EXPECTED_D1_DATABASE_ID} from '../workers/data-platform/phase4b/live-contract.mjs';
 
 const root=path.resolve(import.meta.dirname,'..');
-const NOW='2026-09-21T12:00:00.000Z';
-const SHA='a'.repeat(40),VERSION='11111111-1111-4111-8111-111111111111';
-const SECRET='x'.repeat(64);
-const request=(method='POST',path=ATTENDED_ACCEPTANCE_PATH,secret=SECRET)=>new Request('https://preview.invalid'+path,{method,headers:{'x-teamsheet-attended-trigger':secret}});
+const NOW='2026-09-21T12:00:00.000Z',SHA='a'.repeat(40),VERSION='11111111-1111-4111-8111-111111111111';
+const ACCOUNT='production-account',FINGERPRINT=createHash('sha256').update(ACCOUNT).digest('hex'),SECRET='x'.repeat(64);
+const request=(method='POST',route=ATTENDED_ACCEPTANCE_PATH,secret=SECRET)=>new Request('https://preview.invalid'+route,{method,headers:{'x-teamsheet-attended-trigger':secret}});
+const identity=buildReviewedAttendedIdentity(SHA),modules=buildUploadModules(resolveModuleGraph());
+function attendedStable(){return {id:VERSION,resources:{script_runtime:{compatibility_date:identity.compatibilityDate},bindings:structuredClone(expectedAttendedBindings())}};}
+function attendedBeta(){return {id:VERSION,main_module:identity.mainModule,compatibility_date:identity.compatibilityDate,annotations:{'workers/message':identity.message,'workers/tag':identity.tag},modules:[...modules].map(([name,source])=>({name,content_base64:Buffer.from(source).toString('base64')}))};}
+function originalStable(){return {id:ORIGINAL_BLOCKED_VERSION_ID,resources:{bindings:[
+  {name:'TEAMSHEET_DATA_DB',type:'d1',database_id:EXPECTED_D1_DATABASE_ID},{name:'API_FOOTBALL_FPL_SEASON',type:'plain_text',text:'2026-27'},
+  {name:'API_FOOTBALL_PROVIDER_SEASON',type:'plain_text',text:'2026'},{name:'EIA_2I5D_ACTIVATION',type:'plain_text',text:'REPOSITORY_ONLY_BLOCKED'}]}};}
+function admission(){return {ok:true,approvedSha:SHA,accountFingerprint:FINGERPRINT,observedAt:NOW,stage:'ATTENDED_ACCEPTANCE',classification:'READY_FOR_SEPARATELY_APPROVED_ATTENDED_ACCEPTANCE',inventory:{reviewedVersionId:VERSION,versionIdentityExact:true,versionInventoryExact:true},runtime:{collectionEnabled:0,credentialState:'AVAILABLE',activeLease:false},evidence:{observedAt:NOW,productionMutations:0,apiFootballRequests:0,secretValuesRead:0}};}
 
 test('attended HTTP path is exact, secret-gated, generic, and reuses collector composition',async()=>{
-  let calls=0;const run=async({controller,env})=>{calls++;assert.equal(env.EIA_2I5D_ACTIVATION,'ATTENDED_ONE_SHOT_DISCOVERY');assert.ok(Number.isFinite(controller.scheduledTime));return {ok:true};};
-  const env={EIA_2I5D_ACTIVATION:'ATTENDED_ONE_SHOT_DISCOVERY',API_FOOTBALL_ATTENDED_TRIGGER_SECRET:SECRET};
-  assert.deepEqual(await runAttendedHttpRequest(request(),env,{run,now:()=>1}),{status:202,body:'Accepted'});assert.equal(calls,1);
-  for(const [candidate,candidateEnv] of [
-    [request('GET'),env],[request('POST','/wrong'),env],[request('POST',ATTENDED_ACCEPTANCE_PATH,'y'.repeat(64)),env],
-    [request(),{...env,EIA_2I5D_ACTIVATION:'REPOSITORY_ONLY_BLOCKED'}]
-  ])assert.deepEqual(await runAttendedHttpRequest(candidate,candidateEnv,{run}),{status:404,body:'Not found'});
-  assert.equal(calls,1);
+  let calls=0;const run=async()=>{calls++;return {ok:true};},env={EIA_2I5D_ACTIVATION:'ATTENDED_ONE_SHOT_DISCOVERY',API_FOOTBALL_ATTENDED_TRIGGER_SECRET:SECRET};
+  assert.deepEqual(await runAttendedHttpRequest(request(),env,{run,now:()=>1}),{status:202,body:'Accepted'});
+  for(const candidate of [request('GET'),request('POST','/wrong'),request('POST',ATTENDED_ACCEPTANCE_PATH,'y'.repeat(64))])assert.deepEqual(await runAttendedHttpRequest(candidate,env,{run}),{status:404,body:'Not found'});
+  assert.deepEqual(await runAttendedHttpRequest(request(),{...env,EIA_2I5D_ACTIVATION:'REPOSITORY_ONLY_BLOCKED'},{run}),{status:404,body:'Not found'});assert.equal(calls,1);
 });
 
-test('attended HTTP failures never render either secret',async()=>{
-  const env={EIA_2I5D_ACTIVATION:'ATTENDED_ONE_SHOT_DISCOVERY',API_FOOTBALL_ATTENDED_TRIGGER_SECRET:SECRET,API_FOOTBALL_API_KEY:'provider-secret'};
-  const result=await runAttendedHttpRequest(request(),env,{run:async()=>{throw new Error(SECRET+' provider-secret');}});
-  assert.deepEqual(result,{status:409,body:'Not accepted'});assert.doesNotMatch(JSON.stringify(result),/provider-secret|x{16}/);
+test('reviewed Version proof pins UUID, commit annotations, modules, runtime and exact final bindings',()=>{
+  assert.equal(validateReviewedAttendedVersion({stableVersion:attendedStable(),betaVersion:attendedBeta(),versionId:VERSION,identity}),true);
+  const cases=[
+    value=>value.beta.modules[0].content_base64=Buffer.from('wrong').toString('base64'),
+    value=>value.beta.annotations['workers/message']='wrong',value=>value.stable.resources.bindings[0].database_id='wrong',
+    value=>value.beta.modules.pop(),value=>value.beta.modules.push({name:'unexpected.mjs',content_base64:Buffer.from('x').toString('base64')})
+  ];
+  for(const mutate of cases){const value={stable:attendedStable(),beta:attendedBeta()};mutate(value);assert.throws(()=>validateReviewedAttendedVersion({stableVersion:value.stable,betaVersion:value.beta,versionId:VERSION,identity}));}
 });
 
-function attendedEvidence(overrides={}){return {
-  version:COLLECTOR_ACTIVATION_PREFLIGHT_VERSION,stage:'ATTENDED_ACCEPTANCE',
-  migrations:[[1,'shadow_data_foundation'],[2,'official_fpl_structured_history'],[3,'production_query_plan_indexes'],[4,'api_football_shadow_identity'],[5,'api_football_shadow_runtime'],[6,'api_football_mapping_qualification']],
-  foreignKeyViolations:0,
-  authority:{season:'2026-27',sourceKey:'official-fpl',sourceRevisionId:'official-fpl-r1',runId:'run',runStatus:'completed',fetchedAt:NOW,digest:'a'.repeat(64),teamIds:Array.from({length:20},(_,i)=>`2026-27:fpl:team:${i+1}`)},
-  mapping:{state:'COMMITTED',isCurrentHead:true,mappingCount:20,memberCount:20,distinctProviderIds:20,distinctFplIds:20,canonicalTeamIds:Array.from({length:20},(_,i)=>`2026-27:fpl:team:${i+1}`),historicalAuthorityDigest:'b'.repeat(64),historicalAuthorityFetchedAt:NOW},
-  runtime:{provider:'api-football',collectionEnabled:0,credentialState:'AVAILABLE',inFlightAttemptId:null,inFlightLeaseExpiresAt:null},
-  counts:{requestAttempts:0,generations:0,fixtureRevisions:0},priorState:{attempt2Count:0,reservedAttemptCount:0,stagingGenerationCount:0},modelUiImportCount:0,
-  inventory:{activation:'ATTENDED_ONE_SHOT_DISCOVERY',databaseIdPlaceholder:false,productionBindingProven:true,workerPresent:true,deploymentCount:0,cronCount:0,workersDev:false,previewUrls:false,configurationExact:true,versionIdentityExact:true,routeCount:0,customDomainCount:0,secretBindingPresent:true,secretBindingNames:['API_FOOTBALL_API_KEY','API_FOOTBALL_ATTENDED_TRIGGER_SECRET']},
-  ...overrides
-};}
-
-test('attended admission requires zero Deployments, exact Version, both secret names, disabled runtime and pristine history',()=>{
-  assert.equal(classifyCollectorActivationPreflight(attendedEvidence(),{now:NOW}).classification,'READY_FOR_SEPARATELY_APPROVED_ATTENDED_ACCEPTANCE');
-  for(const evidence of [
-    attendedEvidence({inventory:{...attendedEvidence().inventory,deploymentCount:1}}),
-    attendedEvidence({inventory:{...attendedEvidence().inventory,versionIdentityExact:false}}),
-    attendedEvidence({inventory:{...attendedEvidence().inventory,secretBindingNames:['API_FOOTBALL_API_KEY']}}),
-    attendedEvidence({runtime:{...attendedEvidence().runtime,collectionEnabled:1}}),
-    attendedEvidence({counts:{requestAttempts:1,generations:0,fixtureRevisions:0}})
-  ])assert.equal(classifyCollectorActivationPreflight(evidence,{now:NOW}).ok,false);
+test('closed Worker-wide Preview inventory admits only original inert plus reviewed attended Version',()=>{
+  const input={versionIds:[ORIGINAL_BLOCKED_VERSION_ID,VERSION],originalStable:originalStable(),attendedVersionId:VERSION,attendedStable:attendedStable(),attendedBeta:attendedBeta(),identity};
+  assert.equal(validateClosedVersionInventory(input),true);
+  assert.throws(()=>validateClosedVersionInventory({...input,versionIds:[...input.versionIds,'22222222-2222-4222-8222-222222222222']}));
+  const activated=originalStable();activated.resources.bindings.find(row=>row.name==='EIA_2I5D_ACTIVATION').text='ATTENDED_ONE_SHOT_DISCOVERY';assert.throws(()=>validateClosedVersionInventory({...input,originalStable:activated}));
+  const secret=originalStable();secret.resources.bindings.push({name:'BAD',type:'secret_text'});assert.throws(()=>validateClosedVersionInventory({...input,originalStable:secret}));
+  assert.throws(()=>validateClosedVersionInventory({...input,attendedVersionId:'22222222-2222-4222-8222-222222222222'}));
 });
 
-test('attended Version metadata is deterministic and has exact closed bindings',()=>{
-  const metadata=buildAttendedVersionMetadata(SHA),modules=buildUploadModules(resolveModuleGraph()),identity=deterministicIdentity(metadata,modules,SHA);
-  assert.deepEqual(metadata.bindings.map(row=>row.name),['TEAMSHEET_DATA_DB','API_FOOTBALL_FPL_SEASON','API_FOOTBALL_PROVIDER_SEASON','EIA_2I5D_ACTIVATION','API_FOOTBALL_API_KEY','API_FOOTBALL_ATTENDED_TRIGGER_SECRET']);
-  assert.equal(metadata.bindings.find(row=>row.name==='EIA_2I5D_ACTIVATION').text,'ATTENDED_ONE_SHOT_DISCOVERY');
-  const detail={id:VERSION,metadata_sha256:identity.metadataSha256,resources:{bindings:metadata.bindings}};
-  assert.equal(validateAttendedVersionDetail(detail,{versionId:VERSION,approvedSha:SHA,identity}),true);
-  assert.equal(metadata.bindings.find(row=>row.name==='TEAMSHEET_DATA_DB').database_id,EXPECTED_D1_DATABASE_ID);
-  assert.doesNotMatch(JSON.stringify(metadata),new RegExp(SECRET));
+test('attended Version upload uses one documented multipart Version creation with both secrets',async()=>{
+  const form=buildAttendedVersionUploadForm(SHA,{apiKey:'synthetic-api-key',triggerSecret:SECRET});
+  const metadata=JSON.parse(String(form.get('metadata')));assert.deepEqual(metadata.bindings.filter(row=>row.type==='secret_text').map(row=>row.name),['API_FOOTBALL_API_KEY','API_FOOTBALL_ATTENDED_TRIGGER_SECRET']);
+  assert.equal(metadata.bindings.find(row=>row.name==='API_FOOTBALL_API_KEY').text,'synthetic-api-key');assert.equal(metadata.bindings.find(row=>row.name==='API_FOOTBALL_ATTENDED_TRIGGER_SECRET').text,SECRET);
+  assert.equal(form.has('collector.mjs'),true);assert.doesNotMatch(JSON.stringify({id:VERSION,bindingNames:metadata.bindings.map(row=>row.name)}),/synthetic-api-key|x{32}/);
 });
 
-test('attended controller invokes once and always disables collection and Preview URLs',async()=>{
-  const events=[];const admission={ok:true,stage:'ATTENDED_ACCEPTANCE',classification:'READY_FOR_SEPARATELY_APPROVED_ATTENDED_ACCEPTANCE',inventory:{reviewedVersionId:VERSION,versionIdentityExact:true},runtime:{collectionEnabled:0,credentialState:'AVAILABLE',activeLease:false},evidence:{productionMutations:0,apiFootballRequests:0,secretValuesRead:0}};
-  const result=await runAttendedAcceptance({admission,versionId:VERSION,enablePreview:async()=>events.push('preview-on'),enableCollection:async()=>events.push('collection-on'),invokeOnce:async()=>{events.push('invoke');throw new Error('unknown');},disableCollection:async()=>events.push('collection-off'),disablePreview:async()=>events.push('preview-off')});
-  assert.equal(result.retryAuthorized,false);assert.deepEqual(events,['preview-on','collection-on','invoke','collection-off','preview-off']);
+test('final attended Version preparation creates one new inactive Version and ambiguity never retries',async()=>{
+  let mutations=0,reads=0;const finalId=VERSION;
+  const result=await prepareFinalAttendedVersion({accountId:'account',approvedSha:SHA,secrets:{apiKey:'synthetic-api-key',triggerSecret:SECRET},request:async(path,{method,multipart})=>{mutations++;assert.match(path,/\/versions$/);assert.equal(method,'POST');assert.ok(multipart instanceof FormData);return {result:{id:finalId}};},readVersions:async()=>{reads++;return [ORIGINAL_BLOCKED_VERSION_ID,finalId];}});
+  assert.equal(result.versionId,finalId);assert.deepEqual({mutations,reads},{mutations:1,reads:1});
+  mutations=0;reads=0;await assert.rejects(()=>prepareFinalAttendedVersion({accountId:'account',approvedSha:SHA,secrets:{apiKey:'synthetic-api-key',triggerSecret:SECRET},request:async()=>{mutations++;throw new MutationAmbiguousError();},readVersions:async()=>{reads++;return [ORIGINAL_BLOCKED_VERSION_ID,finalId];}}),/ambiguous_reconciliation_required_no_retry/);
+  assert.deepEqual({mutations,reads},{mutations:1,reads:1});
 });
 
-test('credential and collection mutations are explicit, distinct and bounded',()=>{
-  const contracts=['SET_CREDENTIAL_AVAILABLE','ENABLE_COLLECTION','DISABLE_COLLECTION','RESET_CREDENTIAL'].map(runtimeMutationContract);
-  assert.equal(contracts.every(row=>row.expectedChanges===1),true);
-  assert.equal(new Set(contracts.map(row=>row.sql)).size,4);
-  assert.match(contracts[0].sql,/credential_state='AVAILABLE'/);assert.match(contracts[1].sql,/collection_enabled=1/);
-  assert.match(contracts[2].sql,/collection_enabled=0/);assert.match(contracts[3].sql,/credential_state='UNPROVISIONED'/);
+test('Preview URL derives from trusted Cloudflare suffix and pins exact identity',()=>{
+  const suffix='-teamsheet-api-football-shadow-collector.fpltsheet.workers.dev';
+  assert.equal(deriveVersionPreviewUrl({versionId:VERSION,previewUrlSuffix:suffix,accountSubdomain:'fpltsheet',path:ATTENDED_ACCEPTANCE_PATH}).href,`https://${VERSION.slice(0,8)}${suffix}${ATTENDED_ACCEPTANCE_PATH}`);
+  for(const bad of ['-teamsheet-api-football-shadow-collector.evil.example','-wrong-worker.fpltsheet.workers.dev','-teamsheet-api-football-shadow-collector.wrong.example.workers.dev','-teamsheet-api-football-shadow-collector.fpltsheet.workers.dev:443','@evil.example'])assert.throws(()=>deriveVersionPreviewUrl({versionId:VERSION,previewUrlSuffix:bad,accountSubdomain:'fpltsheet',path:ATTENDED_ACCEPTANCE_PATH}));
+  for(const route of ['http://evil','/path?query=1','/path#fragment'])assert.throws(()=>deriveVersionPreviewUrl({versionId:VERSION,previewUrlSuffix:suffix,accountSubdomain:'fpltsheet',path:route}));
 });
 
-test('reconciliation accepts exact success and never authorizes retry for ambiguity',()=>{
-  const success={collectionEnabled:0,activeLease:false,attempt2Count:0,requestAttempts:5,succeededAttempts:5,attemptOneCount:5,generations:1,committedGenerations:1,headMatchesGeneration:true,fixtureRevisions:2500,rawPayloadRows:0,modelUiImportCount:0};
-  assert.equal(classifyAcceptanceReconciliation(success).classification,'ATTENDED_ACCEPTANCE_SUCCEEDED');
-  assert.equal(classifyAcceptanceReconciliation({...success,committedGenerations:0}).retryAuthorized,false);
+test('ambiguous or rejected invocation is hard failure after cleanup; only ACCEPTED succeeds',async()=>{
+  const run=async(outcome,{cleanupFails=false}={})=>{const events=[];const result=await runAttendedAcceptance({admission:admission(),versionId:VERSION,
+    enablePreview:async()=>events.push('preview-on'),enableCollection:async()=>events.push('collection-on'),invokeOnce:async()=>{events.push('invoke');return {requestCount:1,outcome};},
+    disableCollection:async()=>{events.push('collection-off');if(cleanupFails)throw new Error('cleanup');},disablePreview:async()=>events.push('preview-off')});return {result,events};};
+  for(const [outcome,options] of [['AMBIGUOUS',{}],['AMBIGUOUS',{cleanupFails:true}],['REJECTED',{}]]){const value=await run(outcome,options);assert.equal(value.result.ok,false);assert.equal(value.result.retryAuthorized,false);assert.deepEqual(value.events,['preview-on','collection-on','invoke','collection-off','preview-off']);}
+  assert.equal((await run('ACCEPTED')).result.classification,'ATTENDED_INVOCATION_COMPLETE_RECONCILIATION_REQUIRED');
 });
 
-test('shipped config remains inert and model paths do not import attended collector',()=>{
-  const config=JSON.parse(fs.readFileSync(path.join(root,'workers/api-football-collector/wrangler.jsonc'),'utf8'));
-  assert.equal(config.vars.EIA_2I5D_ACTIVATION,'REPOSITORY_ONLY_BLOCKED');assert.deepEqual(config.triggers.crons,[]);assert.equal(config.workers_dev,false);assert.equal(config.preview_urls,false);assert.equal(config.d1_databases[0].database_id,'00000000-0000-0000-0000-000000000000');
-  for(const file of fs.readdirSync(path.join(root,'src')).filter(name=>name.endsWith('.js')))assert.doesNotMatch(fs.readFileSync(path.join(root,'src',file),'utf8'),/attended-acceptance|api-football-collector/);
+test('credential lifecycle requires proven final secrets and defers reset until secret Version removal',()=>{
+  const base={collectionEnabled:0,activeLease:false,versionInventoryExact:true,secretBearingVersionPresent:true};
+  assert.match(credentialLifecycleMutation('MARK_AVAILABLE',base).sql,/credential_state='AVAILABLE'/);
+  assert.equal(credentialLifecycleMutation('MARK_AVAILABLE',{...base,secretBearingVersionPresent:false}).ok,false);
+  assert.equal(credentialLifecycleMutation('RESET_UNPROVISIONED',base).ok,false);
+  assert.match(credentialLifecycleMutation('RESET_UNPROVISIONED',{...base,secretBearingVersionPresent:false}).sql,/credential_state='UNPROVISIONED'/);
 });
 
-test('attended workflow is manual exact-main zero-Deployment and one-invocation only',()=>{
+test('executor fingerprints account and closes mutation endpoint surface before fetch',async()=>{
+  const paths=attendedCloudflarePaths(ACCOUNT);assert.equal(assertAttendedCloudflareRequestAllowed('GET',paths.subdomain,{accountId:ACCOUNT}),true);assert.equal(assertAttendedCloudflareRequestAllowed('POST',paths.d1,{accountId:ACCOUNT}),true);
+  for(const path of [`/accounts/${ACCOUNT}/workers/scripts/x/deployments`,`/accounts/${ACCOUNT}/workers/scripts/x/schedules`,`/accounts/${ACCOUNT}/workers/routes`,`/accounts/${ACCOUNT}/workers/domains`])assert.throws(()=>assertAttendedCloudflareRequestAllowed('POST',path,{accountId:ACCOUNT}),/forbidden/);
+  let calls=0;const base={CLOUDFLARE_ACCOUNT_ID:ACCOUNT,CLOUDFLARE_ATTENDED_MUTATION_TOKEN:'token',APPROVED_SHA:SHA,API_FOOTBALL_ATTENDED_VERSION_ID:VERSION,API_FOOTBALL_ATTENDED_TRIGGER_SECRET:SECRET,API_FOOTBALL_ATTENDED_ADMISSION_PATH:'/tmp/absent'};
+  for(const env of [{...base,CLOUDFLARE_ACCOUNT_FINGERPRINT:'0'.repeat(64)},base])await assert.rejects(()=>executeLiveAttendedAcceptance({env,fetchImpl:async()=>{calls++;}}));assert.equal(calls,0);
+});
+
+test('executor derives URL before secret egress, invokes once, and stays within separate control budget',async()=>{
+  const file='/tmp/attended-admission-test.json';fs.writeFileSync(file,JSON.stringify(admission()));const calls=[];
+  const env={CLOUDFLARE_ACCOUNT_ID:ACCOUNT,CLOUDFLARE_ACCOUNT_FINGERPRINT:FINGERPRINT,CLOUDFLARE_ATTENDED_MUTATION_TOKEN:'token',APPROVED_SHA:SHA,API_FOOTBALL_ATTENDED_VERSION_ID:VERSION,API_FOOTBALL_ATTENDED_TRIGGER_SECRET:SECRET,API_FOOTBALL_ATTENDED_ADMISSION_PATH:file};
+  const fetchImpl=async(url,init={})=>{calls.push({url:String(url),init});if(String(url).endsWith('/workers/subdomain'))return new Response(JSON.stringify({success:true,result:{subdomain:'fpltsheet'}}));if(String(url).endsWith('/subdomain')&&(init.method||'GET')==='GET')return new Response(JSON.stringify({success:true,result:{enabled:false,previews_enabled:false,preview_url_suffix:'-teamsheet-api-football-shadow-collector.fpltsheet.workers.dev'}}));if(String(url).includes('workers.dev'))return new Response('',{status:202});if(String(url).includes('/query'))return new Response(JSON.stringify({success:true,result:[{success:true,meta:{changes:1}}]}));return new Response(JSON.stringify({success:true,result:{}}));};
+  const result=await executeLiveAttendedAcceptance({env,fetchImpl});assert.equal(result.ok,true);assert.equal(result.providerInvocations,1);assert.deepEqual(result.controlBudget,{d1Calls:2,d1Statements:2,d1RowsChanged:2});assert.deepEqual([ATTENDED_CONTROL_MAX_D1_CALLS,ATTENDED_CONTROL_MAX_D1_STATEMENTS,ATTENDED_CONTROL_MAX_ROWS_CHANGED],[2,2,2]);
+  assert.equal(calls.filter(row=>row.init.headers?.['x-teamsheet-attended-trigger']).length,1);fs.unlinkSync(file);
+});
+
+test('executor transport ambiguity invokes exactly once, cleans up, returns failure and never retries',async()=>{
+  const file='/tmp/attended-admission-ambiguous.json';fs.writeFileSync(file,JSON.stringify(admission()));let previewCalls=0,previewDisable=0;
+  const env={CLOUDFLARE_ACCOUNT_ID:ACCOUNT,CLOUDFLARE_ACCOUNT_FINGERPRINT:FINGERPRINT,CLOUDFLARE_ATTENDED_MUTATION_TOKEN:'token',APPROVED_SHA:SHA,API_FOOTBALL_ATTENDED_VERSION_ID:VERSION,API_FOOTBALL_ATTENDED_TRIGGER_SECRET:SECRET,API_FOOTBALL_ATTENDED_ADMISSION_PATH:file};
+  const result=await executeLiveAttendedAcceptance({env,fetchImpl:async(url,init={})=>{const value=String(url);if(value.endsWith('/workers/subdomain'))return new Response(JSON.stringify({success:true,result:{subdomain:'fpltsheet'}}));if(value.endsWith('/subdomain')&&(init.method||'GET')==='GET')return new Response(JSON.stringify({success:true,result:{enabled:false,previews_enabled:false,preview_url_suffix:'-teamsheet-api-football-shadow-collector.fpltsheet.workers.dev'}}));if(value.includes('workers.dev')){previewCalls++;throw new Error('unknown delivery');}if(value.includes('/query'))return new Response(JSON.stringify({success:true,result:[{success:true,meta:{changes:1}}]}));if(value.endsWith('/subdomain')&&JSON.parse(init.body).previews_enabled===false)previewDisable++;return new Response(JSON.stringify({success:true,result:{}}));}});
+  assert.equal(result.ok,false);assert.equal(result.retryAuthorized,false);assert.equal(result.providerInvocations,1);assert.equal(previewCalls,1);assert.equal(previewDisable,1);fs.unlinkSync(file);
+});
+
+test('bad Preview suffix prevents enablement and trigger-secret egress',async()=>{
+  const file='/tmp/attended-admission-bad-preview.json';fs.writeFileSync(file,JSON.stringify(admission()));const calls=[];
+  const env={CLOUDFLARE_ACCOUNT_ID:ACCOUNT,CLOUDFLARE_ACCOUNT_FINGERPRINT:FINGERPRINT,CLOUDFLARE_ATTENDED_MUTATION_TOKEN:'token',APPROVED_SHA:SHA,API_FOOTBALL_ATTENDED_VERSION_ID:VERSION,API_FOOTBALL_ATTENDED_TRIGGER_SECRET:SECRET,API_FOOTBALL_ATTENDED_ADMISSION_PATH:file};
+  await assert.rejects(()=>executeLiveAttendedAcceptance({env,fetchImpl:async(url,init={})=>{calls.push({url:String(url),init});const result=String(url).endsWith('/workers/subdomain')?{subdomain:'fpltsheet'}:{enabled:false,previews_enabled:false,preview_url_suffix:'-teamsheet-api-football-shadow-collector.evil.example'};return new Response(JSON.stringify({success:true,result}));}}),/preview_identity/);
+  assert.equal(calls.length,2);assert.equal(calls.some(row=>row.init.headers?.['x-teamsheet-attended-trigger']),false);fs.unlinkSync(file);
+});
+
+function reconciliation(overrides={}){return {runtime:{collectionEnabled:0,credentialState:'AVAILABLE',activeLease:false},inventory:{previewUrls:false,versionInventoryExact:true,versionIdentityExact:true,workersDev:false,deploymentCount:0,cronCount:0,routeCount:0,customDomainCount:0},priorState:{requestAttempts:5,attempt1Count:5,attempt2Count:0,succeededAttemptCount:5,authFailureCount:0,quotaBlockedCount:0,timeoutCount:0,transportUnknownCount:0,schemaFailureCount:0,httpFailureCount:0,reservedAttemptCount:0,stagingGenerationCount:0,generations:1,committedGenerationCount:1,failedGenerationCount:0,persistenceUncertainCount:0,completionUncertainCount:0,membershipConsistentCount:1,headMatchCount:1,fixtureRevisions:10},modelUiImportCount:0,rawPayloadStoragePresent:false,...overrides};}
+test('independent reconciliation classifies success and every important terminal stop without retry',()=>{
+  assert.equal(classifyAttendedReconciliation(reconciliation()).classification,'ATTENDED_ACCEPTANCE_RECONCILED_SUCCESS');
+  const cases=[
+    {runtime:{collectionEnabled:1,credentialState:'AVAILABLE',activeLease:false}},{inventory:{...reconciliation().inventory,previewUrls:true}},
+    {runtime:{collectionEnabled:0,credentialState:'INVALID',activeLease:false}},{priorState:{...reconciliation().priorState,authFailureCount:1,succeededAttemptCount:0}},
+    {priorState:{...reconciliation().priorState,quotaBlockedCount:1}},{priorState:{...reconciliation().priorState,timeoutCount:1}},
+    {priorState:{...reconciliation().priorState,transportUnknownCount:1}},{priorState:{...reconciliation().priorState,schemaFailureCount:1}},
+    {priorState:{...reconciliation().priorState,httpFailureCount:1}},{priorState:{...reconciliation().priorState,reservedAttemptCount:1}},
+    {priorState:{...reconciliation().priorState,persistenceUncertainCount:1}},{priorState:{...reconciliation().priorState,completionUncertainCount:1}},
+    {priorState:{...reconciliation().priorState,stagingGenerationCount:1,committedGenerationCount:0}},{inventory:{...reconciliation().inventory,versionInventoryExact:false}}
+  ];
+  for(const value of cases){const result=classifyAttendedReconciliation(reconciliation(value));assert.equal(result.ok,false);assert.equal(result.retryAuthorized,false);}
+});
+
+test('abstract attended admission, shipped config, provider contract and model isolation remain pinned',()=>{
+  const evidence={version:COLLECTOR_ACTIVATION_PREFLIGHT_VERSION,stage:'ATTENDED_ACCEPTANCE',migrations:[[1,'shadow_data_foundation'],[2,'official_fpl_structured_history'],[3,'production_query_plan_indexes'],[4,'api_football_shadow_identity'],[5,'api_football_shadow_runtime'],[6,'api_football_mapping_qualification']],foreignKeyViolations:0,authority:{season:'2026-27',sourceKey:'official-fpl',sourceRevisionId:'official-fpl-r1',runId:'run',runStatus:'completed',fetchedAt:NOW,digest:'a'.repeat(64),teamIds:Array.from({length:20},(_,i)=>`2026-27:fpl:team:${i+1}`)},mapping:{state:'COMMITTED',isCurrentHead:true,mappingCount:20,memberCount:20,distinctProviderIds:20,distinctFplIds:20,canonicalTeamIds:Array.from({length:20},(_,i)=>`2026-27:fpl:team:${i+1}`),historicalAuthorityDigest:'b'.repeat(64),historicalAuthorityFetchedAt:NOW},runtime:{provider:'api-football',collectionEnabled:0,credentialState:'AVAILABLE',inFlightAttemptId:null,inFlightLeaseExpiresAt:null},counts:{requestAttempts:0,generations:0,fixtureRevisions:0},priorState:{attempt2Count:0,reservedAttemptCount:0,stagingGenerationCount:0},modelUiImportCount:0,rawPayloadStoragePresent:false,inventory:{activation:'ATTENDED_ONE_SHOT_DISCOVERY',databaseIdPlaceholder:false,productionBindingProven:true,workerPresent:true,deploymentCount:0,cronCount:0,workersDev:false,previewUrls:false,configurationExact:true,versionIdentityExact:true,versionInventoryExact:true,previewUrlIdentityExact:true,routeCount:0,customDomainCount:0,secretBindingPresent:true,secretBindingNames:['API_FOOTBALL_API_KEY','API_FOOTBALL_ATTENDED_TRIGGER_SECRET']}};
+  assert.equal(classifyCollectorActivationPreflight(evidence,{now:NOW}).ok,true);assert.equal(classifyCollectorActivationPreflight({...evidence,inventory:{...evidence.inventory,deploymentCount:1}},{now:NOW}).ok,false);
+  const config=JSON.parse(fs.readFileSync(path.join(root,'workers/api-football-collector/wrangler.jsonc'),'utf8'));assert.equal(config.vars.EIA_2I5D_ACTIVATION,'REPOSITORY_ONLY_BLOCKED');assert.deepEqual(config.triggers.crons,[]);assert.equal(config.workers_dev,false);assert.equal(config.preview_urls,false);
+  const runtime=fs.readFileSync(path.join(root,'workers/api-football-collector/runtime-contracts.mjs'),'utf8'),orchestrator=fs.readFileSync(path.join(root,'workers/api-football-collector/activation-orchestrator.mjs'),'utf8');
+  for(const value of ['720_896','2_000','2_500','1_000'])assert.match(runtime+orchestrator,new RegExp(value));assert.match(orchestrator,/DISCOVERY_MAX_D1_STATEMENTS=.*50|DISCOVERY_MAX_D1_STATEMENTS/);
+});
+
+test('workflow pins exact-main provenance, artifact identity, protected execution and always-run closeout',()=>{
   const workflow=fs.readFileSync(path.join(root,'.github/workflows/api-football-collector-attended-acceptance.yml'),'utf8');
-  const executor=fs.readFileSync(path.join(root,'workers/api-football-collector/run-attended-acceptance.mjs'),'utf8');
-  for(const expected of [/workflow_dispatch:/,/github\.run_attempt == 1/,/refs\/heads\/main/,/Tests and deterministic build/,/ATTENDED_ACCEPTANCE/,/run-attended-acceptance\.mjs/,/node-version: 24\.19\.0/])assert.match(workflow,expected);
-  assert.doesNotMatch(workflow,/schedule:|wrangler\s+deploy|\/deployments/);
-  assert.match(executor,/providerInvocations!==0/);assert.match(executor,/disableCollection/);assert.match(executor,/disablePreview/);
-  assert.doesNotMatch(executor,/v3\.football\.api-sports\.io|API_FOOTBALL_API_KEY|attempt_number\s*=\s*2/);
+  for(const required of ["row.name==='Tests and deterministic build'","row.status==='completed'","row.conclusion==='success'","row.head_sha===process.env.APPROVED_SHA","row.app?.slug==='github-actions'","https://github.com/priteshpatel390-del/FPL/actions/runs/",'github.run_attempt == 1','git ls-remote','git status --porcelain --untracked-files=all','EXPECTED_ARTIFACT_SHA256','sha256sum','$API_FOOTBALL_ATTENDED_ADMISSION_PATH','final-readonly-reconciliation:','continue-on-error: true','attended-reconciliation.mjs'])assert.match(workflow,new RegExp(required.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')));
+  assert.ok((workflow.match(/git ls-remote/g)||[]).length>=4);assert.ok((workflow.match(/refs\/heads\/main/g)||[]).length>=4);
+  assert.doesNotMatch(workflow,/API_FOOTBALL_ATTENDED_VERSION_PREVIEW_URL|wrangler\s+deploy|\/deployments|^\s{2}schedule:/m);
 });

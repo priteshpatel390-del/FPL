@@ -1,56 +1,78 @@
 # API-Football Attended One-Shot Discovery Acceptance Foundation
 
-## Approval and status
+## Approval and observed status
 
-Pritesh approved repository implementation only. This record adds dormant code, tests and a manual protected workflow for a future separately approved attended acceptance. No live Cloudflare mutation, D1 mutation, secret provisioning or inspection, Preview enablement, Version upload/deletion, provider request, collector execution, Deployment, Cron, route, custom domain or merge occurred.
+Pritesh approved repository remediation only. No live **API-Football collector** Cloudflare mutation, attended Version upload, collector Preview enablement, production D1 mutation, provider execution, Deployment or Cron occurred as part of this task. Cloudflare Git integration separately processed the PR branch for the existing `teamsheet-fpl-gateway` and published its ordinary commit/branch Preview URLs; that unrelated automated project activity is not evidence that `teamsheet-api-football-shadow-collector` was uploaded, routed or executed.
 
-The accepted design preserves **zero Cloudflare Deployments**. A future attended Version is an inactive Version with an exact reviewed identity. Its Versioned Preview URL may be enabled only temporarily after fresh read-only admission, then disabled regardless of outcome. The original blocked inactive Version remains retained.
+Checked-in collector configuration remains `REPOSITORY_ONLY_BLOCKED`, placeholder-D1, secret-free, Cron-free, `workers_dev=false` and `preview_urls=false`. Repository presence and merge grant no live authority.
 
-## Narrow HTTP contract
+## Exact final Version construction and proof
 
-The Worker now exposes one exact `POST /__teamsheet/api-football/attended-one-shot` path. It requires `ATTENDED_ONE_SHOT_DISCOVERY` and a separate `API_FOOTBALL_ATTENDED_TRIGGER_SECRET`. The trigger is compared through SHA-256 digests; wrong method, path, activation or secret returns the same generic rejection. Responses contain no provider key, trigger, account identity, D1 identity, mapping data or internal error. Accepted requests reuse `runScheduledCollector()` and therefore the existing planner and `runOneShotDiscoveryGeneration()` composition rather than duplicating collection logic.
+The executable contract no longer pretends that `{name,type:'secret_text'}` is a valid secret-bearing upload. Cloudflare's documented `versions upload --secrets-file` lifecycle uploads code and up to 100 secrets together as one new inactive Version. The repository models that exact multipart Version upload: two runtime-only secret values become `secret_text` bindings inside the ephemeral multipart request, never a retained report or repository object. The expected read-back contract exposes only their names/types.
 
-Checked-in `wrangler.jsonc` remains blocked, with placeholder D1, no secrets, no Cron, `workers_dev=false` and `preview_urls=false`.
+A future separately approved preparation starts with the one original blocked Version, uploads one final attended Version containing reviewed code and both secrets, and leaves Deployment count zero. The resulting Version ID must differ from the original. Mutation rejection or ambiguity stops without retry. No secret preparation runs in the acceptance-execution job.
 
-## Exact attended Version
+Admission derives the reviewed identity from exact approved SHA and the existing closed transitive module graph. It reads both stable Version metadata and the Beta Worker Version detail with `include=modules`, then proves:
 
-`buildAttendedVersionMetadata()` uses the same closed reviewed module graph as inactive staging. Its exact binding set is:
+- exact final Version UUID;
+- exact approved-SHA message/tag provenance;
+- exact module-name set and SHA-256 of every returned module byte sequence;
+- exact main module and compatibility date;
+- exact production `TEAMSHEET_DATA_DB` binding;
+- exact season/activation plain-text bindings;
+- exactly `API_FOOTBALL_API_KEY` and `API_FOOTBALL_ATTENDED_TRIGGER_SECRET` as secret bindings;
+- no unexpected binding or module.
 
-- production `TEAMSHEET_DATA_DB`;
-- `API_FOOTBALL_FPL_SEASON=2026-27`;
-- `API_FOOTBALL_PROVIDER_SEASON=2026`;
-- `EIA_2I5D_ACTIVATION=ATTENDED_ONE_SHOT_DISCOVERY`;
-- secret-binding metadata for `API_FOOTBALL_API_KEY`;
-- secret-binding metadata for `API_FOOTBALL_ATTENDED_TRIGGER_SECRET`.
+No invented `metadata_sha256` field is used. If either content-bearing API response is absent or malformed, admission fails closed.
 
-No secret value is constructed, read, logged, returned, persisted or stored in repository artifacts.
+## Worker-wide Preview exposure and URL identity
 
-## Admission and execution order
+`previews_enabled` is Worker-wide. Admission therefore permits exactly two Versions:
 
-`ATTENDED_ACCEPTANCE` now requires Worker presence, Deployment/Cron/route/custom-domain counts all zero, workers.dev and Preview URLs disabled, exact reviewed Version identity, exact production D1, exact binding set, both secret names by metadata only, runtime disabled with credential `AVAILABLE`, no lease, migrations 0001–0006, zero FK violations, fresh exact-20 Official FPL authority, current committed 20/20 mapping, exact canonical coverage, pristine history and zero model/UI imports. Any nonzero Deployment count stops admission. Repository-stage rules remain unchanged.
+1. original inactive Version `e49ac8f2-4289-46bc-9f0b-87a20cd7be62`, still exact blocked activation, production D1 binding, three expected plain-text values and no secret;
+2. exact reviewed final secret-bearing attended Version.
 
-The dormant workflow is exact-main, exact-Verify and first-attempt gated. Its order is:
+An unexpected third Version, wrong attended Version, activated/secret-bearing original, or any unreadable Version stops before Preview enablement. Nothing is automatically deleted.
 
-1. fresh read-only attended admission while collection is disabled;
-2. temporarily enable Version Preview URLs;
-3. enable collection immediately before invocation;
-4. make exactly one authenticated POST to the exact Versioned Preview URL;
-5. disable collection regardless of result;
-6. disable Preview URLs regardless of result;
-7. stop for independent reconciliation.
+The executor accepts no free-form Preview URL. Before mutation it reads trusted Worker and account subdomain metadata. Cloudflare documents Version Preview URLs as `<first-8-Version-ID>-<Worker>.<account-subdomain>.workers.dev`; Wrangler likewise derives the prefix from `versionId.slice(0,8)` plus API-returned `preview_url_suffix`. Repository logic requires exact HTTPS hostname, Worker name, account subdomain, prefix and path, with no port, credentials, query or fragment. Trigger secret egress occurs only after this proof.
 
-The executor contains a second-invocation guard and never retries provider work. Unknown transport, cleanup failure or mutation ambiguity returns reconciliation-required. Repository presence does not authorize workflow dispatch.
+## Admission, execution and artifact handoff
 
-## Preserved provider and D1 envelopes
+The workflow remains manual, first-attempt-only and exact-current-main. It requires an exact-head `Tests and deterministic build` check from `github-actions` whose details URL belongs to this repository's Actions runs. Current-main and clean-tree gates repeat after read-only environment admission, after mutation-capable environment admission and immediately before mutation.
 
-Discovery remains five `GET /fixtures?league=<id>&season=2026` requests for league IDs `2`, `3`, `848`, `45` and `48`; provider key remains only in `x-apisports-key`. Timeout remains 15,000 ms, response ceiling 720,896 bytes, per-response row ceiling 2,000, generation ceiling 2,500, spacing 1,000 ms and HTTP-attempt ceiling 5. Attempt 2 and blind retry remain forbidden.
+Read-only admission binds its sanitized artifact to exact approved SHA, final Version ID, observation timestamp, attended stage, production-account fingerprint, exact classification and zero mutation/provider/secret-read counters. Direct non-sensitive job outputs carry expected identities and artifact SHA-256; execution verifies both file hash and internal identity before any network mutation.
 
-D1 limits remain 50 total statements, 43 mutations, 7 reads, 6 fixture chunks, 1,250 rows per chunk, 1,500,000-byte chunk JSON, 7,500 fixture-related rows, 25 control rows and 7,525 total worst-case rows written.
+Only then may the protected executor:
 
-## Reconciliation
+1. verify the production account fingerprint before every Cloudflare request capability is created;
+2. read and validate exact Preview suffix/subdomain;
+3. enable Worker-wide Preview URLs;
+4. enable D1 collection;
+5. send exactly one authenticated POST to the derived exact Version URL;
+6. disable collection regardless of invocation outcome;
+7. disable Preview URLs regardless of invocation outcome;
+8. stop for independent read-only reconciliation.
 
-Success requires collection disabled, no active lease, exactly five attempt-1 successes, one committed generation, its current head, 0–2,500 fixture revisions, zero raw payload rows and zero model/UI imports. Any other state stops with `retryAuthorized=false`. Auth, quota, timeout, unknown transport, schema, persistence, completion and commit evidence remains durable under existing collector semantics; no destructive restore or automatic second execution exists.
+A closed request allowlist admits only Worker-subdomain GET/POST, account-subdomain GET and the exact production D1 query POST. Deployment, Cron, route, domain, Access and arbitrary endpoints fail before fetch.
 
-## Remaining gate
+Only `{requestCount:1,outcome:'ACCEPTED'}` reaches invocation-complete state. Timeout, exception, unknown delivery, malformed/unexpected response or HTTP rejection is a hard reconciliation-required failure with `retryAuthorized=false`; cleanup still runs and no second invocation exists.
 
-No real Preview URL, live Cloudflare mutation, live D1 mutation, secret provisioning, physical API-Football call, attended Version upload, live reconciliation or staging-credential cleanup/revocation is proven here. Live attended acceptance needs a new explicit owner approval after merge, exact-main verification, exact Version review, credential preparation and fresh admission.
+## D1 budgets and credential lifecycle
+
+Collector data-path limits remain unchanged: 50 total statements, 43 mutations, 7 reads and at most 7,525 rows written for the five-request generation.
+
+Acceptance control mutations are a separate envelope: exactly two D1 calls/statements and at most two changed rows—one collection enable and one collection disable. Independent read-only admission/reconciliation uses one bounded D1 batch each and is outside the collector mutation envelope.
+
+Credential preparation is a separate earlier gate, capped at one D1 call/statement/row. Runtime may move from `UNPROVISIONED` to `AVAILABLE` only after exact final secret-bearing Version and closed inventory are proven while collection is disabled. Acceptance preflight requires `AVAILABLE`. It remains `AVAILABLE` after execution/reconciliation while the secret-bearing Version exists. A later separately approved cleanup may reset to `UNPROVISIONED`, capped at one D1 call/statement/row, only after secret-bearing Version removal is independently proven. The acceptance workflow neither marks availability nor resets credentials.
+
+## Independent post-run reconciliation
+
+An `always()` read-only job uses the protected steward environment after execution success or failure. It re-reads exact content/inventory, routing, Deployment/Cron state and one fixed read-only D1 batch. Sanitized evidence distinguishes exact five attempt-1 successes and one committed/head-consistent generation from auth, quota, timeout, transport, schema, HTTP, reservation/lease, persistence, completion, commit, cleanup and inventory ambiguity. Every non-clean state returns `retryAuthorized=false`; no repair, provider retry or destructive cleanup occurs.
+
+Success requires collection and Preview disabled, workers.dev disabled, zero Deployments/Cron/routes/domains, credential `AVAILABLE`, no lease, exactly five attempt-1 `SUCCEEDED` rows, no attempt 2/RESERVED row, exactly one committed generation, matching head and membership, 0–2,500 fixture revisions, exact Version inventory, zero model/UI imports and no raw-payload storage surface. Artifact fields exclude account IDs, tokens, secrets, raw provider payloads and private mapping pairs.
+
+## Preserved provider/model boundary and remaining gate
+
+Discovery remains exactly five `GET /fixtures?league=<id>&season=2026` requests for leagues `2`, `3`, `848`, `45`, `48`; timeout 15,000 ms; response ceiling 720,896 bytes; 2,000 rows/response; 2,500 fixtures/generation; 1,000 ms spacing; five HTTP attempts maximum; no attempt 2 or automatic retry. No lineup, player, event, workload, model or UI path is added.
+
+No real attended Version upload, collector secret provisioning, runtime credential mutation, Versioned Preview toggle, collector invocation, provider request, reconciliation, Version deletion or staging-token cleanup is proven here. Each remains separately owner-gated after merge and exact-main verification.

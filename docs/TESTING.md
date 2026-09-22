@@ -1,6 +1,6 @@
 ## API-Football attended acceptance regression coverage
 
-Permanent tests cover blocked/wrong activation, exact method/path, missing/wrong trigger, generic output, shared collector composition, zero-Deployment attended admission, exact Version/bindings, pristine disabled runtime, one invocation, cleanup-always behavior, no automatic retry, inert Wrangler, fixed provider/D1 envelopes and model isolation. See [attended acceptance foundation](API-FOOTBALL-ATTENDED-ACCEPTANCE-FOUNDATION.md).
+Permanent tests cover exact module/annotation/binding identity, closed Worker-wide Version inventory, documented code-plus-secrets upload shape, trusted Preview URL derivation, account fingerprint and endpoint allowlist, artifact provenance, ambiguous invocation failure, cleanup, separate control budgets, credential lifecycle, always-run reconciliation, zero Deployment, inert Wrangler, provider ceilings and model isolation. See [attended acceptance foundation](API-FOOTBALL-ATTENDED-ACCEPTANCE-FOUNDATION.md).
 
 ## API-Football inactive-staging live acceptance and terminology regression
 

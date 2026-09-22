@@ -1,6 +1,6 @@
 ## API-Football attended acceptance boundary
 
-API-Football remains shadow-only. Candidate preserves exact five-competition fixture discovery, request/response ceilings, server-side key handling, no raw-payload persistence and no model/UI path. No provider request has been authorized by this repository work. See [attended acceptance foundation](API-FOOTBALL-ATTENDED-ACCEPTANCE-FOUNDATION.md).
+API-Football remains shadow-only. Remediation preserves exact five-competition fixture discovery, request/response ceilings, server-side key handling, no raw-payload persistence and no model/UI path; ambiguous invocation is consumed and never retried. No provider request has been authorized by this repository work. See [attended acceptance foundation](API-FOOTBALL-ATTENDED-ACCEPTANCE-FOUNDATION.md).
 
 ## API-Football source state after inactive staging
 

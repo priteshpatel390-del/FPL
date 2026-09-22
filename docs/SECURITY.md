@@ -1,6 +1,6 @@
 ## Attended collector trigger security
 
-Future attended execution requires a distinct high-entropy trigger secret plus attended activation on an exact inactive Version. Both trigger and provider key remain server-side, absent from logs/responses/artifacts/D1/docs, and preflight checks binding names only. Checked-in config contains neither secret. See [attended acceptance foundation](API-FOOTBALL-ATTENDED-ACCEPTANCE-FOUNDATION.md).
+Future attended execution requires a distinct high-entropy trigger secret plus attended activation on an exact module-proven inactive Version. Both secrets are uploaded together only in an ephemeral Version multipart request, remain absent from logs/reports/D1/docs, and read-only preflight sees names/types only. Account fingerprint, closed endpoint allowlist, exact two-Version inventory and trusted Preview hostname proof precede mutation. Checked-in config contains neither secret. See [attended acceptance foundation](API-FOOTBALL-ATTENDED-ACCEPTANCE-FOUNDATION.md).
 
 ## API-Football inactive-staging security closeout
 

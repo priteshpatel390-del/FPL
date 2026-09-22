@@ -10,7 +10,9 @@ import {
   API_FOOTBALL_ACTIVATION_LIVE_PREFLIGHT_VERSION,
   assertActivationReadOnlySql,
   buildAuthority,
+  PREFLIGHT_ATTENDED_CLOUDFLARE_GETS,
   PREFLIGHT_MAX_CLOUDFLARE_GETS,
+  PREFLIGHT_REPOSITORY_CLOUDFLARE_GETS,
   PREFLIGHT_MAX_D1_QUERY_CALLS,
   productionModelUiImportCount,
   runApiFootballActivationLivePreflight
@@ -19,12 +21,15 @@ import {
   COLLECTOR_PREFLIGHT_REPOSITORY_STAGE,
   COLLECTOR_REPOSITORY_STAGE_READY
 } from '../workers/api-football-collector/activation-preflight.mjs';
+import {buildReviewedAttendedIdentity,expectedAttendedBindings,ORIGINAL_BLOCKED_VERSION_ID} from '../workers/api-football-collector/attended-version.mjs';
+import {buildUploadModules,resolveModuleGraph} from '../workers/api-football-collector/stage-inactive-version.mjs';
 
 const root=path.resolve(import.meta.dirname,'..');
 const ACCOUNT='synthetic-production-account';
 const TOKEN='synthetic-read-token';
 const NOW='2026-09-21T16:00:00.000Z';
 const fingerprint=createHash('sha256').update(ACCOUNT).digest('hex');
+const APPROVED_SHA='a'.repeat(40),ATTENDED_VERSION_ID='11111111-1111-4111-8111-111111111111';
 const migrations=[
   [1,'shadow_data_foundation'],[2,'official_fpl_structured_history'],[3,'production_query_plan_indexes'],
   [4,'api_football_shadow_identity'],[5,'api_football_shadow_runtime'],[6,'api_football_mapping_qualification']
@@ -43,7 +48,7 @@ function json(result,status=200){
   return new Response(JSON.stringify({success:status===200,result}),{status,headers:{'content-type':'application/json'}});
 }
 function absent(){return new Response('',{status:404});}
-function d1Rows({attempts=0,generations=0,fixtureRevisions=0,rowsWritten=0,completedAt=officialRun.completed_at,historicalAuthorityDigest=null,historicalAuthorityFetchedAt='2026-09-20T12:00:00.000Z',canonicalTeamIds=officialTeams.map(row=>row.subject_entity_id).sort()}={}){
+function d1Rows({attempts=0,generations=0,fixtureRevisions=0,credentialState='UNPROVISIONED',rowsWritten=0,completedAt=officialRun.completed_at,historicalAuthorityDigest=null,historicalAuthorityFetchedAt='2026-09-20T12:00:00.000Z',canonicalTeamIds=officialTeams.map(row=>row.subject_entity_id).sort()}={}){
   const run={...officialRun,completed_at:completedAt};
   const currentAuthority=buildAuthority([run],officialTeams);
   const persistedAuthorityDigest=historicalAuthorityDigest??createHash('sha256').update(currentAuthority.digest).digest('hex');
@@ -54,19 +59,39 @@ function d1Rows({attempts=0,generations=0,fixtureRevisions=0,rowsWritten=0,compl
     officialTeams,
     mappingHead:[{fpl_season:'2026-27',state:'COMMITTED',mapping_count:20,official_fpl_authority_digest:persistedAuthorityDigest,official_fpl_authority_fetched_at:historicalAuthorityFetchedAt}],
     mappingMembers:[{member_count:20,distinct_provider_ids:20,distinct_fpl_ids:20,canonical_fpl_team_ids:canonicalTeamIds.join('|')}],
-    runtime:[{provider:'api-football',collection_enabled:0,credential_state:'UNPROVISIONED',in_flight_attempt_id:null,in_flight_lease_expires_at:null}],
-    attempts:[{total:attempts,attempt2_count:0,reserved_count:0}],
-    generations:[{total:generations,staging_count:0}],
+    runtime:[{provider:'api-football',collection_enabled:0,credential_state:credentialState,in_flight_attempt_id:null,in_flight_lease_expires_at:null}],
+    attempts:[{total:attempts,attempt1_count:attempts,attempt2_count:0,reserved_count:0,succeeded_count:attempts,auth_failure_count:0,quota_blocked_count:0,timeout_count:0,transport_unknown_count:0,schema_failure_count:0,http_failure_count:0}],
+    generations:[{total:generations,staging_count:0,committed_count:generations,failed_count:0,persistence_uncertain_count:0,completion_uncertain_count:0,membership_consistent_count:generations,head_match_count:generations}],
     fixtureRevisions:[{total:fixtureRevisions}],
+    rawPayloadStorage:[],
     rowsWritten
   };
 }
-function fakeFetch({collectorPresent=false,state=d1Rows()}={}){
+function attendedFixtures(){
+  const identity=buildReviewedAttendedIdentity(APPROVED_SHA),modules=buildUploadModules(resolveModuleGraph());
+  const attendedStable={id:ATTENDED_VERSION_ID,resources:{script_runtime:{compatibility_date:identity.compatibilityDate},bindings:structuredClone(expectedAttendedBindings())}};
+  const attendedBeta={id:ATTENDED_VERSION_ID,main_module:identity.mainModule,compatibility_date:identity.compatibilityDate,annotations:{'workers/message':identity.message,'workers/tag':identity.tag},modules:[...modules].map(([name,source])=>({name,content_base64:Buffer.from(source).toString('base64')}))};
+  const originalStable={id:ORIGINAL_BLOCKED_VERSION_ID,resources:{bindings:[
+    {name:'TEAMSHEET_DATA_DB',type:'d1',database_id:EXPECTED_D1_DATABASE_ID},{name:'API_FOOTBALL_FPL_SEASON',type:'plain_text',text:'2026-27'},
+    {name:'API_FOOTBALL_PROVIDER_SEASON',type:'plain_text',text:'2026'},{name:'EIA_2I5D_ACTIVATION',type:'plain_text',text:'REPOSITORY_ONLY_BLOCKED'}]}};
+  return {identity,attendedStable,attendedBeta,originalStable};
+}
+function fakeFetch({collectorPresent=false,attended=false,state=d1Rows(),mutateAttended=()=>{}}={}){
+  const fixtures=attendedFixtures();mutateAttended(fixtures);
   const bySql=new Map(Object.entries(ACTIVATION_QUERIES).map(([key,sql])=>[sql,key]));
   return async (url,init={})=>{
     const value=String(url);
     if(value.includes('/d1/database/')&&value.includes('?fields='))return json({uuid:EXPECTED_D1_DATABASE_ID,name:'teamsheet-data',file_size:123});
     if(value.includes('/workers/scripts/teamsheet-data-platform/settings'))return json({bindings:[{name:'TEAMSHEET_DATA_DB',type:'d1',database_id:EXPECTED_D1_DATABASE_ID}]});
+    if(attended&&value.includes('/workers/scripts/teamsheet-api-football-shadow-collector/versions/'+ATTENDED_VERSION_ID))return json(fixtures.attendedStable);
+    if(attended&&value.includes('/workers/scripts/teamsheet-api-football-shadow-collector/versions/'+ORIGINAL_BLOCKED_VERSION_ID))return json(fixtures.originalStable);
+    if(attended&&value.includes('/workers/scripts/teamsheet-api-football-shadow-collector/versions?'))return json({items:[{id:ORIGINAL_BLOCKED_VERSION_ID},{id:ATTENDED_VERSION_ID}]});
+    if(attended&&value.includes('/workers/workers?'))return json([{id:'worker-object-id',name:'teamsheet-api-football-shadow-collector'}]);
+    if(attended&&value.includes('/workers/workers/worker-object-id/versions/'))return json(fixtures.attendedBeta);
+    if(attended&&value.includes('/workers/scripts/teamsheet-api-football-shadow-collector/subdomain'))return json({enabled:false,previews_enabled:false,preview_url_suffix:'-teamsheet-api-football-shadow-collector.example.workers.dev'});
+    if(attended&&value.endsWith('/workers/subdomain'))return json({subdomain:'example'});
+    if(attended&&value.endsWith('/workers/domains'))return json([]);
+    if(attended&&value.endsWith('/workers/scripts'))return json([{id:'teamsheet-api-football-shadow-collector',routes:[]}]);
     if(value.includes('/workers/scripts/teamsheet-api-football-shadow-collector/settings')){
       return collectorPresent?json({bindings:[]}):absent();
     }
@@ -96,9 +121,10 @@ function env(){
     DATA_STEWARD_CLOUDFLARE_READ_TOKEN:TOKEN
   };
 }
+function attendedEnv(){return {...env(),APPROVED_SHA,API_FOOTBALL_PREFLIGHT_STAGE:'ATTENDED_ACCEPTANCE',API_FOOTBALL_ATTENDED_VERSION_ID:ATTENDED_VERSION_ID};}
 
 test('activation live preflight SQL registry is read-only and closed',()=>{
-  assert.equal(Object.keys(ACTIVATION_QUERIES).length,10);
+  assert.equal(Object.keys(ACTIVATION_QUERIES).length,11);
   for(const sql of Object.values(ACTIVATION_QUERIES))assert.equal(assertActivationReadOnlySql(sql),sql);
   for(const sql of [
     "UPDATE api_football_runtime_state SET collection_enabled=1",
@@ -119,18 +145,36 @@ test('repository infrastructure staging admission passes only from exact post-00
   assert.equal(report.foreignKeyViolations,0);
   assert.equal(report.officialFplAuthority.teamCount,20);
   assert.deepEqual(report.mapping,{state:'COMMITTED',mappingCount:20,memberCount:20,distinctProviderIds:20,distinctFplIds:20,canonicalCoverageMatches:true,historicalAuthorityProvenancePresent:true});
-  assert.deepEqual(report.priorState,{requestAttempts:0,generations:0,fixtureRevisions:0,attempt2Count:0,reservedAttemptCount:0,stagingGenerationCount:0});
+  assert.equal(report.priorState.requestAttempts,0);assert.equal(report.priorState.attempt2Count,0);assert.equal(report.priorState.stagingGenerationCount,0);
   assert.equal(report.inventory.workerPresent,false);
   assert.equal(report.inventory.deploymentCount,0);
   assert.equal(report.inventory.cronCount,0);
   assert.equal(report.inventory.secretBindingPresent,false);
   assert.equal(report.inventory.databaseIdPlaceholder,true);
   assert.equal(report.modelUiImportCount,0);
-  assert.equal(report.evidence.cloudflareGets,PREFLIGHT_MAX_CLOUDFLARE_GETS);
+  assert.equal(report.evidence.cloudflareGets,PREFLIGHT_REPOSITORY_CLOUDFLARE_GETS);
+  assert.equal(report.evidence.cloudflareGetCeiling,PREFLIGHT_REPOSITORY_CLOUDFLARE_GETS);
   assert.equal(report.evidence.d1QueryCalls,PREFLIGHT_MAX_D1_QUERY_CALLS);
   assert.equal(report.evidence.productionMutations,0);
   assert.equal(report.evidence.apiFootballRequests,0);
   assert.equal(report.evidence.secretValuesRead,0);
+});
+
+test('attended live preflight proves exact reviewed content and closed two-Version inventory',async()=>{
+  const report=await runApiFootballActivationLivePreflight({env:attendedEnv(),fetchImpl:fakeFetch({collectorPresent:true,attended:true,state:d1Rows({credentialState:'AVAILABLE'})}),now:()=>NOW});
+  assert.equal(report.ok,true);
+  assert.equal(report.inventory.versionIdentityExact,true);assert.equal(report.inventory.versionInventoryExact,true);
+  assert.equal(report.evidence.cloudflareGets,PREFLIGHT_ATTENDED_CLOUDFLARE_GETS);assert.equal(PREFLIGHT_MAX_CLOUDFLARE_GETS,PREFLIGHT_ATTENDED_CLOUDFLARE_GETS);
+});
+
+for(const [name,mutate] of [
+  ['wrong module content',value=>{value.attendedBeta.modules[0].content_base64=Buffer.from('wrong').toString('base64');}],
+  ['wrong commit annotation',value=>{value.attendedBeta.annotations['workers/message']='wrong';}],
+  ['wrong binding',value=>{value.attendedStable.resources.bindings[0].database_id='wrong';}],
+  ['missing module',value=>{value.attendedBeta.modules.pop();}]
+])test(`attended live preflight rejects correct UUID with ${name}`,async()=>{
+  const report=await runApiFootballActivationLivePreflight({env:attendedEnv(),fetchImpl:fakeFetch({collectorPresent:true,attended:true,mutateAttended:mutate}),now:()=>NOW});
+  assert.equal(report.inventory.versionIdentityExact,false);assert.equal(report.ok,false);
 });
 
 test('fresh authority may differ from immutable historical mapping provenance when canonical coverage is unchanged',async()=>{

@@ -1,6 +1,6 @@
 ## Decision — zero-Deployment attended API-Football acceptance
 
-Use a separately reviewed inactive Version and temporary Versioned Preview URL; do not create a first Cloudflare Deployment. Require fresh disabled-runtime admission, invoke once, clean up regardless of outcome, and never retry automatically. Repository implementation grants no live authority. See [attended acceptance foundation](API-FOOTBALL-ATTENDED-ACCEPTANCE-FOUNDATION.md).
+Use one final secret-bearing inactive Version beside the original blocked Version and a temporary Worker-wide Versioned Preview URL; do not create a first Cloudflare Deployment. Require cryptographic module proof, exact two-Version inventory, trusted Preview derivation, fresh disabled-runtime admission, one definite invocation, cleanup and independent reconciliation; never retry automatically. Repository implementation grants no live authority. See [attended acceptance foundation](API-FOOTBALL-ATTENDED-ACCEPTANCE-FOUNDATION.md).
 
 ## Decision — distinguish Worker presence from Deployment state
 

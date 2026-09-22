@@ -1,6 +1,6 @@
 ## Current API-Football checkpoint
 
-Attended one-shot acceptance foundation is a repository candidate. Next steps remain owner-gated: review/merge, exact-main verification, attended Version preparation, secret provisioning, fresh read-only admission, separately approved live execution and independent reconciliation. See [attended acceptance foundation](API-FOOTBALL-ATTENDED-ACCEPTANCE-FOUNDATION.md).
+Attended one-shot acceptance remediation is a repository candidate. Next steps remain separately owner-gated: review/merge, exact-main verification, one final code-plus-secrets Version upload, credential preparation, fresh content/inventory admission, separately approved live execution, independent reconciliation and later cleanup. See [attended acceptance foundation](API-FOOTBALL-ATTENDED-ACCEPTANCE-FOUNDATION.md).
 
 ## Current checkpoint — inactive collector staging complete
 

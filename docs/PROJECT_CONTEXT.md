@@ -1,6 +1,6 @@
 ## API-Football attended acceptance candidate — 21 September 2026
 
-Repository-only foundation now models a future zero-Deployment, temporary Versioned Preview one-shot acceptance. Shipped configuration stays inert; live execution remains separately owner-gated. See [attended acceptance foundation](API-FOOTBALL-ATTENDED-ACCEPTANCE-FOUNDATION.md).
+Repository-only remediation now requires exact module-byte identity, closed two-Version inventory, trusted Preview-host derivation, production-account fingerprinting, bounded control mutations and independent no-retry reconciliation. Shipped configuration stays inert; live collector execution remains separately owner-gated. Unrelated `teamsheet-fpl-gateway` PR previews are not collector deployment evidence. See [attended acceptance foundation](API-FOOTBALL-ATTENDED-ACCEPTANCE-FOUNDATION.md).
 
 ## API-Football inactive collector staging — LIVE CLOSEOUT
 

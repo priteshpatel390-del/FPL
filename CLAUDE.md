@@ -1,6 +1,6 @@
-## Current checkpoint — attended API-Football acceptance foundation candidate
+## Current checkpoint — attended API-Football acceptance foundation remediation
 
-Owner approval covers repository implementation only of a zero-Deployment attended one-shot discovery acceptance foundation. Candidate adds one exact secret-gated HTTP path, exact inactive attended-Version metadata, attended read-only admission, cleanup-always one-invocation orchestration, reconciliation classification, permanent tests and a dormant protected workflow. Checked-in Wrangler remains blocked and inert. No live Cloudflare/D1/secret/Preview/provider action occurred or is authorized. See [attended acceptance foundation](docs/API-FOOTBALL-ATTENDED-ACCEPTANCE-FOUNDATION.md).
+PR #286 remains a repository-only draft. Remediation proves exact Version module bytes and closed two-Version inventory, derives the Preview hostname from Cloudflare metadata, fingerprints the production account, closes mutation endpoints, treats ambiguous invocation as failure, separates control/collector D1 budgets and adds independent read-only reconciliation. Checked-in Wrangler remains inert. No live API-Football collector mutation, secret action, Preview toggle, D1 mutation or provider request occurred. The unrelated `teamsheet-fpl-gateway` Git integration did publish its normal PR previews; that is not collector deployment evidence. See [attended acceptance foundation](docs/API-FOOTBALL-ATTENDED-ACCEPTANCE-FOUNDATION.md).
 
 ## API-Football inactive collector staging — LIVE CLOSEOUT
 

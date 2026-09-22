@@ -1,6 +1,6 @@
 ## Attended API-Football acceptance remains unproven
 
-Repository code does not prove a real Versioned Preview URL, live Cloudflare or D1 mutation, secret provisioning, physical API-Football call, live cleanup/revocation or post-run reconciliation. No predictive-accuracy claim follows. See [attended acceptance foundation](API-FOOTBALL-ATTENDED-ACCEPTANCE-FOUNDATION.md).
+Repository tests do not prove a real collector Version upload, secret provisioning, Versioned Preview toggle, production D1 mutation, physical API-Football call, live reconciliation, Version deletion or cleanup/revocation. No predictive-accuracy claim follows. See [attended acceptance foundation](API-FOOTBALL-ATTENDED-ACCEPTANCE-FOUNDATION.md).
 
 ## Current API-Football staging limitations
 

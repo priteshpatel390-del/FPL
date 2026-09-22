@@ -1,6 +1,6 @@
-## Attended acceptance implementation amendment
+## Attended acceptance remediation amendment
 
-The repository candidate tightens `ATTENDED_ACCEPTANCE` to Deployment count exactly zero and adds exact Version identity, two-secret binding metadata, route/domain absence, temporary Versioned Preview invocation, cleanup-always and no-retry reconciliation contracts. Repository-stage admission is unchanged. See [attended acceptance foundation](API-FOOTBALL-ATTENDED-ACCEPTANCE-FOUNDATION.md).
+`ATTENDED_ACCEPTANCE` now requires Deployment count zero, exact reviewed module bytes/annotations/bindings, a closed original-blocked plus final-attended Version inventory, trusted account/Worker Preview suffix, both secret names/types, route/domain absence, disabled runtime and pristine history. Ambiguous invocation is failure; two bounded control mutations are separate from the unchanged collector budget; independent read-only closeout never authorizes retry. Repository-stage admission is unchanged. See [attended acceptance foundation](API-FOOTBALL-ATTENDED-ACCEPTANCE-FOUNDATION.md).
 
 # API-Football Collector Activation Foundation
 

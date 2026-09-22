@@ -1,18 +1,34 @@
 export const ATTENDED_ACCEPTANCE_CONTRACT_VERSION='api-football-attended-acceptance-v1';
 export const ATTENDED_RUNTIME_ACTIONS=Object.freeze([
-  'SET_CREDENTIAL_AVAILABLE','ENABLE_COLLECTION','INVOKE_ONCE','DISABLE_COLLECTION','RESET_CREDENTIAL','RECONCILE'
+  'ENABLE_COLLECTION','INVOKE_ONCE','DISABLE_COLLECTION','RECONCILE'
 ]);
+export const ATTENDED_CONTROL_MAX_D1_CALLS=2;
+export const ATTENDED_CONTROL_MAX_D1_STATEMENTS=2;
+export const ATTENDED_CONTROL_MAX_ROWS_CHANGED=2;
+export const ATTENDED_CREDENTIAL_PREPARATION_MAX_D1_CALLS=1;
+export const ATTENDED_CREDENTIAL_CLEANUP_MAX_D1_CALLS=1;
 const safe=value=>Object.freeze(value);
 const fail=reason=>safe({ok:false,reason});
 
 export function runtimeMutationContract(action){
   const contracts={
-    SET_CREDENTIAL_AVAILABLE:{sql:"UPDATE api_football_runtime_state SET credential_state='AVAILABLE' WHERE provider='api-football' AND collection_enabled=0 AND credential_state='UNPROVISIONED' AND in_flight_attempt_id IS NULL",expectedChanges:1},
     ENABLE_COLLECTION:{sql:"UPDATE api_football_runtime_state SET collection_enabled=1 WHERE provider='api-football' AND collection_enabled=0 AND credential_state='AVAILABLE' AND in_flight_attempt_id IS NULL",expectedChanges:1},
-    DISABLE_COLLECTION:{sql:"UPDATE api_football_runtime_state SET collection_enabled=0 WHERE provider='api-football' AND collection_enabled=1",expectedChanges:1},
-    RESET_CREDENTIAL:{sql:"UPDATE api_football_runtime_state SET credential_state='UNPROVISIONED' WHERE provider='api-football' AND collection_enabled=0 AND credential_state='AVAILABLE' AND in_flight_attempt_id IS NULL",expectedChanges:1}
+    DISABLE_COLLECTION:{sql:"UPDATE api_football_runtime_state SET collection_enabled=0 WHERE provider='api-football' AND collection_enabled=1",expectedChanges:1}
   };
   return contracts[action]?safe(contracts[action]):fail('attended_runtime_action_invalid');
+}
+
+export function credentialLifecycleMutation(action,evidence={}){
+  if(evidence.collectionEnabled!==0||evidence.activeLease!==false)return fail('attended_credential_lifecycle_precondition_failed');
+  if(action==='MARK_AVAILABLE'){
+    if(evidence.versionInventoryExact!==true||evidence.secretBearingVersionPresent!==true)return fail('attended_secret_binding_not_proven');
+    return safe({sql:"UPDATE api_football_runtime_state SET credential_state='AVAILABLE' WHERE provider='api-football' AND collection_enabled=0 AND credential_state='UNPROVISIONED' AND in_flight_attempt_id IS NULL",expectedChanges:1,maxD1Calls:ATTENDED_CREDENTIAL_PREPARATION_MAX_D1_CALLS});
+  }
+  if(action==='RESET_UNPROVISIONED'){
+    if(evidence.secretBearingVersionPresent!==false)return fail('attended_secret_removal_not_proven');
+    return safe({sql:"UPDATE api_football_runtime_state SET credential_state='UNPROVISIONED' WHERE provider='api-football' AND collection_enabled=0 AND credential_state IN ('AVAILABLE','INVALID') AND in_flight_attempt_id IS NULL",expectedChanges:1,maxD1Calls:ATTENDED_CREDENTIAL_CLEANUP_MAX_D1_CALLS});
+  }
+  return fail('attended_credential_lifecycle_action_invalid');
 }
 
 export function validateAttendedAdmission(report,{versionId}={}){
@@ -42,10 +58,10 @@ export async function runAttendedAcceptance({admission,versionId,enablePreview,e
     await enablePreview(versionId);
     await enableCollection();
     invocation=await invokeOnce(versionId);
-    if(!invocation||invocation.requestCount!==1)throw new Error('attended_invocation_ambiguous');
+    if(!invocation||invocation.requestCount!==1||invocation.outcome!=='ACCEPTED')throw new Error('attended_invocation_ambiguous');
   }catch(caught){error=caught;}
   try{await disableCollection();}catch(caught){error=error||caught;}
   try{await disablePreview();}catch(caught){error=error||caught;}
-  if(error)return safe({ok:false,reason:'attended_execution_requires_reconciliation',retryAuthorized:false,invocationAttempted:invocation!==null});
+  if(error)return safe({ok:false,classification:'ATTENDED_EXECUTION_RECONCILIATION_REQUIRED',reason:'attended_execution_requires_reconciliation',retryAuthorized:false,invocationAttempted:invocation!==null});
   return safe({ok:true,classification:'ATTENDED_INVOCATION_COMPLETE_RECONCILIATION_REQUIRED',retryAuthorized:false,requestCount:1});
 }
