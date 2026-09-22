@@ -1,3 +1,7 @@
+## Current checkpoint — dedicated attended-preparation START read-only admission candidate
+
+Read-only run `35715501477` on exact main `68bdebec33b2baf178ad3f7c5daf9f191125f35f` safely failed because the historical activation workflow invoked `REPOSITORY_INFRASTRUCTURE_STAGING`, not the current `ATTENDED_PREPARATION_START` stage. It recorded 0 production mutations, 0 API-Football requests and 0 secret-value reads; its evidence also confirmed `routeCount: 0` after PR #288. Owner approval covers repository implementation only of a dedicated manual read-only START admission under `data-steward-readonly`. It must not create a Version, mutate D1, read provider/trigger secrets, enable Preview, deploy, call API-Football or continue into attended preparation. Live dispatch remains separately owner-gated after merge and exact-main verification.
+
 ## Current checkpoint — API-Football attended preparation foundation
 
 PR #286 is merged. Its reviewed head `f24d02864e0f1776bda28beb3e969be946bb9d17` entered `main` as merge commit `fda5a45ccd86928f60d91e8e34ded79ff49064da`. Post-merge Verify Teamsheet run `35699898106` and Pages run `35699897564` both succeeded; Verify passed 2,347 / 2,347 tests plus byte-identical production builds, root/deployable equality and exact manifest identity. The attended-acceptance foundation is therefore repository-merged, but **no live attended Version, secret provisioning, production D1 credential transition, Preview toggle or provider request has occurred**.
