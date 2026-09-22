@@ -207,3 +207,12 @@ API-Football remains private/shadow-only and Official FPL remains authoritative.
 Merge of this foundation authorizes no live preparation.
 
 A later owner approval is required before **attended preparation** may create the secret-bearing Version or submit the one-row D1 transition. Only after independently reconciled preparation reaches `READY_FOR_SEPARATELY_APPROVED_ATTENDED_ACCEPTANCE` may the already-merged attended acceptance be considered, and the actual five-request acceptance requires a **further separate explicit owner approval**.
+
+
+## Dedicated read-only START admission remediation — 22 September 2026
+
+Read-only workflow run 35715501477 on main 68bdebec33b2baf178ad3f7c5daf9f191125f35f safely stopped as `STOP_REPOSITORY_INFRASTRUCTURE_STAGING_REVIEW_REQUIRED / repository_stage_inventory_unexpected`. It executed the historical `REPOSITORY_INFRASTRUCTURE_STAGING` stage rather than the current `ATTENDED_PREPARATION_START` lifecycle stage. The run recorded zero production mutations, zero API-Football requests and zero secret-value reads. Its artifact also confirmed the route-decoder remediation reports `routeCount: 0`.
+
+The repository therefore provides a separate manual-only workflow, `api-football-attended-preparation-start-readonly.yml`, whose only production observation invokes `activation-live-preflight.mjs` with `API_FOOTBALL_PREFLIGHT_STAGE=ATTENDED_PREPARATION_START` under `data-steward-readonly`. It requires exact current main, exact-head Verify Teamsheet success, first-attempt dispatch, the existing bounded read-only Cloudflare/D1 reader, and a sanitized `READY_FOR_ATTENDED_VERSION_PREPARATION` result. It contains no attended Version upload token, D1 mutation token, provider credential, trigger secret, Version creation runner, provider host, Deployment action, or continuation into credential preparation.
+
+This remediation authorizes repository implementation only. A later live dispatch of the dedicated read-only START workflow remains separately owner-gated. Success of that read-only admission does not authorize Version creation, credential-state mutation, Preview enablement, or the five-request attended acceptance.

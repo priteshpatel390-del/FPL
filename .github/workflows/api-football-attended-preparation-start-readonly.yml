@@ -1,0 +1,153 @@
+# Manual-only, read-only admission for the attended API-Football preparation START stage.
+# This workflow cannot create a Version, mutate D1, call API-Football, deploy, or change Preview/Cron/routes/domains.
+name: API-Football Attended Preparation Start Read-Only Admission
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  actions: read
+  checks: read
+
+concurrency:
+  group: api-football-attended-preparation-start-readonly
+  cancel-in-progress: false
+
+jobs:
+  repository-gate:
+    if: github.event_name == 'workflow_dispatch' && github.run_attempt == 1
+    runs-on: ubuntu-latest
+    timeout-minutes: 6
+    outputs:
+      approved_sha: ${{ steps.identity.outputs.approved_sha }}
+    steps:
+      - name: Validate dispatch identity before checkout
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          EVENT_REF: ${{ github.ref }}
+          EVENT_REPOSITORY: ${{ github.repository }}
+          EVENT_SHA: ${{ github.sha }}
+          EVENT_RUN_ATTEMPT: ${{ github.run_attempt }}
+        run: |
+          set -euo pipefail
+          test "$EVENT_NAME" = workflow_dispatch
+          test "$EVENT_RUN_ATTEMPT" = 1
+          test "$EVENT_REF" = refs/heads/main
+          test "$EVENT_REPOSITORY" = priteshpatel390-del/FPL
+          printf '%s' "$EVENT_SHA" | grep -Eq '^[0-9a-f]{40}$'
+      - name: Check out exact dispatch revision
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Gate exact current main and clean tree
+        id: identity
+        env:
+          EVENT_SHA: ${{ github.sha }}
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "$EVENT_SHA"
+          remote_main="$(git ls-remote https://github.com/priteshpatel390-del/FPL.git refs/heads/main | cut -f1)"
+          test -n "$remote_main"
+          test "$remote_main" = "$EVENT_SHA"
+          test -z "$(git status --porcelain --untracked-files=all)"
+          echo "approved_sha=$EVENT_SHA" >> "$GITHUB_OUTPUT"
+      - name: Require exact-head Verify Teamsheet success
+        env:
+          GH_TOKEN: ${{ github.token }}
+          APPROVED_SHA: ${{ steps.identity.outputs.approved_sha }}
+        run: |
+          set -euo pipefail
+          response="$RUNNER_TEMP/check-runs.json"
+          gh api "repos/${{ github.repository }}/commits/$APPROVED_SHA/check-runs" > "$response"
+          node --input-type=module - "$response" <<'NODE'
+          import fs from 'node:fs';
+          const body=JSON.parse(fs.readFileSync(process.argv[2],'utf8'));
+          const matches=(body.check_runs??[]).filter(row=>row.name==='Tests and deterministic build'&&row.status==='completed'&&row.conclusion==='success'&&row.head_sha===process.env.APPROVED_SHA&&row.app?.slug==='github-actions'&&row.details_url?.startsWith('https://github.com/priteshpatel390-del/FPL/actions/runs/'));
+          if(matches.length<1)throw new Error('exact-head Verify Teamsheet success is absent');
+          NODE
+          rm -f "$response"
+          test -z "$(git status --porcelain --untracked-files=all)"
+
+  attended-preparation-start-readonly:
+    if: github.event_name == 'workflow_dispatch' && github.run_attempt == 1
+    needs: repository-gate
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    permissions:
+      contents: read
+    environment:
+      name: data-steward-readonly
+      deployment: false
+    steps:
+      - name: Check out gated exact main
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          ref: ${{ needs.repository-gate.outputs.approved_sha }}
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Reconfirm exact protected main after read-only environment admission
+        env:
+          APPROVED_SHA: ${{ needs.repository-gate.outputs.approved_sha }}
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "$APPROVED_SHA"
+          test "$(git ls-remote https://github.com/priteshpatel390-del/FPL.git refs/heads/main | cut -f1)" = "$APPROVED_SHA"
+          test -z "$(git status --porcelain --untracked-files=all)"
+      - name: Set up exact Node
+        uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
+        with:
+          node-version: 24.19.0
+          check-latest: false
+      - name: Run focused preparation preflight tests before Cloudflare credential introduction
+        run: |
+          set -euo pipefail
+          test "$(node --version)" = v24.19.0
+          node --test tests/api-football-attended-preparation-foundation.test.mjs tests/api-football-collector-activation-live-preflight.test.mjs
+          test -z "$(git status --porcelain --untracked-files=all)"
+      - name: Reconfirm current main immediately before read-only production observation
+        env:
+          APPROVED_SHA: ${{ needs.repository-gate.outputs.approved_sha }}
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "$APPROVED_SHA"
+          test "$(git ls-remote https://github.com/priteshpatel390-del/FPL.git refs/heads/main | cut -f1)" = "$APPROVED_SHA"
+          test -z "$(git status --porcelain --untracked-files=all)"
+      - name: Establish exact singleton-original attended preparation START admission
+        env:
+          APPROVED_SHA: ${{ needs.repository-gate.outputs.approved_sha }}
+          API_FOOTBALL_PREFLIGHT_STAGE: ATTENDED_PREPARATION_START
+          DATA_STEWARD_CLOUDFLARE_ACCOUNT_ID: ${{ secrets.DATA_STEWARD_CLOUDFLARE_ACCOUNT_ID }}
+          DATA_STEWARD_CLOUDFLARE_ACCOUNT_FINGERPRINT: ${{ vars.DATA_STEWARD_CLOUDFLARE_ACCOUNT_FINGERPRINT }}
+          DATA_STEWARD_CLOUDFLARE_READ_TOKEN: ${{ secrets.DATA_STEWARD_CLOUDFLARE_READ_TOKEN }}
+          API_FOOTBALL_ACTIVATION_PREFLIGHT_REPORT_PATH: ${{ runner.temp }}/attended-preparation-start-readonly.json
+        run: node workers/api-football-collector/activation-live-preflight.mjs
+      - name: Validate sanitized START admission
+        if: success()
+        env:
+          REPORT: ${{ runner.temp }}/attended-preparation-start-readonly.json
+          APPROVED_SHA: ${{ needs.repository-gate.outputs.approved_sha }}
+          ACCOUNT_FINGERPRINT: ${{ vars.DATA_STEWARD_CLOUDFLARE_ACCOUNT_FINGERPRINT }}
+        run: |
+          set -euo pipefail
+          node --input-type=module - <<'NODE'
+          import fs from 'node:fs';
+          const r=JSON.parse(fs.readFileSync(process.env.REPORT,'utf8'));
+          if(r.ok!==true||r.approvedSha!==process.env.APPROVED_SHA||r.accountFingerprint!==process.env.ACCOUNT_FINGERPRINT||
+            r.stage!=='ATTENDED_PREPARATION_START'||r.classification!=='READY_FOR_ATTENDED_VERSION_PREPARATION'||
+            r.inventory?.originalVersionIdentityExact!==true||r.inventory?.versionInventoryExact!==true||
+            r.inventory?.deploymentCount!==0||r.inventory?.previewUrls!==false||r.inventory?.routeCount!==0||
+            r.runtime?.collectionEnabled!==0||r.runtime?.credentialState!=='UNPROVISIONED'||
+            r.evidence?.productionMutations!==0||r.evidence?.apiFootballRequests!==0||r.evidence?.secretValuesRead!==0)
+            throw new Error('attended preparation START admission invalid');
+          NODE
+      - name: Upload sanitized attended preparation START evidence
+        if: always()
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6
+        with:
+          name: api-football-attended-preparation-start-readonly
+          path: ${{ runner.temp }}/attended-preparation-start-readonly.json
+          if-no-files-found: error
+          retention-days: 7
