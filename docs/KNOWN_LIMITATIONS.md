@@ -1,3 +1,9 @@
+## Attended preparation remains repository-only and unexecuted
+
+The preparation foundation does not prove current live Cloudflare state, secret availability, token permissions, real Version-upload acceptance, real D1 mutation semantics, or successful transition to `AVAILABLE`. The last accepted live collector evidence remains inactive-staging run `35645387203`; no fresh preparation observation has been executed in this checkpoint.
+
+A future live preparation also depends on owner-created protected environments and narrowly scoped credentials that do not exist merely because the workflow references them. The previous `api-football-collector-version-upload` / `CLOUDFLARE_COLLECTOR_WORKER_UPLOAD_TOKEN` cleanup is still unproven and must be resolved before live preparation. Even a future preparation PASS would establish only readiness for a separately approved five-request acceptance; it would not establish provider reliability, predictive value or any model/UI benefit. See [attended preparation foundation](API-FOOTBALL-ATTENDED-PREPARATION-FOUNDATION.md).
+
 ## Attended API-Football acceptance remains unproven
 
 Repository tests do not prove a real collector Version upload, secret provisioning, Versioned Preview toggle, production D1 mutation, physical API-Football call, live reconciliation, Version deletion or cleanup/revocation. No predictive-accuracy claim follows. See [attended acceptance foundation](API-FOOTBALL-ATTENDED-ACCEPTANCE-FOUNDATION.md).
