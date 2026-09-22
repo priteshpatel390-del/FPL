@@ -1,3 +1,9 @@
+## API-Football attended preparation regression coverage
+
+`tests/api-football-attended-preparation-foundation.test.mjs` covers singleton-original admission, accepted original creation SHA/module-hash pinning, Version construction, exact binding sets, secret separation/non-retention, one-submission Version ambiguity reconciliation, closed Version/D1 endpoint allowlists, exact one-call/one-statement/one-row credential transition, no-resubmit D1 ambiguity, exact AVAILABLE closeout, immutable/manual workflow gates, separate protected environments, zero provider/Deployment/Preview/Cron/route/domain authority and model/UI isolation.
+
+The activation preflight now has preparation-specific START, VERSION_READY and CLOSEOUT classifications. Existing attended-acceptance classification remains separate. Full `./run-tests.sh`, deterministic exact-identity production builds and exact-head GitHub Verify remain required before merge; repository tests do not substitute for future live Cloudflare evidence. See [attended preparation foundation](API-FOOTBALL-ATTENDED-PREPARATION-FOUNDATION.md).
+
 ## API-Football attended acceptance regression coverage
 
 Permanent tests cover exact module/annotation/binding identity, closed Worker-wide Version inventory, documented code-plus-secrets upload shape, trusted Preview URL derivation, account fingerprint and endpoint allowlist, artifact provenance, ambiguous invocation failure, cleanup, separate control budgets, credential lifecycle, always-run reconciliation, zero Deployment, inert Wrangler, provider ceilings and model isolation. See [attended acceptance foundation](API-FOOTBALL-ATTENDED-ACCEPTANCE-FOUNDATION.md).
