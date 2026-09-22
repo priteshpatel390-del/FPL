@@ -1,3 +1,7 @@
+## Attended acceptance run 35748566087 consumed before provider egress
+
+Run `35748566087` must not be rerun. It failed safely before protected execution because Preview URL identity was read from the wrong Cloudflare metadata endpoint. Reconciliation recorded 0 API-Football requests, 0 request-attempt rows, 0 discovery generations, 0 fixture revisions and no production mutation. A new attended acceptance dispatch remains blocked until the Preview-identity repository remediation is merged, exact-main verification succeeds, and the owner separately approves a new live dispatch.
+
 ## API-Football attended acceptance provenance — repository remediation pending review
 
 The merged acceptance workflow is not safe to dispatch as-is because it currently reconstructs the immutable attended Version against the current execution SHA unless an explicit Version provenance SHA is supplied. This is fail-closed and should stop before mutation/provider egress, but it would consume a useless attended run. The remediation candidate pins Version `04d79556-3070-429f-9944-b5b53d799842`, provenance `69bb84fadbcce94e9fece3ff438d985866cce183` and the historical 17-module byte identity through admission, critical recheck and reconciliation. No live acceptance should be attempted until that remediation is merged and exact-main verification succeeds.

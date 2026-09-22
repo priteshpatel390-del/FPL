@@ -88,7 +88,8 @@ function fakeFetch({collectorPresent=false,attended=false,state=d1Rows(),mutateA
     if(attended&&value.includes('/workers/scripts/teamsheet-api-football-shadow-collector/versions?'))return json({items:[{id:ORIGINAL_BLOCKED_VERSION_ID},{id:ATTENDED_VERSION_ID}]});
     if(attended&&value.includes('/workers/workers?'))return json([{id:'worker-object-id',name:'teamsheet-api-football-shadow-collector'}]);
     if(attended&&value.includes('/workers/workers/worker-object-id/versions/'))return json(fixtures.attendedBeta);
-    if(attended&&value.includes('/workers/scripts/teamsheet-api-football-shadow-collector/subdomain'))return json({enabled:false,previews_enabled:false,preview_url_suffix:'-teamsheet-api-football-shadow-collector.example.workers.dev'});
+    if(attended&&value.endsWith('/workers/workers/worker-object-id'))return json({id:'worker-object-id',name:'teamsheet-api-football-shadow-collector',subdomain:{enabled:false,previews_enabled:false,preview_url_suffix:'-teamsheet-api-football-shadow-collector.example.workers.dev'}});
+    if(attended&&value.includes('/workers/scripts/teamsheet-api-football-shadow-collector/subdomain'))return json({enabled:false,previews_enabled:false});
     if(attended&&value.endsWith('/workers/subdomain'))return json({subdomain:'example'});
     if(attended&&value.endsWith('/workers/domains'))return json([]);
     if(attended&&value.endsWith('/workers/scripts'))return json([{id:'teamsheet-api-football-shadow-collector',routes:[]}]);
@@ -166,6 +167,36 @@ test('attended live preflight proves exact reviewed content and closed two-Versi
   assert.equal(report.inventory.versionIdentityExact,true);assert.equal(report.inventory.versionInventoryExact,true);
   assert.equal(report.inventory.previewUrlSuffix,'-teamsheet-api-football-shadow-collector.example.workers.dev');assert.equal(report.inventory.accountSubdomain,'example');
   assert.equal(report.evidence.cloudflareGets,PREFLIGHT_ATTENDED_CLOUDFLARE_GETS);assert.equal(PREFLIGHT_MAX_CLOUDFLARE_GETS,PREFLIGHT_ATTENDED_CLOUDFLARE_GETS);
+});
+
+test('attended Preview identity comes from modern Worker metadata, not legacy Script Subdomain shape',async()=>{
+  const calls=[];
+  const baseFetch=fakeFetch({collectorPresent:true,attended:true,state:d1Rows({credentialState:'AVAILABLE'})});
+  const report=await runApiFootballActivationLivePreflight({
+    env:attendedEnv(),
+    fetchImpl:async(url,init)=>{calls.push(String(url));return baseFetch(url,init);},
+    now:()=>NOW
+  });
+  assert.equal(report.ok,true);
+  assert.equal(report.inventory.previewUrlIdentityExact,true);
+  assert.equal(report.inventory.previewUrlSuffix,'-teamsheet-api-football-shadow-collector.example.workers.dev');
+  assert.ok(calls.some(value=>value.endsWith('/workers/scripts/teamsheet-api-football-shadow-collector/subdomain')));
+  assert.ok(calls.some(value=>value.endsWith('/workers/workers/worker-object-id')));
+});
+
+test('attended Preview identity fails closed when modern Worker metadata has a wrong suffix',async()=>{
+  const baseFetch=fakeFetch({collectorPresent:true,attended:true,state:d1Rows({credentialState:'AVAILABLE'})});
+  const report=await runApiFootballActivationLivePreflight({
+    env:attendedEnv(),
+    fetchImpl:async(url,init)=>{
+      if(String(url).endsWith('/workers/workers/worker-object-id'))return json({id:'worker-object-id',name:'teamsheet-api-football-shadow-collector',subdomain:{enabled:false,previews_enabled:false,preview_url_suffix:'-wrong.example.workers.dev'}});
+      return baseFetch(url,init);
+    },
+    now:()=>NOW
+  });
+  assert.equal(report.ok,false);
+  assert.equal(report.inventory.previewUrlIdentityExact,false);
+  assert.equal(report.reason,'attended_stage_inventory_unexpected');
 });
 
 test('attended Version provenance remains pinned when the executing repository head advances',async()=>{
