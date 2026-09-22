@@ -4,9 +4,11 @@ import path from 'node:path';
 import {fileURLToPath,pathToFileURL} from 'node:url';
 import {stableStringify} from '../../src/decision-intelligence/canonical.mjs';
 import {EXPECTED_D1_DATABASE_ID} from '../data-platform/phase4b/live-contract.mjs';
+import {buildReviewedAttendedIdentity,ORIGINAL_BLOCKED_VERSION_ID,validateClosedVersionInventory} from './attended-version.mjs';
 import {
   classifyCollectorActivationPreflight,
   COLLECTOR_ACTIVATION_PREFLIGHT_VERSION,
+  COLLECTOR_PREFLIGHT_ATTENDED_STAGE,
   COLLECTOR_PREFLIGHT_REPOSITORY_STAGE
 } from './activation-preflight.mjs';
 
@@ -27,7 +29,9 @@ export const EXPECTED_MIGRATIONS=Object.freeze([
   [6,'api_football_mapping_qualification']
 ]);
 export const PREFLIGHT_TIMEOUT_MS=15_000;
-export const PREFLIGHT_MAX_CLOUDFLARE_GETS=5;
+export const PREFLIGHT_REPOSITORY_CLOUDFLARE_GETS=5;
+export const PREFLIGHT_ATTENDED_CLOUDFLARE_GETS=13;
+export const PREFLIGHT_MAX_CLOUDFLARE_GETS=PREFLIGHT_ATTENDED_CLOUDFLARE_GETS;
 export const PREFLIGHT_MAX_D1_QUERY_CALLS=1;
 
 const root=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'../..');
@@ -57,9 +61,10 @@ export const ACTIVATION_QUERIES=Object.freeze({
   mappingHead:"SELECT h.fpl_season,q.state,q.mapping_count,q.official_fpl_authority_digest,q.official_fpl_authority_fetched_at FROM api_football_team_mapping_heads h JOIN api_football_team_mapping_qualifications q ON q.qualification_id=h.qualification_id WHERE h.fpl_season='2026-27'",
   mappingMembers:"SELECT COUNT(*) AS member_count,COUNT(DISTINCT provider_team_id) AS distinct_provider_ids,COUNT(DISTINCT canonical_fpl_team_id) AS distinct_fpl_ids,GROUP_CONCAT(canonical_fpl_team_id,'|') AS canonical_fpl_team_ids FROM (SELECT provider_team_id,canonical_fpl_team_id FROM api_football_team_mapping_members WHERE qualification_id=(SELECT qualification_id FROM api_football_team_mapping_heads WHERE fpl_season='2026-27') ORDER BY canonical_fpl_team_id)",
   runtime:"SELECT provider,collection_enabled,credential_state,in_flight_attempt_id,in_flight_lease_expires_at FROM api_football_runtime_state WHERE provider='api-football'",
-  attempts:"SELECT COUNT(*) AS total,SUM(CASE WHEN attempt_number=2 THEN 1 ELSE 0 END) AS attempt2_count,SUM(CASE WHEN outcome='RESERVED' THEN 1 ELSE 0 END) AS reserved_count FROM api_football_request_attempts",
-  generations:"SELECT COUNT(*) AS total,SUM(CASE WHEN state='STAGING' THEN 1 ELSE 0 END) AS staging_count FROM api_football_discovery_generations",
-  fixtureRevisions:"SELECT COUNT(*) AS total FROM api_football_fixture_revisions"
+  attempts:"SELECT COUNT(*) AS total,SUM(CASE WHEN attempt_number=1 THEN 1 ELSE 0 END) AS attempt1_count,SUM(CASE WHEN attempt_number=2 THEN 1 ELSE 0 END) AS attempt2_count,SUM(CASE WHEN outcome='RESERVED' THEN 1 ELSE 0 END) AS reserved_count,SUM(CASE WHEN outcome='SUCCEEDED' THEN 1 ELSE 0 END) AS succeeded_count,SUM(CASE WHEN outcome='AUTH_FAILURE' THEN 1 ELSE 0 END) AS auth_failure_count,SUM(CASE WHEN outcome='QUOTA_BLOCKED' THEN 1 ELSE 0 END) AS quota_blocked_count,SUM(CASE WHEN outcome='TIMEOUT' THEN 1 ELSE 0 END) AS timeout_count,SUM(CASE WHEN outcome='TRANSPORT_UNKNOWN' THEN 1 ELSE 0 END) AS transport_unknown_count,SUM(CASE WHEN outcome='SCHEMA_FAILURE' THEN 1 ELSE 0 END) AS schema_failure_count,SUM(CASE WHEN outcome='HTTP_FAILURE' THEN 1 ELSE 0 END) AS http_failure_count FROM api_football_request_attempts",
+  generations:"SELECT COUNT(*) AS total,SUM(CASE WHEN state='STAGING' THEN 1 ELSE 0 END) AS staging_count,SUM(CASE WHEN state='COMMITTED' THEN 1 ELSE 0 END) AS committed_count,SUM(CASE WHEN state='FAILED' THEN 1 ELSE 0 END) AS failed_count,SUM(CASE WHEN failure_class='persistence_uncertain' THEN 1 ELSE 0 END) AS persistence_uncertain_count,SUM(CASE WHEN failure_class='attempt_completion_uncertain' THEN 1 ELSE 0 END) AS completion_uncertain_count,SUM(CASE WHEN state='COMMITTED' AND fixture_count=(SELECT COUNT(*) FROM api_football_generation_fixtures gf WHERE gf.generation_id=api_football_discovery_generations.generation_id) THEN 1 ELSE 0 END) AS membership_consistent_count,SUM(CASE WHEN state='COMMITTED' AND EXISTS(SELECT 1 FROM api_football_discovery_heads h WHERE h.generation_id=api_football_discovery_generations.generation_id) THEN 1 ELSE 0 END) AS head_match_count FROM api_football_discovery_generations",
+  fixtureRevisions:"SELECT COUNT(*) AS total FROM api_football_fixture_revisions",
+  rawPayloadStorage:"SELECT name FROM sqlite_master WHERE type='table' AND (lower(name) LIKE '%raw%payload%' OR lower(sql) LIKE '%raw_provider_payload%') ORDER BY name"
 });
 for(const sql of Object.values(ACTIVATION_QUERIES))assertActivationReadOnlySql(sql);
 
@@ -82,7 +87,7 @@ async function readJson(fetchImpl,url,{token,method='GET',body=null}={}){
 }
 
 function decodeBindings(result){
-  const bindings=Array.isArray(result?.bindings)?result.bindings:[];
+  const bindings=Array.isArray(result?.bindings)?result.bindings:Array.isArray(result?.resources?.bindings)?result.resources.bindings:[];
   return bindings.filter(row=>row&&typeof row.name==='string'&&typeof row.type==='string');
 }
 function dataPlatformBindingMatches(result){
@@ -94,11 +99,12 @@ function collectorInventory(reads){
   if(statuses.every(status=>status===404))return Object.freeze({workerPresent:false,deploymentCount:0,secretBindingPresent:false,cronCount:0});
   if(!reads.settings.ok||!reads.schedules.ok||!reads.deployments.ok)return null;
   const bindings=decodeBindings(reads.settings.result);
-  const secretBindingPresent=bindings.some(row=>row.name==='API_FOOTBALL_API_KEY'&&row.type==='secret_text');
+  const secretBindingNames=bindings.filter(row=>row.type==='secret_text').map(row=>row.name).sort();
+  const secretBindingPresent=secretBindingNames.includes('API_FOOTBALL_API_KEY');
   const schedules=Array.isArray(reads.schedules.result?.schedules)?reads.schedules.result.schedules:Array.isArray(reads.schedules.result)?reads.schedules.result:[];
   const deployments=Array.isArray(reads.deployments.result?.deployments)?reads.deployments.result.deployments:Array.isArray(reads.deployments.result)?reads.deployments.result:null;
   if(!deployments)return null;
-  return Object.freeze({workerPresent:true,deploymentCount:deployments.length,secretBindingPresent,cronCount:schedules.length});
+  return Object.freeze({workerPresent:true,deploymentCount:deployments.length,secretBindingPresent,secretBindingNames,bindings,cronCount:schedules.length});
 }
 
 function parseWrangler(){
@@ -163,7 +169,7 @@ export function buildAuthority(runRows,teamRows){
   });
 }
 
-function buildEvidence(rows,{inventory,nowIso}){
+function buildEvidence(rows,{inventory,nowIso,stage=COLLECTOR_PREFLIGHT_REPOSITORY_STAGE}){
   const ledger=Array.isArray(rows.ledger)?rows.ledger.map(row=>[count(row.version),String(row.name||'')]):null;
   if(!ledger||ledger.some(([version,name])=>version===null||!name))return fail('activation_migration_ledger_invalid');
   const authority=buildAuthority(rows.officialRun,rows.officialTeams);
@@ -172,7 +178,7 @@ function buildEvidence(rows,{inventory,nowIso}){
   if(!mappingHead||!members||!runtime||!attempts||!generations||!fixtureRevisions)return fail('activation_state_incomplete');
   const evidence={
     version:COLLECTOR_ACTIVATION_PREFLIGHT_VERSION,
-    stage:COLLECTOR_PREFLIGHT_REPOSITORY_STAGE,
+    stage,
     migrations:ledger,
     foreignKeyViolations:Array.isArray(rows.foreignKeys)?rows.foreignKeys.length:null,
     authority,
@@ -193,47 +199,96 @@ function buildEvidence(rows,{inventory,nowIso}){
     },
     priorState:{
       attempt2Count:count(attempts.attempt2_count??0),reservedAttemptCount:count(attempts.reserved_count??0),
-      stagingGenerationCount:count(generations.staging_count??0)
+      stagingGenerationCount:count(generations.staging_count??0),attempt1Count:count(attempts.attempt1_count??0),
+      succeededAttemptCount:count(attempts.succeeded_count??0),authFailureCount:count(attempts.auth_failure_count??0),
+      quotaBlockedCount:count(attempts.quota_blocked_count??0),timeoutCount:count(attempts.timeout_count??0),
+      transportUnknownCount:count(attempts.transport_unknown_count??0),schemaFailureCount:count(attempts.schema_failure_count??0),
+      httpFailureCount:count(attempts.http_failure_count??0),committedGenerationCount:count(generations.committed_count??0),
+      failedGenerationCount:count(generations.failed_count??0),membershipConsistentCount:count(generations.membership_consistent_count??0),
+      headMatchCount:count(generations.head_match_count??0),persistenceUncertainCount:count(generations.persistence_uncertain_count??0),
+      completionUncertainCount:count(generations.completion_uncertain_count??0)
     },
     inventory,
     modelUiImportCount:productionModelUiImportCount()
   };
+  evidence.rawPayloadStoragePresent=Array.isArray(rows.rawPayloadStorage)&&rows.rawPayloadStorage.length>0;
   if(!Number.isFinite(Date.parse(nowIso)))return fail('activation_now_invalid');
   return Object.freeze({ok:true,evidence:Object.freeze(evidence)});
 }
 
-export async function runApiFootballActivationLivePreflight({env=process.env,fetchImpl=globalThis.fetch,now=()=>new Date().toISOString()}={}){
+export async function runApiFootballActivationLivePreflight({env=process.env,fetchImpl=globalThis.fetch,now=()=>new Date().toISOString(),stage=env.API_FOOTBALL_PREFLIGHT_STAGE||COLLECTOR_PREFLIGHT_REPOSITORY_STAGE}={}){
   const accountId=env.DATA_STEWARD_CLOUDFLARE_ACCOUNT_ID,accountFingerprint=env.DATA_STEWARD_CLOUDFLARE_ACCOUNT_FINGERPRINT,token=env.DATA_STEWARD_CLOUDFLARE_READ_TOKEN;
   if(typeof accountId!=='string'||!accountId||typeof accountFingerprint!=='string'||!hex64(accountFingerprint)||typeof token!=='string'||!token)return fail('activation_preflight_environment_incomplete');
   if(digest(accountId)!==accountFingerprint)return fail('activation_production_account_identity_mismatch');
   const nowIso=iso(now());if(!nowIso)return fail('activation_now_invalid');
+  const attendedStage=stage===COLLECTOR_PREFLIGHT_ATTENDED_STAGE;
+  if(stage!==COLLECTOR_PREFLIGHT_REPOSITORY_STAGE&&!attendedStage)return fail('activation_preflight_stage_invalid');
+  const expectedGets=attendedStage?PREFLIGHT_ATTENDED_CLOUDFLARE_GETS:PREFLIGHT_REPOSITORY_CLOUDFLARE_GETS;
+  let cloudflareGets=0;
+  const boundedFetch=async(url,init={})=>{if((init.method||'GET')==='GET'&&++cloudflareGets>expectedGets)throw new Error('activation_cloudflare_get_ceiling_exceeded');return fetchImpl(url,init);};
 
-  const database=await readJson(fetchImpl,d1Path(accountId,'?fields=uuid,name,file_size'),{token});
+  const database=await readJson(boundedFetch,d1Path(accountId,'?fields=uuid,name,file_size'),{token});
   if(!database.ok||database.result?.uuid!==EXPECTED_D1_DATABASE_ID||database.result?.name!==EXPECTED_DATABASE_NAME)return fail('activation_production_d1_identity_mismatch');
-  const platform=await readJson(fetchImpl,workerPath(accountId,EXPECTED_DATA_PLATFORM_WORKER,'/settings'),{token});
+  const platform=await readJson(boundedFetch,workerPath(accountId,EXPECTED_DATA_PLATFORM_WORKER,'/settings'),{token});
   if(!platform.ok||!dataPlatformBindingMatches(platform.result))return fail('activation_data_platform_binding_mismatch');
 
+  const selectedVersionId=attendedStage?env.API_FOOTBALL_ATTENDED_VERSION_ID:null;
+  const approvedSha=attendedStage?env.APPROVED_SHA:null;
+  if(attendedStage&&(typeof selectedVersionId!=='string'||!/^[0-9a-f-]{36}$/i.test(selectedVersionId)))return fail('activation_attended_version_identity_invalid');
+  if(attendedStage&&!/^[0-9a-f]{40}$/.test(String(approvedSha||'')))return fail('activation_attended_approved_sha_invalid');
   const collectorReads={
-    settings:await readJson(fetchImpl,workerPath(accountId,EXPECTED_COLLECTOR_WORKER,'/settings'),{token}),
-    schedules:await readJson(fetchImpl,workerPath(accountId,EXPECTED_COLLECTOR_WORKER,'/schedules'),{token}),
-    deployments:await readJson(fetchImpl,workerPath(accountId,EXPECTED_COLLECTOR_WORKER,'/deployments'),{token})
+    settings:await readJson(boundedFetch,workerPath(accountId,EXPECTED_COLLECTOR_WORKER,attendedStage?'/versions/'+encodeURIComponent(selectedVersionId):'/settings'),{token}),
+    schedules:await readJson(boundedFetch,workerPath(accountId,EXPECTED_COLLECTOR_WORKER,'/schedules'),{token}),
+    deployments:await readJson(boundedFetch,workerPath(accountId,EXPECTED_COLLECTOR_WORKER,'/deployments'),{token})
   };
+  if(attendedStage){
+    collectorReads.subdomain=await readJson(boundedFetch,workerPath(accountId,EXPECTED_COLLECTOR_WORKER,'/subdomain'),{token});
+    collectorReads.accountSubdomain=await readJson(boundedFetch,apiPath(accountId,'/workers/subdomain'),{token});
+    collectorReads.domains=await readJson(boundedFetch,apiPath(accountId,'/workers/domains'),{token});
+    collectorReads.scripts=await readJson(boundedFetch,apiPath(accountId,'/workers/scripts'),{token});
+    collectorReads.versions=await readJson(boundedFetch,workerPath(accountId,EXPECTED_COLLECTOR_WORKER,'/versions?deployable=true'),{token});
+    collectorReads.originalStable=await readJson(boundedFetch,workerPath(accountId,EXPECTED_COLLECTOR_WORKER,'/versions/'+ORIGINAL_BLOCKED_VERSION_ID),{token});
+    collectorReads.betaWorkers=await readJson(boundedFetch,apiPath(accountId,'/workers/workers?per_page=100&order_by=name&order=asc'),{token});
+    const worker=Array.isArray(collectorReads.betaWorkers.result)?collectorReads.betaWorkers.result.find(row=>row?.name===EXPECTED_COLLECTOR_WORKER):null;
+    if(!worker?.id)return fail('activation_attended_worker_identity_unavailable');
+    collectorReads.attendedBeta=await readJson(boundedFetch,apiPath(accountId,'/workers/workers/'+encodeURIComponent(worker.id)+'/versions/'+encodeURIComponent(selectedVersionId)+'?include=modules'),{token});
+    if(!collectorReads.subdomain.ok||!collectorReads.accountSubdomain.ok||!collectorReads.domains.ok||!collectorReads.scripts.ok||!collectorReads.versions.ok||!collectorReads.originalStable.ok||!collectorReads.betaWorkers.ok||!collectorReads.attendedBeta.ok)return fail('activation_attended_inventory_unreadable');
+  }
   const collector=collectorInventory(collectorReads);if(!collector)return fail('activation_collector_inventory_unreadable');
   const wrangler=parseWrangler();if(!wrangler)return fail('activation_repository_config_unreadable');
 
-  const d1=await runD1(fetchImpl,{accountId,token});if(!d1.ok)return d1;
+  const d1=await runD1(boundedFetch,{accountId,token});if(!d1.ok)return d1;
+  const attended=stage===COLLECTOR_PREFLIGHT_ATTENDED_STAGE;
+  const reviewedVersionId=attended?selectedVersionId:null;
+  const binding=name=>collector.bindings?.find(row=>row.name===name);
+  let versionIdentityExact=false,versionInventoryExact=false;
+  if(attended){
+    const versionIds=(Array.isArray(collectorReads.versions.result?.items)?collectorReads.versions.result.items:Array.isArray(collectorReads.versions.result)?collectorReads.versions.result:[]).map(row=>row?.id).filter(Boolean);
+    try{validateClosedVersionInventory({versionIds,originalStable:collectorReads.originalStable.result,attendedVersionId:reviewedVersionId,attendedStable:collectorReads.settings.result,attendedBeta:collectorReads.attendedBeta.result,identity:buildReviewedAttendedIdentity(approvedSha)});versionIdentityExact=true;versionInventoryExact=true;}catch{}
+  }
+  const previewUrlIdentityExact=!attended||collectorReads.subdomain.result?.preview_url_suffix===`-${EXPECTED_COLLECTOR_WORKER}.${collectorReads.accountSubdomain.result?.subdomain}.workers.dev`;
   const inventory=Object.freeze({
-    activation:wrangler.activation,databaseIdPlaceholder:wrangler.databaseIdPlaceholder,workerPresent:collector.workerPresent,
+    activation:attended?binding('EIA_2I5D_ACTIVATION')?.text:wrangler.activation,databaseIdPlaceholder:attended?false:wrangler.databaseIdPlaceholder,
+    productionBindingProven:attended&&binding(EXPECTED_COLLECTOR_BINDING)?.type==='d1'&&binding(EXPECTED_COLLECTOR_BINDING)?.database_id===EXPECTED_D1_DATABASE_ID,
+    workerPresent:collector.workerPresent,
     deploymentCount:collector.deploymentCount,secretBindingPresent:collector.secretBindingPresent,cronCount:collector.cronCount,
-    workersDev:wrangler.workersDev,previewUrls:wrangler.previewUrls
+    secretBindingNames:collector.secretBindingNames||[],workersDev:attended?collectorReads.subdomain.result?.enabled:wrangler.workersDev,
+    previewUrls:attended?collectorReads.subdomain.result?.previews_enabled:wrangler.previewUrls,
+    configurationExact:attended&&binding('API_FOOTBALL_FPL_SEASON')?.text==='2026-27'&&String(binding('API_FOOTBALL_PROVIDER_SEASON')?.text)==='2026',
+    reviewedVersionId,versionIdentityExact,versionInventoryExact,previewUrlIdentityExact,
+    previewUrlSuffix:attended?collectorReads.subdomain.result?.preview_url_suffix:null,
+    accountSubdomain:attended?collectorReads.accountSubdomain.result?.subdomain:null,
+    routeCount:attended?(Array.isArray(collectorReads.scripts.result)?collectorReads.scripts.result.find(row=>row?.id===EXPECTED_COLLECTOR_WORKER)?.routes?.length:null):0,
+    customDomainCount:attended?(Array.isArray(collectorReads.domains.result)?collectorReads.domains.result.filter(row=>row?.service===EXPECTED_COLLECTOR_WORKER).length:null):0
   });
-  const built=buildEvidence(d1.rows,{inventory,nowIso});if(!built.ok)return built;
+  const built=buildEvidence(d1.rows,{inventory,nowIso,stage});if(!built.ok)return built;
   const classified=classifyCollectorActivationPreflight(built.evidence,{now:nowIso});
+  if(cloudflareGets!==expectedGets)return fail('activation_cloudflare_get_count_unexpected');
 
   return Object.freeze({
     ok:classified.ok===true,
     version:API_FOOTBALL_ACTIVATION_LIVE_PREFLIGHT_VERSION,
-    observedAt:nowIso,stage:COLLECTOR_PREFLIGHT_REPOSITORY_STAGE,
+    observedAt:nowIso,approvedSha:approvedSha??null,accountFingerprint,stage,
     classification:classified.classification,reason:classified.reason??null,
     migrationCount:built.evidence.migrations.length,
     foreignKeyViolations:built.evidence.foreignKeyViolations,
@@ -252,8 +307,9 @@ export async function runApiFootballActivationLivePreflight({env=process.env,fet
     priorState:Object.freeze({...built.evidence.counts,...built.evidence.priorState}),
     inventory:Object.freeze({...inventory}),
     modelUiImportCount:built.evidence.modelUiImportCount,
+    rawPayloadStoragePresent:built.evidence.rawPayloadStoragePresent,
     evidence:Object.freeze({
-      cloudflareGets:PREFLIGHT_MAX_CLOUDFLARE_GETS,d1QueryCalls:PREFLIGHT_MAX_D1_QUERY_CALLS,d1RowsRead:d1.rowsRead,
+      observedAt:nowIso,cloudflareGets,cloudflareGetCeiling:expectedGets,d1QueryCalls:PREFLIGHT_MAX_D1_QUERY_CALLS,d1RowsRead:d1.rowsRead,
       productionMutations:0,apiFootballRequests:0,secretValuesRead:0
     })
   });

@@ -1,3 +1,7 @@
+## Attended API-Football acceptance remains unproven
+
+Repository tests do not prove a real collector Version upload, secret provisioning, Versioned Preview toggle, production D1 mutation, physical API-Football call, live reconciliation, Version deletion or cleanup/revocation. No predictive-accuracy claim follows. See [attended acceptance foundation](API-FOOTBALL-ATTENDED-ACCEPTANCE-FOUNDATION.md).
+
 ## Current API-Football staging limitations
 
 The collector is **not deployed to traffic**. Cloudflare contains an inert Worker object and one inactive Version only; live run `35645387203` proved Deployment count 0, workers.dev/Preview URLs disabled, no route/domain, no Cron, no secret binding and zero API-Football requests. The Version is production-D1-bound configuration, but it cannot execute through the approved staging state.

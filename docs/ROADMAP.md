@@ -1,3 +1,7 @@
+## Current API-Football checkpoint
+
+Attended one-shot acceptance remediation is a repository candidate. Next steps remain separately owner-gated: review/merge, exact-main verification, one final code-plus-secrets Version upload, credential preparation, fresh content/inventory admission, separately approved live execution, independent reconciliation and later cleanup. See [attended acceptance foundation](API-FOOTBALL-ATTENDED-ACCEPTANCE-FOUNDATION.md).
+
 ## Current checkpoint — inactive collector staging complete
 
 Live inactive staging is complete and accepted from run `35645387203` on exact `main` `302dc21cc4b821ac8b224d176765a29c0724a244`: inert Worker shell present, exactly one inactive Version `e49ac8f2-4289-46bc-9f0b-87a20cd7be62`, Deployment count 0, Cron 0, secret bindings 0 and provider requests 0.

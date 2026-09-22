@@ -1,3 +1,7 @@
+## API-Football attended acceptance regression coverage
+
+Permanent tests cover exact module/annotation/binding identity, closed Worker-wide Version inventory, documented code-plus-secrets upload shape, trusted Preview URL derivation, account fingerprint and endpoint allowlist, artifact provenance, ambiguous invocation failure, cleanup, separate control budgets, credential lifecycle, always-run reconciliation, zero Deployment, inert Wrangler, provider ceilings and model isolation. See [attended acceptance foundation](API-FOOTBALL-ATTENDED-ACCEPTANCE-FOUNDATION.md).
+
 ## API-Football inactive-staging live acceptance and terminology regression
 
 Live workflow `35645387203`, attempt 1, succeeded on exact `main` `302dc21cc4b821ac8b224d176765a29c0724a244`. Fresh admission, protected inactive staging and final read-only closeout all passed. Candidate Version: `e49ac8f2-4289-46bc-9f0b-87a20cd7be62`; Deployment/Cron/route/domain/secret counts remained zero; D1 mutations and API-Football requests remained zero.

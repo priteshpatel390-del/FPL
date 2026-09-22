@@ -1,3 +1,7 @@
+## API-Football attended acceptance boundary
+
+API-Football remains shadow-only. Remediation preserves exact five-competition fixture discovery, request/response ceilings, server-side key handling, no raw-payload persistence and no model/UI path; ambiguous invocation is consumed and never retried. No provider request has been authorized by this repository work. See [attended acceptance foundation](API-FOOTBALL-ATTENDED-ACCEPTANCE-FOUNDATION.md).
+
 ## API-Football source state after inactive staging
 
 API-Football remains **shadow-only and non-acquiring**. Live inactive-staging run `35645387203` created only an inert Worker shell and one inactive Version; it made **0 API-Football requests**, persisted no provider response, changed no D1 data and provisioned no `API_FOOTBALL_API_KEY`. Provider acquisition, fixture ingestion and every downstream model/product use remain separately gated.

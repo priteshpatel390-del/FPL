@@ -32,6 +32,7 @@ function sharedEvidence(evidence,stage,{now}={}){
   if(!counts||Object.values(counts).some(value=>!Number.isSafeInteger(value)||value<0)||counts.requestAttempts>100_000||counts.generations>10_000||counts.fixtureRevisions>1_000_000)return stop(stage,'historical_state_unbounded');
   if(evidence.priorState?.attempt2Count!==0||evidence.priorState?.reservedAttemptCount!==0||evidence.priorState?.stagingGenerationCount!==0)return stop(stage,'prior_state_requires_reconciliation');
   if(evidence.modelUiImportCount!==0)return stop(stage,'model_ui_integration_detected');
+  if(evidence.rawPayloadStoragePresent!==false)return stop(stage,'raw_payload_storage_detected');
   return safe({ok:true});
 }
 
@@ -48,7 +49,10 @@ export function classifyCollectorActivationPreflight(evidence,{now}={}){
     return safe({ok:true,stage,classification:COLLECTOR_REPOSITORY_STAGE_READY,secretBindingPresent:false});
   }
   if(inventory.activation!==API_FOOTBALL_ATTENDED_DISCOVERY_ACTIVATION||inventory.databaseIdPlaceholder!==false||inventory.productionBindingProven!==true||
-    inventory.workerPresent!==true||inventory.configurationExact!==true||inventory.secretBindingPresent!==true)return stop(stage,'attended_stage_inventory_unexpected');
+    inventory.workerPresent!==true||inventory.deploymentCount!==0||inventory.configurationExact!==true||inventory.versionIdentityExact!==true||
+    inventory.versionInventoryExact!==true||inventory.previewUrlIdentityExact!==true||
+    inventory.routeCount!==0||inventory.customDomainCount!==0||inventory.secretBindingPresent!==true||
+    JSON.stringify(inventory.secretBindingNames)!==JSON.stringify(['API_FOOTBALL_API_KEY','API_FOOTBALL_ATTENDED_TRIGGER_SECRET']))return stop(stage,'attended_stage_inventory_unexpected');
   if(evidence.runtime.credentialState!=='AVAILABLE')return stop(stage,'credential_state_unexpected');
   if(evidence.counts.requestAttempts!==0||evidence.counts.generations!==0||evidence.counts.fixtureRevisions!==0)return stop(stage,'first_acceptance_history_not_pristine');
   return safe({ok:true,stage,classification:COLLECTOR_ATTENDED_STAGE_READY,secretBindingPresent:true});

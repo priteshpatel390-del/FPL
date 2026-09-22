@@ -1,3 +1,7 @@
+## Attended-stage remediation
+
+Live preflight selects `ATTENDED_ACCEPTANCE`, exact approved SHA and final Version ID; reads stable metadata plus Beta `include=modules`; hashes every module; validates exact annotations, runtime and six bindings; and admits only the exact inert original plus reviewed final Version. It also proves trusted Preview suffix, zero Deployments/Cron/routes/domains, disabled workers.dev/Preview URLs, exact production D1 and pristine disabled runtime. Repository stage performs exactly five Cloudflare GETs; attended stage exactly thirteen, each under its stage-specific hard ceiling. See [attended acceptance foundation](API-FOOTBALL-ATTENDED-ACCEPTANCE-FOUNDATION.md).
+
 ## Post-staging terminology correction — 21 September 2026
 
 Live inactive staging run `35645387203` demonstrated that the preflight's historical `inventory.deployed` label actually meant only “collector Worker/script inventory is present”: the run had a present Worker and inactive Version while the dedicated postflight proved **Deployment count 0**. The sanitized live-preflight report contract therefore moves to `workerPresent` plus explicit `deploymentCount`. This is a semantics/evidence correction, not a live infrastructure change.

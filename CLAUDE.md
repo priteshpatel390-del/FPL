@@ -1,3 +1,7 @@
+## Current checkpoint — attended API-Football acceptance foundation remediation
+
+PR #286 remains a repository-only draft. Remediation proves exact Version module bytes and closed two-Version inventory, derives the Preview hostname from Cloudflare metadata, fingerprints the production account, closes mutation endpoints, treats ambiguous invocation as failure, separates control/collector D1 budgets and adds independent read-only reconciliation. Checked-in Wrangler remains inert. No live API-Football collector mutation, secret action, Preview toggle, D1 mutation or provider request occurred. The unrelated `teamsheet-fpl-gateway` Git integration did publish its normal PR previews; that is not collector deployment evidence. See [attended acceptance foundation](docs/API-FOOTBALL-ATTENDED-ACCEPTANCE-FOUNDATION.md).
+
 ## API-Football inactive collector staging — LIVE CLOSEOUT
 
 **Supersedes the inactive-staging candidate wording below; historical design sections remain for audit.** Owner-attended workflow run `35645387203`, attempt 1, completed successfully on exact `main` `302dc21cc4b821ac8b224d176765a29c0724a244`. Fresh admission again returned `READY_FOR_REPOSITORY_INFRASTRUCTURE_STAGING`; the protected stage then created the inert `teamsheet-api-football-shadow-collector` shell and uploaded exactly one inactive Version, `e49ac8f2-4289-46bc-9f0b-87a20cd7be62`. Both approved Cloudflare mutations were definite successes.
