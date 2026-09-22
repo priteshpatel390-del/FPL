@@ -284,6 +284,10 @@ test('credential recovery workflow resumes only from exact proved Version state 
   assert.match(workflow,/github\.run_attempt == 1/);
   assert.match(workflow,/refs\/heads\/main/);
   assert.match(workflow,/attended_version_id:/);
+  assert.match(workflow,/04d79556-3070-429f-9944-b5b53d799842/);
+  assert.ok((workflow.match(/69bb84fadbcce94e9fece3ff438d985866cce183/g)||[]).length>=4);
+  assert.match(workflow,/API_FOOTBALL_ATTENDED_VERSION_APPROVED_SHA/);
+  assert.match(workflow,/versionApprovedSha/);
   assert.match(workflow,/API_FOOTBALL_PREFLIGHT_STAGE: ATTENDED_PREPARATION_VERSION_READY/);
   assert.match(workflow,/READY_FOR_ATTENDED_CREDENTIAL_PREPARATION/);
   assert.match(workflow,/name: api-football-attended-preparation-credential/);

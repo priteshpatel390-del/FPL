@@ -168,6 +168,28 @@ test('attended live preflight proves exact reviewed content and closed two-Versi
   assert.equal(report.evidence.cloudflareGets,PREFLIGHT_ATTENDED_CLOUDFLARE_GETS);assert.equal(PREFLIGHT_MAX_CLOUDFLARE_GETS,PREFLIGHT_ATTENDED_CLOUDFLARE_GETS);
 });
 
+test('attended Version provenance remains pinned when the executing repository head advances',async()=>{
+  const executionSha='b'.repeat(40);
+  const report=await runApiFootballActivationLivePreflight({
+    env:{...attendedEnv(),APPROVED_SHA:executionSha,API_FOOTBALL_ATTENDED_VERSION_APPROVED_SHA:APPROVED_SHA},
+    fetchImpl:fakeFetch({collectorPresent:true,attended:true,state:d1Rows({credentialState:'AVAILABLE'})}),now:()=>NOW
+  });
+  assert.equal(report.ok,true);
+  assert.equal(report.approvedSha,executionSha);
+  assert.equal(report.versionApprovedSha,APPROVED_SHA);
+  assert.equal(report.inventory.versionIdentityExact,true);
+  assert.equal(report.inventory.versionInventoryExact,true);
+});
+
+test('attended Version provenance override fails closed when malformed',async()=>{
+  const report=await runApiFootballActivationLivePreflight({
+    env:{...attendedEnv(),API_FOOTBALL_ATTENDED_VERSION_APPROVED_SHA:'not-a-sha'},
+    fetchImpl:fakeFetch({collectorPresent:true,attended:true}),now:()=>NOW
+  });
+  assert.equal(report.ok,false);
+  assert.equal(report.reason,'activation_attended_version_approved_sha_invalid');
+});
+
 for(const [name,mutate] of [
   ['wrong module content',value=>{value.attendedBeta.modules[0].content_base64=Buffer.from('wrong').toString('base64');}],
   ['wrong commit annotation',value=>{value.attendedBeta.annotations['workers/message']='wrong';}],
