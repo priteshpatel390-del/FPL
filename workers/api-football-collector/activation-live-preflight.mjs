@@ -102,6 +102,13 @@ function dataPlatformBindingMatches(result){
   const d1=decodeBindings(result).find(row=>row.name===EXPECTED_COLLECTOR_BINDING&&row.type==='d1');
   return Boolean(d1&&d1.database_id===EXPECTED_D1_DATABASE_ID);
 }
+export function scriptRouteCount(scriptsResult,workerName=EXPECTED_COLLECTOR_WORKER){
+  if(!Array.isArray(scriptsResult))return null;
+  const script=scriptsResult.find(row=>row?.id===workerName);
+  if(!script||script.routes==null)return 0;
+  return Array.isArray(script.routes)?script.routes.length:null;
+}
+
 function collectorInventory(reads){
   const statuses=[reads.settings.status,reads.schedules.status,reads.deployments.status];
   if(statuses.every(status=>status===404))return Object.freeze({workerPresent:false,deploymentCount:0,secretBindingPresent:false,cronCount:0});
@@ -314,7 +321,7 @@ export async function runApiFootballActivationLivePreflight({env=process.env,fet
     reviewedVersionId,versionIdentityExact,versionInventoryExact,originalVersionIdentityExact,previewUrlIdentityExact,
     previewUrlSuffix:attendedStage?collectorReads.subdomain.result?.preview_url_suffix:null,
     accountSubdomain:attendedStage?collectorReads.accountSubdomain.result?.subdomain:null,
-    routeCount:liveVersionStage?(Array.isArray(collectorReads.scripts.result)?collectorReads.scripts.result.find(row=>row?.id===EXPECTED_COLLECTOR_WORKER)?.routes?.length:null):0,
+    routeCount:liveVersionStage?scriptRouteCount(collectorReads.scripts.result):0,
     customDomainCount:liveVersionStage?(Array.isArray(collectorReads.domains.result)?collectorReads.domains.result.filter(row=>row?.service===EXPECTED_COLLECTOR_WORKER).length:null):0
   });
   const built=buildEvidence(d1.rows,{inventory,nowIso,stage});if(!built.ok)return built;

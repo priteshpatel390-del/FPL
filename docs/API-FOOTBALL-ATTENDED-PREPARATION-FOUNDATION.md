@@ -1,6 +1,8 @@
 # API-Football Attended Preparation Foundation
 
-Status: **repository implementation candidate only — no live preparation is authorized or executed by this document.**
+Status: **repository implementation plus live-start false-negative remediation candidate — no live Version or credential mutation is authorized by this document.**
+
+Live run `35712638164`, attempt 1, on exact `main` `4d3105ca9833734491c00fbe3eb273b915e8d73d` stopped at read-only `ATTENDED_PREPARATION_START` as `STOP_ATTENDED_PREPARATION_START_REVIEW_REQUIRED` / `preparation_start_inventory_unexpected`. Independent Cloudflare inspection proved the accepted inactive singleton remained exact: Worker `teamsheet-api-football-shadow-collector`, Version `e49ac8f2-4289-46bc-9f0b-87a20cd7be62`, Deployment 0, workers.dev/Preview disabled, Cron 0, dedicated routes `[]`, collector custom domains 0, secret bindings 0, original module SHA-256 identity exact, runtime `collection_enabled=0` / `UNPROVISIONED`, attempts/generations/fixture revisions 0/0/0. The Workers script-list object encodes that zero-route state as `routes: null`. The live reader previously used `script.routes?.length`, which is `undefined` for `null`, and the classifier treats any `routeCount!==0` as unexpected inventory. This remediation decodes `null`/missing script-list routes as `0` while still failing closed on a real route array or a non-array routes object. Run `35712638164` is consumed and must not be rerun.
 
 ## Baseline
 
