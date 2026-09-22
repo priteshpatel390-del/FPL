@@ -36,24 +36,54 @@ export function validateAdmissionHandoff(report,{approvedSha,versionId,versionAp
   return true;
 }
 
+const CRITICAL_PREFLIGHT_DIAGNOSTICS=Object.freeze({
+  activation_preflight_environment_incomplete:'preflight_environment_incomplete',
+  activation_production_account_identity_mismatch:'production_account_identity_mismatch',
+  activation_production_d1_identity_mismatch:'production_d1_identity_mismatch',
+  activation_data_platform_binding_mismatch:'data_platform_binding_mismatch',
+  activation_attended_version_identity_invalid:'attended_version_identity_invalid',
+  activation_attended_approved_sha_invalid:'approved_sha_invalid',
+  activation_attended_version_approved_sha_invalid:'version_provenance_invalid',
+  activation_attended_worker_identity_unavailable:'worker_identity_unavailable',
+  activation_attended_inventory_unreadable:'inventory_unreadable',
+  activation_collector_inventory_unreadable:'collector_inventory_unreadable',
+  activation_repository_config_unreadable:'repository_config_unreadable',
+  activation_d1_read_failed:'d1_read_failed',
+  activation_d1_metadata_invalid:'d1_metadata_invalid',
+  activation_d1_write_detected:'d1_write_detected',
+  activation_migration_ledger_invalid:'migration_ledger_invalid',
+  activation_official_authority_invalid:'official_authority_invalid',
+  activation_state_incomplete:'state_incomplete',
+  activation_now_invalid:'time_invalid',
+  activation_cloudflare_get_count_unexpected:'cloudflare_get_count_unexpected'
+});
+
+export function attendedCriticalRecheckDiagnostic(report,{approvedSha,versionId,versionApprovedSha,accountFingerprint}={}){
+  if(report?.ok!==true)return CRITICAL_PREFLIGHT_DIAGNOSTICS[report?.reason]??'preflight_failed_unknown';
+  const inventory=report?.inventory||{},runtime=report?.runtime||{},prior=report?.priorState||{},mapping=report?.mapping||{};
+  if(report.approvedSha!==approvedSha||report.versionApprovedSha!==versionApprovedSha||report.accountFingerprint!==accountFingerprint||
+    report.stage!=='ATTENDED_ACCEPTANCE'||report.classification!=='READY_FOR_SEPARATELY_APPROVED_ATTENDED_ACCEPTANCE')return 'preflight_identity_or_classification_mismatch';
+  if(report.migrationCount!==6||report.foreignKeyViolations!==0||report.officialFplAuthority?.valid!==true||report.officialFplAuthority?.teamCount!==20||
+    mapping.state!=='COMMITTED'||mapping.mappingCount!==20||mapping.memberCount!==20||mapping.distinctProviderIds!==20||mapping.distinctFplIds!==20||
+    mapping.canonicalCoverageMatches!==true||mapping.historicalAuthorityProvenancePresent!==true)return 'foundational_state_mismatch';
+  if(inventory.reviewedVersionId!==versionId||inventory.versionIdentityExact!==true||inventory.versionInventoryExact!==true)return 'version_inventory_mismatch';
+  if(inventory.productionBindingProven!==true||inventory.configurationExact!==true)return 'collector_configuration_mismatch';
+  if(inventory.previewUrlIdentityExact!==true||typeof inventory.previewUrlSuffix!=='string'||typeof inventory.accountSubdomain!=='string')return 'preview_identity_mismatch';
+  if(inventory.workerPresent!==true||inventory.workersDev!==false||inventory.previewUrls!==false||inventory.deploymentCount!==0||
+    inventory.cronCount!==0||inventory.routeCount!==0||inventory.customDomainCount!==0)return 'collector_topology_mismatch';
+  if(inventory.secretBindingPresent!==true||JSON.stringify(inventory.secretBindingNames)!==JSON.stringify(['API_FOOTBALL_API_KEY','API_FOOTBALL_ATTENDED_TRIGGER_SECRET']))return 'secret_binding_mismatch';
+  if(runtime.collectionEnabled!==0||runtime.credentialState!=='AVAILABLE'||runtime.activeLease!==false||
+    prior.requestAttempts!==0||prior.generations!==0||prior.fixtureRevisions!==0||prior.attempt2Count!==0||prior.reservedAttemptCount!==0||prior.stagingGenerationCount!==0)return 'runtime_history_mismatch';
+  if(report.modelUiImportCount!==0||report.rawPayloadStoragePresent!==false)return 'model_isolation_mismatch';
+  if(report.evidence?.productionMutations!==0||report.evidence?.apiFootballRequests!==0||report.evidence?.secretValuesRead!==0)return 'preflight_evidence_mismatch';
+  return null;
+}
+
 export function validateCriticalRecheck(report,{approvedSha,versionId,versionApprovedSha,accountFingerprint}={}){
   if(!HEX40.test(String(approvedSha||''))||versionApprovedSha!==ATTENDED_VERSION_APPROVED_SHA||!HEX64.test(String(accountFingerprint||'')))fail('attended_critical_identity_invalid');
-  const inventory=report?.inventory||{},runtime=report?.runtime||{},prior=report?.priorState||{},mapping=report?.mapping||{};
-  if(report?.ok!==true||report.approvedSha!==approvedSha||report.versionApprovedSha!==versionApprovedSha||report.accountFingerprint!==accountFingerprint||
-    report.stage!=='ATTENDED_ACCEPTANCE'||report.classification!=='READY_FOR_SEPARATELY_APPROVED_ATTENDED_ACCEPTANCE'||
-    report.migrationCount!==6||report.foreignKeyViolations!==0||report.officialFplAuthority?.valid!==true||report.officialFplAuthority?.teamCount!==20||
-    mapping.state!=='COMMITTED'||mapping.mappingCount!==20||mapping.memberCount!==20||mapping.distinctProviderIds!==20||mapping.distinctFplIds!==20||
-    mapping.canonicalCoverageMatches!==true||mapping.historicalAuthorityProvenancePresent!==true||
-    inventory.reviewedVersionId!==versionId||inventory.versionIdentityExact!==true||inventory.versionInventoryExact!==true||
-    inventory.productionBindingProven!==true||inventory.configurationExact!==true||inventory.previewUrlIdentityExact!==true||
-    inventory.workerPresent!==true||inventory.workersDev!==false||inventory.previewUrls!==false||inventory.deploymentCount!==0||
-    inventory.cronCount!==0||inventory.routeCount!==0||inventory.customDomainCount!==0||inventory.secretBindingPresent!==true||
-    JSON.stringify(inventory.secretBindingNames)!==JSON.stringify(['API_FOOTBALL_API_KEY','API_FOOTBALL_ATTENDED_TRIGGER_SECRET'])||
-    typeof inventory.previewUrlSuffix!=='string'||typeof inventory.accountSubdomain!=='string'||
-    runtime.collectionEnabled!==0||runtime.credentialState!=='AVAILABLE'||runtime.activeLease!==false||
-    prior.requestAttempts!==0||prior.generations!==0||prior.fixtureRevisions!==0||prior.attempt2Count!==0||prior.reservedAttemptCount!==0||prior.stagingGenerationCount!==0||
-    report.modelUiImportCount!==0||report.rawPayloadStoragePresent!==false||
-    report.evidence?.productionMutations!==0||report.evidence?.apiFootballRequests!==0||report.evidence?.secretValuesRead!==0)fail('attended_critical_state_drift');
+  const diagnostic=attendedCriticalRecheckDiagnostic(report,{approvedSha,versionId,versionApprovedSha,accountFingerprint});
+  if(diagnostic)fail('attended_critical_state_drift__'+diagnostic);
+  const inventory=report.inventory;
   return Object.freeze({previewUrlSuffix:inventory.previewUrlSuffix,accountSubdomain:inventory.accountSubdomain});
 }
 
