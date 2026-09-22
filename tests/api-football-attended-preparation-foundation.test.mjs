@@ -263,3 +263,16 @@ test('preparation remains completely isolated from production model and browser 
   assert.doesNotMatch(prep,/src\/model|optimiseTransfers|projectXP|captain|mini.?league/i);
   assert.doesNotMatch(prep,/v3\.football\.api-sports\.io|attended-one-shot|previews_enabled\s*:\s*true|\/deployments/);
 });
+
+
+test('dedicated attended preparation START workflow is manual read-only and cannot continue into mutation',()=>{
+  const workflow=fs.readFileSync(path.join(root,'.github/workflows/api-football-attended-preparation-start-readonly.yml'),'utf8');
+  assert.match(workflow,/workflow_dispatch:/);
+  assert.match(workflow,/github\.run_attempt == 1/);
+  assert.match(workflow,/refs\/heads\/main/);
+  assert.match(workflow,/Tests and deterministic build/);
+  assert.match(workflow,/name: data-steward-readonly/);
+  assert.match(workflow,/API_FOOTBALL_PREFLIGHT_STAGE: ATTENDED_PREPARATION_START/);
+  assert.match(workflow,/READY_FOR_ATTENDED_VERSION_PREPARATION/);
+  assert.match(workflow,/routeCount\?\.*/); // impossible sentinel; replaced below
+});
