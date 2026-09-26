@@ -68,7 +68,7 @@ export function attendedCriticalRecheckDiagnostic(report,{approvedSha,versionId,
     mapping.canonicalCoverageMatches!==true||mapping.historicalAuthorityProvenancePresent!==true)return 'foundational_state_mismatch';
   if(inventory.reviewedVersionId!==versionId||inventory.versionIdentityExact!==true||inventory.versionInventoryExact!==true)return 'version_inventory_mismatch';
   if(inventory.productionBindingProven!==true||inventory.configurationExact!==true)return 'collector_configuration_mismatch';
-  if(inventory.previewUrlIdentityExact!==true||typeof inventory.previewUrlSuffix!=='string'||typeof inventory.accountSubdomain!=='string')return 'preview_identity_mismatch';
+  if(inventory.previewUrlIdentityExact!==true||typeof inventory.previewUrlSuffix!=='string'||typeof inventory.versionUrl!=='string'||typeof inventory.accountSubdomain!=='string')return 'preview_identity_mismatch';
   if(inventory.workerPresent!==true||inventory.workersDev!==false||inventory.previewUrls!==false||inventory.deploymentCount!==0||
     inventory.cronCount!==0||inventory.routeCount!==0||inventory.customDomainCount!==0)return 'collector_topology_mismatch';
   if(inventory.secretBindingPresent!==true||JSON.stringify(inventory.secretBindingNames)!==JSON.stringify(['API_FOOTBALL_API_KEY','API_FOOTBALL_ATTENDED_TRIGGER_SECRET']))return 'secret_binding_mismatch';
@@ -84,7 +84,7 @@ export function validateCriticalRecheck(report,{approvedSha,versionId,versionApp
   const diagnostic=attendedCriticalRecheckDiagnostic(report,{approvedSha,versionId,versionApprovedSha,accountFingerprint});
   if(diagnostic)fail('attended_critical_state_drift__'+diagnostic);
   const inventory=report.inventory;
-  return Object.freeze({previewUrlSuffix:inventory.previewUrlSuffix,accountSubdomain:inventory.accountSubdomain});
+  return Object.freeze({previewUrlSuffix:inventory.previewUrlSuffix,versionUrl:inventory.versionUrl,accountSubdomain:inventory.accountSubdomain});
 }
 
 export async function executeLiveAttendedAcceptance({env=process.env,fetchImpl=globalThis.fetch,criticalRecheck=runApiFootballActivationLivePreflight}={}){
@@ -109,7 +109,7 @@ export async function executeLiveAttendedAcceptance({env=process.env,fetchImpl=g
     fetchImpl,stage:'ATTENDED_ACCEPTANCE'
   });
   const previewIdentity=validateCriticalRecheck(critical,{approvedSha,versionId,versionApprovedSha,accountFingerprint:fingerprint});
-  const previewUrl=deriveVersionPreviewUrl({versionId,previewUrlSuffix:previewIdentity.previewUrlSuffix,accountSubdomain:previewIdentity.accountSubdomain,path:ATTENDED_ACCEPTANCE_PATH});
+  const previewUrl=deriveVersionPreviewUrl({versionId,versionUrl:previewIdentity.versionUrl,previewUrlSuffix:previewIdentity.previewUrlSuffix,accountSubdomain:previewIdentity.accountSubdomain,path:ATTENDED_ACCEPTANCE_PATH});
 
   const headers={Authorization:'Bearer '+mutationToken,'content-type':'application/json'};
   const paths=attendedCloudflarePaths(account);let providerInvocations=0,d1Calls=0,d1Statements=0,d1RowsChanged=0;
