@@ -20,11 +20,12 @@ import {EXPECTED_D1_DATABASE_ID} from '../workers/data-platform/phase4b/live-con
 
 const root=path.resolve(import.meta.dirname,'..');
 const NOW='2026-09-21T12:00:00.000Z',SHA='a'.repeat(40),VERSION='11111111-1111-4111-8111-111111111111',VERSION_PROVENANCE=ATTENDED_VERSION_APPROVED_SHA;
+const PREVIEW_SUFFIX='-teamsheet-api-football-shadow-collector.fpltsheet.workers.dev',VERSION_URL='https://opaque-v17'+PREVIEW_SUFFIX;
 const ACCOUNT='production-account',FINGERPRINT=createHash('sha256').update(ACCOUNT).digest('hex'),SECRET='x'.repeat(64);
 const request=(method='POST',route=ATTENDED_ACCEPTANCE_PATH,secret=SECRET)=>new Request('https://preview.invalid'+route,{method,headers:{'x-teamsheet-attended-trigger':secret}});
 const identity=buildReviewedAttendedIdentity(SHA),modules=buildUploadModules(resolveModuleGraph());
 function attendedStable(){return {id:VERSION,resources:{script_runtime:{compatibility_date:identity.compatibilityDate},bindings:structuredClone(expectedAttendedBindings())}};}
-function attendedBeta(){return {id:VERSION,main_module:identity.mainModule,compatibility_date:identity.compatibilityDate,annotations:{'workers/message':identity.message,'workers/tag':identity.tag},modules:[...modules].map(([name,source])=>({name,content_base64:Buffer.from(source).toString('base64')}))};}
+function attendedBeta(){return {id:VERSION,main_module:identity.mainModule,compatibility_date:identity.compatibilityDate,urls:[VERSION_URL],annotations:{'workers/message':identity.message,'workers/tag':identity.tag},modules:[...modules].map(([name,source])=>({name,content_base64:Buffer.from(source).toString('base64')}))};}
 function originalStable(){return {id:ORIGINAL_BLOCKED_VERSION_ID,resources:{bindings:[
   {name:'TEAMSHEET_DATA_DB',type:'d1',database_id:EXPECTED_D1_DATABASE_ID},{name:'API_FOOTBALL_FPL_SEASON',type:'plain_text',text:'2026-27'},
   {name:'API_FOOTBALL_PROVIDER_SEASON',type:'plain_text',text:'2026'},{name:'EIA_2I5D_ACTIVATION',type:'plain_text',text:'REPOSITORY_ONLY_BLOCKED'}]}};}
@@ -82,11 +83,17 @@ test('final attended Version preparation creates one new inactive Version and am
   assert.deepEqual({mutations,reads},{mutations:1,reads:1});
 });
 
-test('Preview URL derives from trusted Cloudflare suffix and pins exact identity',()=>{
-  const suffix='-teamsheet-api-football-shadow-collector.fpltsheet.workers.dev';
-  assert.equal(deriveVersionPreviewUrl({versionId:VERSION,previewUrlSuffix:suffix,accountSubdomain:'fpltsheet',path:ATTENDED_ACCEPTANCE_PATH}).href,`https://${VERSION.slice(0,8)}${suffix}${ATTENDED_ACCEPTANCE_PATH}`);
-  for(const bad of ['-teamsheet-api-football-shadow-collector.evil.example','-wrong-worker.fpltsheet.workers.dev','-teamsheet-api-football-shadow-collector.wrong.example.workers.dev','-teamsheet-api-football-shadow-collector.fpltsheet.workers.dev:443','@evil.example'])assert.throws(()=>deriveVersionPreviewUrl({versionId:VERSION,previewUrlSuffix:bad,accountSubdomain:'fpltsheet',path:ATTENDED_ACCEPTANCE_PATH}));
-  for(const route of ['http://evil','/path?query=1','/path#fragment'])assert.throws(()=>deriveVersionPreviewUrl({versionId:VERSION,previewUrlSuffix:suffix,accountSubdomain:'fpltsheet',path:route}));
+test('Preview URL uses the exact Cloudflare Version URL instead of assuming a UUID prefix',()=>{
+  assert.equal(deriveVersionPreviewUrl({versionId:VERSION,versionUrl:VERSION_URL,previewUrlSuffix:PREVIEW_SUFFIX,accountSubdomain:'fpltsheet',path:ATTENDED_ACCEPTANCE_PATH}).href,VERSION_URL+ATTENDED_ACCEPTANCE_PATH);
+  assert.notEqual(new URL(VERSION_URL).hostname.split('-')[0],VERSION.slice(0,8));
+  for(const badUrl of [
+    'http://opaque-v17'+PREVIEW_SUFFIX,
+    'https://opaque-v17-wrong-worker.fpltsheet.workers.dev',
+    'https://opaque-v17'+PREVIEW_SUFFIX+'/unexpected',
+    'https://evil.example'
+  ])assert.throws(()=>deriveVersionPreviewUrl({versionId:VERSION,versionUrl:badUrl,previewUrlSuffix:PREVIEW_SUFFIX,accountSubdomain:'fpltsheet',path:ATTENDED_ACCEPTANCE_PATH}));
+  for(const badSuffix of ['-teamsheet-api-football-shadow-collector.evil.example','-wrong-worker.fpltsheet.workers.dev','-teamsheet-api-football-shadow-collector.wrong.example.workers.dev','-teamsheet-api-football-shadow-collector.fpltsheet.workers.dev:443','@evil.example'])assert.throws(()=>deriveVersionPreviewUrl({versionId:VERSION,versionUrl:VERSION_URL,previewUrlSuffix:badSuffix,accountSubdomain:'fpltsheet',path:ATTENDED_ACCEPTANCE_PATH}));
+  for(const route of ['http://evil','/path?query=1','/path#fragment'])assert.throws(()=>deriveVersionPreviewUrl({versionId:VERSION,versionUrl:VERSION_URL,previewUrlSuffix:PREVIEW_SUFFIX,accountSubdomain:'fpltsheet',path:route}));
 });
 
 test('ambiguous or rejected invocation is hard failure after cleanup; only ACCEPTED succeeds',async()=>{
@@ -110,7 +117,7 @@ function criticalAdmission(overrides={}){
     ...admission(),migrationCount:6,foreignKeyViolations:0,officialFplAuthority:{valid:true,teamCount:20,fetchedAt:NOW},
     mapping:{state:'COMMITTED',mappingCount:20,memberCount:20,distinctProviderIds:20,distinctFplIds:20,canonicalCoverageMatches:true,historicalAuthorityProvenancePresent:true},
     inventory:{reviewedVersionId:VERSION,versionIdentityExact:true,versionInventoryExact:true,productionBindingProven:true,configurationExact:true,
-      previewUrlIdentityExact:true,previewUrlSuffix:'-teamsheet-api-football-shadow-collector.fpltsheet.workers.dev',accountSubdomain:'fpltsheet',
+      previewUrlIdentityExact:true,previewUrlSuffix:PREVIEW_SUFFIX,versionUrl:VERSION_URL,accountSubdomain:'fpltsheet',
       workerPresent:true,workersDev:false,previewUrls:false,deploymentCount:0,cronCount:0,routeCount:0,customDomainCount:0,
       secretBindingPresent:true,secretBindingNames:['API_FOOTBALL_API_KEY','API_FOOTBALL_ATTENDED_TRIGGER_SECRET']},
     runtime:{collectionEnabled:0,credentialState:'AVAILABLE',activeLease:false},
