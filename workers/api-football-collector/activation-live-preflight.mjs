@@ -122,6 +122,18 @@ function collectorInventory(reads){
   return Object.freeze({workerPresent:true,deploymentCount:deployments.length,secretBindingPresent,secretBindingNames,bindings,cronCount:schedules.length});
 }
 
+function exactAttendedVersionUrl(betaVersion,previewUrlSuffix){
+  if(!betaVersion||typeof previewUrlSuffix!=='string')return null;
+  const urls=Array.isArray(betaVersion.urls)?betaVersion.urls:[];
+  const matches=urls.filter(value=>{
+    if(typeof value!=='string')return false;
+    let url;try{url=new URL(value);}catch{return false;}
+    const prefix=url.hostname.endsWith(previewUrlSuffix)?url.hostname.slice(0,-previewUrlSuffix.length):'';
+    return url.protocol==='https:'&&!url.port&&!url.username&&!url.password&&!url.search&&!url.hash&&url.pathname==='/'&&/^[a-z0-9-]+$/.test(prefix);
+  });
+  return urls.length===1&&matches.length===1?matches[0]:null;
+}
+
 function parseWrangler(){
   let config;try{config=JSON.parse(readFileSync(path.join(root,'workers/api-football-collector/wrangler.jsonc'),'utf8'));}catch{return null;}
   const d1=Array.isArray(config.d1_databases)?config.d1_databases.find(row=>row?.binding===EXPECTED_COLLECTOR_BINDING):null;
@@ -312,10 +324,13 @@ export async function runApiFootballActivationLivePreflight({env=process.env,fet
     const versionIds=(Array.isArray(collectorReads.versions.result?.items)?collectorReads.versions.result.items:Array.isArray(collectorReads.versions.result)?collectorReads.versions.result:[]).map(row=>row?.id).filter(Boolean);
     try{validateClosedVersionInventory({versionIds,originalStable:collectorReads.originalStable.result,attendedVersionId:reviewedVersionId,attendedStable:collectorReads.settings.result,attendedBeta:collectorReads.attendedBeta.result,identity:buildImmutableAttendedVersionIdentity(versionApprovedSha)});versionIdentityExact=true;versionInventoryExact=true;}catch{}
   }
+  const previewUrlSuffix=attendedStage?collectorReads.betaWorker.result?.subdomain?.preview_url_suffix:null;
+  const versionUrl=attendedStage?exactAttendedVersionUrl(collectorReads.attendedBeta.result,previewUrlSuffix):null;
   const previewUrlIdentityExact=!attendedStage||(
     collectorReads.betaWorker.result?.id===collectorReads.betaWorkers.result?.find?.(row=>row?.name===EXPECTED_COLLECTOR_WORKER)?.id&&
     collectorReads.betaWorker.result?.name===EXPECTED_COLLECTOR_WORKER&&
-    collectorReads.betaWorker.result?.subdomain?.preview_url_suffix===`-${EXPECTED_COLLECTOR_WORKER}.${collectorReads.accountSubdomain.result?.subdomain}.workers.dev`
+    previewUrlSuffix===`-${EXPECTED_COLLECTOR_WORKER}.${collectorReads.accountSubdomain.result?.subdomain}.workers.dev`&&
+    typeof versionUrl==='string'
   );
   const inventory=Object.freeze({
     activation:liveVersionStage?binding('EIA_2I5D_ACTIVATION')?.text:wrangler.activation,databaseIdPlaceholder:liveVersionStage?false:wrangler.databaseIdPlaceholder,
@@ -326,7 +341,7 @@ export async function runApiFootballActivationLivePreflight({env=process.env,fet
     previewUrls:liveVersionStage?collectorReads.subdomain.result?.previews_enabled:wrangler.previewUrls,
     configurationExact:liveVersionStage&&binding('API_FOOTBALL_FPL_SEASON')?.text==='2026-27'&&String(binding('API_FOOTBALL_PROVIDER_SEASON')?.text)==='2026',
     reviewedVersionId,versionIdentityExact,versionInventoryExact,originalVersionIdentityExact,previewUrlIdentityExact,
-    previewUrlSuffix:attendedStage?collectorReads.betaWorker.result?.subdomain?.preview_url_suffix:null,
+    previewUrlSuffix,versionUrl,
     accountSubdomain:attendedStage?collectorReads.accountSubdomain.result?.subdomain:null,
     routeCount:liveVersionStage?scriptRouteCount(collectorReads.scripts.result):0,
     customDomainCount:liveVersionStage?(Array.isArray(collectorReads.domains.result)?collectorReads.domains.result.filter(row=>row?.service===EXPECTED_COLLECTOR_WORKER).length:null):0
