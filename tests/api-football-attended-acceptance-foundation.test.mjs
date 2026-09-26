@@ -20,11 +20,12 @@ import {EXPECTED_D1_DATABASE_ID} from '../workers/data-platform/phase4b/live-con
 
 const root=path.resolve(import.meta.dirname,'..');
 const NOW='2026-09-21T12:00:00.000Z',SHA='a'.repeat(40),VERSION='11111111-1111-4111-8111-111111111111',VERSION_PROVENANCE=ATTENDED_VERSION_APPROVED_SHA;
+const PREVIEW_SUFFIX='-teamsheet-api-football-shadow-collector.fpltsheet.workers.dev',VERSION_URL='https://opaque-v17'+PREVIEW_SUFFIX,WORKER_ID='worker-object-id';
 const ACCOUNT='production-account',FINGERPRINT=createHash('sha256').update(ACCOUNT).digest('hex'),SECRET='x'.repeat(64);
 const request=(method='POST',route=ATTENDED_ACCEPTANCE_PATH,secret=SECRET)=>new Request('https://preview.invalid'+route,{method,headers:{'x-teamsheet-attended-trigger':secret}});
 const identity=buildReviewedAttendedIdentity(SHA),modules=buildUploadModules(resolveModuleGraph());
 function attendedStable(){return {id:VERSION,resources:{script_runtime:{compatibility_date:identity.compatibilityDate},bindings:structuredClone(expectedAttendedBindings())}};}
-function attendedBeta(){return {id:VERSION,main_module:identity.mainModule,compatibility_date:identity.compatibilityDate,annotations:{'workers/message':identity.message,'workers/tag':identity.tag},modules:[...modules].map(([name,source])=>({name,content_base64:Buffer.from(source).toString('base64')}))};}
+function attendedBeta(){return {id:VERSION,main_module:identity.mainModule,compatibility_date:identity.compatibilityDate,urls:[VERSION_URL],annotations:{'workers/message':identity.message,'workers/tag':identity.tag},modules:[...modules].map(([name,source])=>({name,content_base64:Buffer.from(source).toString('base64')}))};}
 function originalStable(){return {id:ORIGINAL_BLOCKED_VERSION_ID,resources:{bindings:[
   {name:'TEAMSHEET_DATA_DB',type:'d1',database_id:EXPECTED_D1_DATABASE_ID},{name:'API_FOOTBALL_FPL_SEASON',type:'plain_text',text:'2026-27'},
   {name:'API_FOOTBALL_PROVIDER_SEASON',type:'plain_text',text:'2026'},{name:'EIA_2I5D_ACTIVATION',type:'plain_text',text:'REPOSITORY_ONLY_BLOCKED'}]}};}
@@ -82,11 +83,17 @@ test('final attended Version preparation creates one new inactive Version and am
   assert.deepEqual({mutations,reads},{mutations:1,reads:1});
 });
 
-test('Preview URL derives from trusted Cloudflare suffix and pins exact identity',()=>{
-  const suffix='-teamsheet-api-football-shadow-collector.fpltsheet.workers.dev';
-  assert.equal(deriveVersionPreviewUrl({versionId:VERSION,previewUrlSuffix:suffix,accountSubdomain:'fpltsheet',path:ATTENDED_ACCEPTANCE_PATH}).href,`https://${VERSION.slice(0,8)}${suffix}${ATTENDED_ACCEPTANCE_PATH}`);
-  for(const bad of ['-teamsheet-api-football-shadow-collector.evil.example','-wrong-worker.fpltsheet.workers.dev','-teamsheet-api-football-shadow-collector.wrong.example.workers.dev','-teamsheet-api-football-shadow-collector.fpltsheet.workers.dev:443','@evil.example'])assert.throws(()=>deriveVersionPreviewUrl({versionId:VERSION,previewUrlSuffix:bad,accountSubdomain:'fpltsheet',path:ATTENDED_ACCEPTANCE_PATH}));
-  for(const route of ['http://evil','/path?query=1','/path#fragment'])assert.throws(()=>deriveVersionPreviewUrl({versionId:VERSION,previewUrlSuffix:suffix,accountSubdomain:'fpltsheet',path:route}));
+test('Preview URL uses the exact Cloudflare Version URL instead of assuming a UUID prefix',()=>{
+  assert.equal(deriveVersionPreviewUrl({versionId:VERSION,versionUrl:VERSION_URL,previewUrlSuffix:PREVIEW_SUFFIX,accountSubdomain:'fpltsheet',path:ATTENDED_ACCEPTANCE_PATH}).href,VERSION_URL+ATTENDED_ACCEPTANCE_PATH);
+  assert.notEqual(new URL(VERSION_URL).hostname.split('-')[0],VERSION.slice(0,8));
+  for(const badUrl of [
+    'http://opaque-v17'+PREVIEW_SUFFIX,
+    'https://opaque-v17-wrong-worker.fpltsheet.workers.dev',
+    'https://opaque-v17'+PREVIEW_SUFFIX+'/unexpected',
+    'https://evil.example'
+  ])assert.throws(()=>deriveVersionPreviewUrl({versionId:VERSION,versionUrl:badUrl,previewUrlSuffix:PREVIEW_SUFFIX,accountSubdomain:'fpltsheet',path:ATTENDED_ACCEPTANCE_PATH}));
+  for(const badSuffix of ['-teamsheet-api-football-shadow-collector.evil.example','-wrong-worker.fpltsheet.workers.dev','-teamsheet-api-football-shadow-collector.wrong.example.workers.dev','-teamsheet-api-football-shadow-collector.fpltsheet.workers.dev:443','@evil.example'])assert.throws(()=>deriveVersionPreviewUrl({versionId:VERSION,versionUrl:VERSION_URL,previewUrlSuffix:badSuffix,accountSubdomain:'fpltsheet',path:ATTENDED_ACCEPTANCE_PATH}));
+  for(const route of ['http://evil','/path?query=1','/path#fragment'])assert.throws(()=>deriveVersionPreviewUrl({versionId:VERSION,versionUrl:VERSION_URL,previewUrlSuffix:PREVIEW_SUFFIX,accountSubdomain:'fpltsheet',path:route}));
 });
 
 test('ambiguous or rejected invocation is hard failure after cleanup; only ACCEPTED succeeds',async()=>{
@@ -110,7 +117,7 @@ function criticalAdmission(overrides={}){
     ...admission(),migrationCount:6,foreignKeyViolations:0,officialFplAuthority:{valid:true,teamCount:20,fetchedAt:NOW},
     mapping:{state:'COMMITTED',mappingCount:20,memberCount:20,distinctProviderIds:20,distinctFplIds:20,canonicalCoverageMatches:true,historicalAuthorityProvenancePresent:true},
     inventory:{reviewedVersionId:VERSION,versionIdentityExact:true,versionInventoryExact:true,productionBindingProven:true,configurationExact:true,
-      previewUrlIdentityExact:true,previewUrlSuffix:'-teamsheet-api-football-shadow-collector.fpltsheet.workers.dev',accountSubdomain:'fpltsheet',
+      previewUrlIdentityExact:true,previewUrlSuffix:PREVIEW_SUFFIX,reviewedWorkerId:WORKER_ID,accountSubdomain:'fpltsheet',
       workerPresent:true,workersDev:false,previewUrls:false,deploymentCount:0,cronCount:0,routeCount:0,customDomainCount:0,
       secretBindingPresent:true,secretBindingNames:['API_FOOTBALL_API_KEY','API_FOOTBALL_ATTENDED_TRIGGER_SECRET']},
     runtime:{collectionEnabled:0,credentialState:'AVAILABLE',activeLease:false},
@@ -138,15 +145,20 @@ test('executor separates read-only critical preflight from mutation credential',
     fetchImpl:async(url,init={})=>{
       const value=String(url);
       if(value.includes('workers.dev'))return new Response('',{status:202});
-      authorizations.push(init.headers?.Authorization??init.headers?.authorization??null);
+      const authorization=init.headers?.Authorization??init.headers?.authorization??null;
+      authorizations.push({url:value,authorization});
+      if(value.includes(`/workers/workers/${WORKER_ID}/versions/${VERSION}`))return new Response(JSON.stringify({success:true,result:{id:VERSION,urls:[VERSION_URL]}}));
       if(value.includes('/query'))return new Response(JSON.stringify({success:true,result:[{success:true,meta:{changes:1}}]}));
       return new Response(JSON.stringify({success:true,result:{}}));
     }
   });
   assert.equal(result.ok,true);
   assert.equal(criticalToken,'read-token');
-  assert.ok(authorizations.length>=4);
-  assert.ok(authorizations.every(value=>value==='Bearer mutation-token'));
+  const versionRead=authorizations.find(row=>row.url.includes(`/workers/workers/${WORKER_ID}/versions/${VERSION}`));
+  assert.equal(versionRead?.authorization,'Bearer read-token');
+  const mutationRequests=authorizations.filter(row=>row!==versionRead);
+  assert.ok(mutationRequests.length>=4);
+  assert.ok(mutationRequests.every(row=>row.authorization==='Bearer mutation-token'));
   fs.unlinkSync(file);
 });
 
@@ -178,17 +190,24 @@ test('critical recheck diagnostics are closed, sanitized and preserve fail-close
 test('executor derives URL from fresh recheck, invokes once, and stays within separate control budget',async()=>{
   const file='/tmp/attended-admission-test.json';fs.writeFileSync(file,JSON.stringify(admission()));const calls=[];let criticalCalls=0;
   const env={CLOUDFLARE_ACCOUNT_ID:ACCOUNT,CLOUDFLARE_ACCOUNT_FINGERPRINT:FINGERPRINT,CLOUDFLARE_ATTENDED_READ_TOKEN:'read-token',CLOUDFLARE_ATTENDED_MUTATION_TOKEN:'mutation-token',APPROVED_SHA:SHA,API_FOOTBALL_ATTENDED_VERSION_ID:VERSION,API_FOOTBALL_ATTENDED_VERSION_APPROVED_SHA:VERSION_PROVENANCE,API_FOOTBALL_ATTENDED_TRIGGER_SECRET:SECRET,API_FOOTBALL_ATTENDED_ADMISSION_PATH:file};
-  const fetchImpl=async(url,init={})=>{calls.push({url:String(url),init});if(String(url).includes('workers.dev'))return new Response('',{status:202});if(String(url).includes('/query'))return new Response(JSON.stringify({success:true,result:[{success:true,meta:{changes:1}}]}));return new Response(JSON.stringify({success:true,result:{}}));};
+  const fetchImpl=async(url,init={})=>{const value=String(url);calls.push({url:value,init});if(value.includes('workers.dev'))return new Response('',{status:202});if(value.includes(`/workers/workers/${WORKER_ID}/versions/${VERSION}`))return new Response(JSON.stringify({success:true,result:{id:VERSION,urls:[VERSION_URL]}}));if(value.includes('/query'))return new Response(JSON.stringify({success:true,result:[{success:true,meta:{changes:1}}]}));return new Response(JSON.stringify({success:true,result:{}}));};
   const result=await executeLiveAttendedAcceptance({env,fetchImpl,criticalRecheck:async()=>{criticalCalls++;return criticalAdmission();}});
-  assert.equal(criticalCalls,1);assert.equal(result.ok,true);assert.equal(result.providerInvocations,1);assert.deepEqual(result.controlBudget,{d1Calls:2,d1Statements:2,d1RowsChanged:2});assert.deepEqual([ATTENDED_CONTROL_MAX_D1_CALLS,ATTENDED_CONTROL_MAX_D1_STATEMENTS,ATTENDED_CONTROL_MAX_ROWS_CHANGED],[2,2,2]);
-  assert.equal(calls.filter(row=>row.init.headers?.['x-teamsheet-attended-trigger']).length,1);fs.unlinkSync(file);
+  assert.equal(criticalCalls,1);assert.equal(result.ok,true);assert.equal(result.providerInvocations,1);assert.equal(result.versionUrlReads,1);assert.deepEqual(result.controlBudget,{d1Calls:2,d1Statements:2,d1RowsChanged:2});assert.deepEqual([ATTENDED_CONTROL_MAX_D1_CALLS,ATTENDED_CONTROL_MAX_D1_STATEMENTS,ATTENDED_CONTROL_MAX_ROWS_CHANGED],[2,2,2]);
+  const providerCall=calls.find(row=>row.init.headers?.['x-teamsheet-attended-trigger']);assert.equal(providerCall?.url,VERSION_URL+ATTENDED_ACCEPTANCE_PATH);fs.unlinkSync(file);
 });
 
 test('executor transport ambiguity invokes exactly once, cleans up, returns failure and never retries',async()=>{
   const file='/tmp/attended-admission-ambiguous.json';fs.writeFileSync(file,JSON.stringify(admission()));let previewCalls=0,previewDisable=0;
   const env={CLOUDFLARE_ACCOUNT_ID:ACCOUNT,CLOUDFLARE_ACCOUNT_FINGERPRINT:FINGERPRINT,CLOUDFLARE_ATTENDED_READ_TOKEN:'read-token',CLOUDFLARE_ATTENDED_MUTATION_TOKEN:'mutation-token',APPROVED_SHA:SHA,API_FOOTBALL_ATTENDED_VERSION_ID:VERSION,API_FOOTBALL_ATTENDED_VERSION_APPROVED_SHA:VERSION_PROVENANCE,API_FOOTBALL_ATTENDED_TRIGGER_SECRET:SECRET,API_FOOTBALL_ATTENDED_ADMISSION_PATH:file};
-  const result=await executeLiveAttendedAcceptance({env,criticalRecheck:async()=>criticalAdmission(),fetchImpl:async(url,init={})=>{const value=String(url);if(value.includes('workers.dev')){previewCalls++;throw new Error('unknown delivery');}if(value.includes('/query'))return new Response(JSON.stringify({success:true,result:[{success:true,meta:{changes:1}}]}));if(value.endsWith('/subdomain')&&JSON.parse(init.body).previews_enabled===false)previewDisable++;return new Response(JSON.stringify({success:true,result:{}}));}});
+  const result=await executeLiveAttendedAcceptance({env,criticalRecheck:async()=>criticalAdmission(),fetchImpl:async(url,init={})=>{const value=String(url);if(value.includes('workers.dev')){previewCalls++;throw new Error('unknown delivery');}if(value.includes(`/workers/workers/${WORKER_ID}/versions/${VERSION}`))return new Response(JSON.stringify({success:true,result:{id:VERSION,urls:[VERSION_URL]}}));if(value.includes('/query'))return new Response(JSON.stringify({success:true,result:[{success:true,meta:{changes:1}}]}));if(value.endsWith('/subdomain')&&JSON.parse(init.body).previews_enabled===false)previewDisable++;return new Response(JSON.stringify({success:true,result:{}}));}});
   assert.equal(result.ok,false);assert.equal(result.retryAuthorized,false);assert.equal(result.providerInvocations,1);assert.equal(previewCalls,1);assert.equal(previewDisable,1);fs.unlinkSync(file);
+});
+
+test('missing post-toggle Version URL fails before D1 enablement or provider invocation and still disables Preview',async()=>{
+  const file='/tmp/attended-admission-version-url-missing.json';fs.writeFileSync(file,JSON.stringify(admission()));let d1Calls=0,providerCalls=0,previewDisable=0;
+  const env={CLOUDFLARE_ACCOUNT_ID:ACCOUNT,CLOUDFLARE_ACCOUNT_FINGERPRINT:FINGERPRINT,CLOUDFLARE_ATTENDED_READ_TOKEN:'read-token',CLOUDFLARE_ATTENDED_MUTATION_TOKEN:'mutation-token',APPROVED_SHA:SHA,API_FOOTBALL_ATTENDED_VERSION_ID:VERSION,API_FOOTBALL_ATTENDED_VERSION_APPROVED_SHA:VERSION_PROVENANCE,API_FOOTBALL_ATTENDED_TRIGGER_SECRET:SECRET,API_FOOTBALL_ATTENDED_ADMISSION_PATH:file};
+  const result=await executeLiveAttendedAcceptance({env,criticalRecheck:async()=>criticalAdmission(),fetchImpl:async(url,init={})=>{const value=String(url);if(value.includes(`/workers/workers/${WORKER_ID}/versions/${VERSION}`))return new Response(JSON.stringify({success:true,result:{id:VERSION,urls:[]}}));if(value.includes('/query')){d1Calls++;return new Response(JSON.stringify({success:true,result:[{success:true,meta:{changes:0}}]}));}if(value.includes('workers.dev')){providerCalls++;return new Response('',{status:202});}if(value.endsWith('/subdomain')&&JSON.parse(init.body).previews_enabled===false)previewDisable++;return new Response(JSON.stringify({success:true,result:{}}));}});
+  assert.equal(result.ok,false);assert.equal(result.providerInvocations,0);assert.equal(result.versionUrlReads,1);assert.equal(d1Calls,1);assert.equal(providerCalls,0);assert.equal(previewDisable,1);assert.deepEqual(result.controlBudget,{d1Calls:1,d1Statements:1,d1RowsChanged:0});fs.unlinkSync(file);
 });
 
 test('bad fresh Preview identity prevents enablement and trigger-secret egress',async()=>{

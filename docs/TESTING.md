@@ -1,3 +1,7 @@
+## Attended acceptance exact Version URL regression coverage
+
+Permanent acceptance tests now require the executor to use the exact routable URL returned by Cloudflare's Worker Version API rather than assuming the Version URL prefix equals the first eight Version UUID characters. Synthetic coverage uses an intentionally unrelated opaque URL prefix, proves the one post-Preview Version lookup uses the read credential while mutation POSTs use the mutation credential, and proves the trigger-secret request targets that exact validated URL. Missing, malformed or wrong-worker Version URLs fail before D1 enablement/provider invocation while cleanup still disables Preview. Existing one-shot/no-retry, two-D1-call/two-row control ceilings, trigger-secret isolation and independent reconciliation coverage remain unchanged.
+
 ## Attended protected credential-separation coverage — 22 September 2026
 
 Following run `35777295834`, acceptance-foundation tests require the final critical preflight to receive only `CLOUDFLARE_ATTENDED_READ_TOKEN`, while every executor-owned Cloudflare control request carries only `CLOUDFLARE_ATTENDED_MUTATION_TOKEN`. A dedicated regression proves identical read/mutation secret values fail before any network request. Existing tests continue to pin the exact two POST mutation endpoints, no second provider invocation, two-statement/two-row control budget, cleanup and independent reconciliation.
