@@ -1,3 +1,11 @@
+## Decision — trust Cloudflare's exact Worker Version URL, not a derived UUID prefix
+
+**Evidence:** attended run `36254448484` successfully crossed Preview and D1 mutation gates and attempted one invocation, while independent reconciliation still observed zero collector request-attempt rows and zero API-Football requests.
+
+**Decision:** remove the unsupported `versionId.slice(0,8)` hostname derivation. After Preview enablement, resolve the exact reviewed Version once through Cloudflare's read-only Worker Version endpoint and validate its returned routable URL against the already-proved Worker/account Preview suffix before enabling collection or sending the trigger secret.
+
+**Preserved boundaries:** no extra mutation, no retry, no provider request-count change, no model/product integration, and no widening of the mutation credential.
+
 ## Decision — split attended critical-preflight reads from control mutations
 
 **Context:** attended run `35777295834` passed the dedicated read-only admission but the protected executor's critical preflight stopped as `data_platform_binding_mismatch` when it reused `CLOUDFLARE_ATTENDED_MUTATION_TOKEN` as its read credential. Independent reconciliation proved the binding and live state remained valid, so broadening the mutation token's Worker access would weaken least privilege merely to satisfy a read-only proof.
