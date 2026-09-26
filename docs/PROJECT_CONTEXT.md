@@ -2,7 +2,9 @@
 
 Owner-approved run `36254448484`, attempt 1, on exact main `5a6f7eaf214fa0b921b6311117b7ccdfa227fc19` proved the protected mutation path now works: Preview was enabled, the runtime D1 flag was enabled and later disabled, and cleanup restored Preview off. The executor issued one HTTP invocation attempt, but the independently read production state remained at 0 request attempts, 0 generations, 0 fixture revisions and 0 API-Football requests. Credential state remained `AVAILABLE`, no lease remained, and Deployment/Cron/routes/domains stayed zero. The run is consumed.
 
-The remaining failure is repository-side Version URL addressing. The executor invented the Preview host using the first eight UUID characters. Cloudflare instead exposes the exact routable URL on the Worker Version object. The remediation resolves that exact URL once, read-only, after Preview enablement and before D1/provider execution, validates it against the already-proved Worker/account suffix, then invokes only that URL. No provider/data-source/model behaviour changes.
+Earlier run `36249006161` is also consumed and must not be rerun. It reached protected execution but its two bounded D1 statements changed zero rows, made zero Version invocation attempts and left the reconciled live state pristine.
+
+The exact live transport failure remains unknowable from the consumed run because the executor discarded status and transport detail. Cloudflare documentation and Wrangler source show that the former eight-character format is expected, so wrong-host addressing is not proved. Repository defects are nevertheless proved: it ignored the exact URL returned by the Version API, invoked immediately without proving Preview readiness, and collapsed every invocation outcome into a generic reconciliation result. The remediation resolves that exact URL once, read-only, after Preview enablement and before D1/provider execution, validates it against the already-proved Worker/account suffix, then invokes only that URL. No provider/data-source/model behaviour changes.
 
 ## API-Football attended run 35777295834 — mutation-token read boundary identified
 
