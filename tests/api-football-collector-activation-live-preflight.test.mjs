@@ -165,7 +165,7 @@ test('attended live preflight proves exact reviewed content and closed two-Versi
   const report=await runApiFootballActivationLivePreflight({env:attendedEnv(),fetchImpl:fakeFetch({collectorPresent:true,attended:true,state:d1Rows({credentialState:'AVAILABLE'})}),now:()=>NOW});
   assert.equal(report.ok,true);
   assert.equal(report.inventory.versionIdentityExact,true);assert.equal(report.inventory.versionInventoryExact,true);
-  assert.equal(report.inventory.previewUrlSuffix,'-teamsheet-api-football-shadow-collector.example.workers.dev');assert.equal(report.inventory.accountSubdomain,'example');
+  assert.equal(report.inventory.previewUrlSuffix,'-teamsheet-api-football-shadow-collector.example.workers.dev');assert.equal(report.inventory.reviewedWorkerId,'worker-object-id');assert.equal(report.inventory.accountSubdomain,'example');
   assert.equal(report.evidence.cloudflareGets,PREFLIGHT_ATTENDED_CLOUDFLARE_GETS);assert.equal(PREFLIGHT_MAX_CLOUDFLARE_GETS,PREFLIGHT_ATTENDED_CLOUDFLARE_GETS);
 });
 
@@ -180,6 +180,7 @@ test('attended Preview identity comes from modern Worker metadata, not legacy Sc
   assert.equal(report.ok,true);
   assert.equal(report.inventory.previewUrlIdentityExact,true);
   assert.equal(report.inventory.previewUrlSuffix,'-teamsheet-api-football-shadow-collector.example.workers.dev');
+  assert.equal(report.inventory.reviewedWorkerId,'worker-object-id');
   assert.ok(calls.some(value=>value.endsWith('/workers/scripts/teamsheet-api-football-shadow-collector/subdomain')));
   assert.ok(calls.some(value=>value.endsWith('/workers/workers/worker-object-id')));
 });

@@ -1,3 +1,11 @@
+## Attended acceptance — exact Version URL resolution
+
+The attended executor must not derive a routable Worker Version hostname from the Version UUID when Cloudflare supplies stronger returned identity. After the fresh critical preflight proves the exact reviewed Worker identity and Preview suffix, protected execution enables Version URLs and performs one bounded read-only Get Worker Version call with the attended read credential. The response must identify the exact reviewed Version and contain exactly one routable URL. That URL is accepted only when it is HTTPS, has no credentials/query/fragment/non-root base path, and its hostname ends in the exact proved `-teamsheet-api-football-shadow-collector.<account-subdomain>.workers.dev` suffix.
+
+Before D1 enablement, at most three secret-free GETs target the exact attended path. Readiness is proved only by the immutable Worker’s exact generic-rejection signature: HTTP 404, `Not found`, text/plain and `cache-control: no-store`. These checks cannot reserve a collector attempt or call API-Football. Only then may collection enable and the single trigger-bearing POST occur. Sanitized diagnostics distinguish URL identity failure, readiness failure, DNS/transport failure, timeout, HTTP status class, Worker trigger rejection, Worker execution rejection and Worker acceptance; none authorize retry.
+
+The new read is not a mutation and does not alter the two-call/two-statement/two-row D1 control ceiling. The mutation credential remains restricted to the Preview-subdomain and D1 control POST surfaces.
+
 ## Attended acceptance protected credential split
 
 The attended acceptance protected executor uses two Cloudflare credentials with different capabilities. `CLOUDFLARE_ATTENDED_READ_TOKEN` feeds the full final critical preflight and is mapped internally to the existing read-only activation-preflight contract. `CLOUDFLARE_ATTENDED_MUTATION_TOKEN` is never passed to that preflight; it is used only by the executor's closed POST allowlist for the collector Preview toggle and the production D1 collection enable/disable statements. The shared account ID and SHA-256 fingerprint bind both credentials to one approved production account, and identical token values fail before network.

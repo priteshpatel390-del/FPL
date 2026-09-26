@@ -5,6 +5,7 @@ export const ATTENDED_RUNTIME_ACTIONS=Object.freeze([
 export const ATTENDED_CONTROL_MAX_D1_CALLS=2;
 export const ATTENDED_CONTROL_MAX_D1_STATEMENTS=2;
 export const ATTENDED_CONTROL_MAX_ROWS_CHANGED=2;
+export const ATTENDED_PREVIEW_READINESS_MAX_ATTEMPTS=3;
 export const ATTENDED_CREDENTIAL_PREPARATION_MAX_D1_CALLS=1;
 export const ATTENDED_CREDENTIAL_PREPARATION_MAX_D1_STATEMENTS=1;
 export const ATTENDED_CREDENTIAL_PREPARATION_MAX_ROWS_CHANGED=1;
@@ -60,10 +61,11 @@ export async function runAttendedAcceptance({admission,versionId,enablePreview,e
     await enablePreview(versionId);
     await enableCollection();
     invocation=await invokeOnce(versionId);
-    if(!invocation||invocation.requestCount!==1||invocation.outcome!=='ACCEPTED')throw new Error('attended_invocation_ambiguous');
+    if(!invocation||invocation.requestCount!==1||invocation.outcome!=='ACCEPTED')throw new Error(invocation?.diagnostic||'ATTENDED_INVOCATION_TRANSPORT_AMBIGUOUS');
   }catch(caught){error=caught;}
   try{await disableCollection();}catch(caught){error=error||caught;}
   try{await disablePreview();}catch(caught){error=error||caught;}
-  if(error)return safe({ok:false,classification:'ATTENDED_EXECUTION_RECONCILIATION_REQUIRED',reason:'attended_execution_requires_reconciliation',retryAuthorized:false,invocationAttempted:invocation!==null});
-  return safe({ok:true,classification:'ATTENDED_INVOCATION_COMPLETE_RECONCILIATION_REQUIRED',retryAuthorized:false,requestCount:1});
+  const diagnostic=typeof error?.message==='string'&&/^ATTENDED_[A-Z0-9_]+$/.test(error.message)?error.message:'ATTENDED_EXECUTION_RECONCILIATION_REQUIRED';
+  if(error)return safe({ok:false,classification:'ATTENDED_EXECUTION_RECONCILIATION_REQUIRED',reason:'attended_execution_requires_reconciliation',diagnostic,retryAuthorized:false,invocationAttempted:invocation!==null});
+  return safe({ok:true,classification:'ATTENDED_INVOCATION_COMPLETE_RECONCILIATION_REQUIRED',diagnostic:'ATTENDED_WORKER_ACCEPTED',retryAuthorized:false,requestCount:1});
 }

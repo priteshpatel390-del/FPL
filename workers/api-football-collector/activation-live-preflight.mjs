@@ -312,10 +312,12 @@ export async function runApiFootballActivationLivePreflight({env=process.env,fet
     const versionIds=(Array.isArray(collectorReads.versions.result?.items)?collectorReads.versions.result.items:Array.isArray(collectorReads.versions.result)?collectorReads.versions.result:[]).map(row=>row?.id).filter(Boolean);
     try{validateClosedVersionInventory({versionIds,originalStable:collectorReads.originalStable.result,attendedVersionId:reviewedVersionId,attendedStable:collectorReads.settings.result,attendedBeta:collectorReads.attendedBeta.result,identity:buildImmutableAttendedVersionIdentity(versionApprovedSha)});versionIdentityExact=true;versionInventoryExact=true;}catch{}
   }
+  const previewUrlSuffix=attendedStage?collectorReads.betaWorker.result?.subdomain?.preview_url_suffix:null;
+  const reviewedWorkerId=attendedStage?collectorReads.betaWorker.result?.id:null;
   const previewUrlIdentityExact=!attendedStage||(
-    collectorReads.betaWorker.result?.id===collectorReads.betaWorkers.result?.find?.(row=>row?.name===EXPECTED_COLLECTOR_WORKER)?.id&&
+    reviewedWorkerId===collectorReads.betaWorkers.result?.find?.(row=>row?.name===EXPECTED_COLLECTOR_WORKER)?.id&&
     collectorReads.betaWorker.result?.name===EXPECTED_COLLECTOR_WORKER&&
-    collectorReads.betaWorker.result?.subdomain?.preview_url_suffix===`-${EXPECTED_COLLECTOR_WORKER}.${collectorReads.accountSubdomain.result?.subdomain}.workers.dev`
+    previewUrlSuffix===`-${EXPECTED_COLLECTOR_WORKER}.${collectorReads.accountSubdomain.result?.subdomain}.workers.dev`
   );
   const inventory=Object.freeze({
     activation:liveVersionStage?binding('EIA_2I5D_ACTIVATION')?.text:wrangler.activation,databaseIdPlaceholder:liveVersionStage?false:wrangler.databaseIdPlaceholder,
@@ -325,8 +327,8 @@ export async function runApiFootballActivationLivePreflight({env=process.env,fet
     secretBindingNames:collector.secretBindingNames||[],workersDev:liveVersionStage?collectorReads.subdomain.result?.enabled:wrangler.workersDev,
     previewUrls:liveVersionStage?collectorReads.subdomain.result?.previews_enabled:wrangler.previewUrls,
     configurationExact:liveVersionStage&&binding('API_FOOTBALL_FPL_SEASON')?.text==='2026-27'&&String(binding('API_FOOTBALL_PROVIDER_SEASON')?.text)==='2026',
-    reviewedVersionId,versionIdentityExact,versionInventoryExact,originalVersionIdentityExact,previewUrlIdentityExact,
-    previewUrlSuffix:attendedStage?collectorReads.betaWorker.result?.subdomain?.preview_url_suffix:null,
+    reviewedVersionId,reviewedWorkerId,versionIdentityExact,versionInventoryExact,originalVersionIdentityExact,previewUrlIdentityExact,
+    previewUrlSuffix,
     accountSubdomain:attendedStage?collectorReads.accountSubdomain.result?.subdomain:null,
     routeCount:liveVersionStage?scriptRouteCount(collectorReads.scripts.result):0,
     customDomainCount:liveVersionStage?(Array.isArray(collectorReads.domains.result)?collectorReads.domains.result.filter(row=>row?.service===EXPECTED_COLLECTOR_WORKER).length:null):0

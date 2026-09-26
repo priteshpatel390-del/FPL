@@ -3,7 +3,7 @@ import fs from 'node:fs';
 import {pathToFileURL} from 'node:url';
 import {EXPECTED_D1_DATABASE_ID} from '../data-platform/phase4b/live-contract.mjs';
 import {ATTENDED_ACCEPTANCE_PATH} from './collector.mjs';
-import {ATTENDED_CONTROL_MAX_D1_CALLS,ATTENDED_CONTROL_MAX_D1_STATEMENTS,ATTENDED_CONTROL_MAX_ROWS_CHANGED,runAttendedAcceptance} from './attended-acceptance.mjs';
+import {ATTENDED_CONTROL_MAX_D1_CALLS,ATTENDED_CONTROL_MAX_D1_STATEMENTS,ATTENDED_CONTROL_MAX_ROWS_CHANGED,ATTENDED_PREVIEW_READINESS_MAX_ATTEMPTS,runAttendedAcceptance} from './attended-acceptance.mjs';
 import {ATTENDED_VERSION_APPROVED_SHA,deriveVersionPreviewUrl} from './attended-version.mjs';
 import {runApiFootballActivationLivePreflight} from './activation-live-preflight.mjs';
 
@@ -15,6 +15,18 @@ const fail=code=>{throw new Error(code);};
 const required=(env,name)=>typeof env[name]==='string'&&env[name]?env[name]:fail('attended_environment_incomplete');
 const digest=value=>createHash('sha256').update(String(value)).digest('hex');
 const enc=value=>encodeURIComponent(String(value));
+const delay=milliseconds=>new Promise(resolve=>setTimeout(resolve,milliseconds));
+const transportDiagnostic=error=>{
+  if(error?.name==='TimeoutError'||error?.name==='AbortError')return 'ATTENDED_INVOCATION_TIMEOUT';
+  const code=error?.cause?.code??error?.code;
+  if(['ENOTFOUND','EAI_AGAIN','ENODATA'].includes(code))return 'ATTENDED_INVOCATION_DNS_TRANSPORT_FAILURE';
+  return 'ATTENDED_INVOCATION_TRANSPORT_AMBIGUOUS';
+};
+const statusClass=status=>Number.isInteger(status)&&status>=100&&status<=599?`${Math.floor(status/100)}XX`:'UNKNOWN';
+async function boundedText(response,maxBytes=32){
+  const declared=Number(response.headers?.get?.('content-length'));if(Number.isFinite(declared)&&declared>maxBytes)return null;
+  let text;try{text=await response.text();}catch{return null;}return Buffer.byteLength(text)<=maxBytes?text:null;
+}
 
 export function attendedCloudflarePaths(accountId){
   const base=`/accounts/${enc(accountId)}`;
@@ -68,7 +80,7 @@ export function attendedCriticalRecheckDiagnostic(report,{approvedSha,versionId,
     mapping.canonicalCoverageMatches!==true||mapping.historicalAuthorityProvenancePresent!==true)return 'foundational_state_mismatch';
   if(inventory.reviewedVersionId!==versionId||inventory.versionIdentityExact!==true||inventory.versionInventoryExact!==true)return 'version_inventory_mismatch';
   if(inventory.productionBindingProven!==true||inventory.configurationExact!==true)return 'collector_configuration_mismatch';
-  if(inventory.previewUrlIdentityExact!==true||typeof inventory.previewUrlSuffix!=='string'||typeof inventory.accountSubdomain!=='string')return 'preview_identity_mismatch';
+  if(inventory.previewUrlIdentityExact!==true||typeof inventory.previewUrlSuffix!=='string'||typeof inventory.reviewedWorkerId!=='string'||typeof inventory.accountSubdomain!=='string'||inventory.previewUrlSuffix!==`-${WORKER}.${inventory.accountSubdomain}.workers.dev`)return 'preview_identity_mismatch';
   if(inventory.workerPresent!==true||inventory.workersDev!==false||inventory.previewUrls!==false||inventory.deploymentCount!==0||
     inventory.cronCount!==0||inventory.routeCount!==0||inventory.customDomainCount!==0)return 'collector_topology_mismatch';
   if(inventory.secretBindingPresent!==true||JSON.stringify(inventory.secretBindingNames)!==JSON.stringify(['API_FOOTBALL_API_KEY','API_FOOTBALL_ATTENDED_TRIGGER_SECRET']))return 'secret_binding_mismatch';
@@ -84,10 +96,10 @@ export function validateCriticalRecheck(report,{approvedSha,versionId,versionApp
   const diagnostic=attendedCriticalRecheckDiagnostic(report,{approvedSha,versionId,versionApprovedSha,accountFingerprint});
   if(diagnostic)fail('attended_critical_state_drift__'+diagnostic);
   const inventory=report.inventory;
-  return Object.freeze({previewUrlSuffix:inventory.previewUrlSuffix,accountSubdomain:inventory.accountSubdomain});
+  return Object.freeze({previewUrlSuffix:inventory.previewUrlSuffix,reviewedWorkerId:inventory.reviewedWorkerId,accountSubdomain:inventory.accountSubdomain});
 }
 
-export async function executeLiveAttendedAcceptance({env=process.env,fetchImpl=globalThis.fetch,criticalRecheck=runApiFootballActivationLivePreflight}={}){
+export async function executeLiveAttendedAcceptance({env=process.env,fetchImpl=globalThis.fetch,criticalRecheck=runApiFootballActivationLivePreflight,wait=delay}={}){
   const account=required(env,'CLOUDFLARE_ACCOUNT_ID'),fingerprint=required(env,'CLOUDFLARE_ACCOUNT_FINGERPRINT');
   const readToken=required(env,'CLOUDFLARE_ATTENDED_READ_TOKEN'),mutationToken=required(env,'CLOUDFLARE_ATTENDED_MUTATION_TOKEN'),approvedSha=required(env,'APPROVED_SHA');
   const versionId=required(env,'API_FOOTBALL_ATTENDED_VERSION_ID'),versionApprovedSha=required(env,'API_FOOTBALL_ATTENDED_VERSION_APPROVED_SHA'),trigger=required(env,'API_FOOTBALL_ATTENDED_TRIGGER_SECRET');
@@ -109,10 +121,9 @@ export async function executeLiveAttendedAcceptance({env=process.env,fetchImpl=g
     fetchImpl,stage:'ATTENDED_ACCEPTANCE'
   });
   const previewIdentity=validateCriticalRecheck(critical,{approvedSha,versionId,versionApprovedSha,accountFingerprint:fingerprint});
-  const previewUrl=deriveVersionPreviewUrl({versionId,previewUrlSuffix:previewIdentity.previewUrlSuffix,accountSubdomain:previewIdentity.accountSubdomain,path:ATTENDED_ACCEPTANCE_PATH});
 
   const headers={Authorization:'Bearer '+mutationToken,'content-type':'application/json'};
-  const paths=attendedCloudflarePaths(account);let providerInvocations=0,d1Calls=0,d1Statements=0,d1RowsChanged=0;
+  const paths=attendedCloudflarePaths(account);let providerInvocations=0,d1Calls=0,d1Statements=0,d1RowsChanged=0,versionUrlReads=0,previewReadinessAttempts=0,previewUrl=null;
   const cloudflare=async(requestPath,init={})=>{
     const method=init.method||'GET';assertAttendedCloudflareRequestAllowed(method,requestPath,{accountId:account});
     let response;try{response=await fetchImpl(API+requestPath,{...init,headers:{...headers,...init.headers},redirect:'error',signal:AbortSignal.timeout(15_000)});}catch{fail('attended_cloudflare_transport_ambiguous');}
@@ -120,6 +131,27 @@ export async function executeLiveAttendedAcceptance({env=process.env,fetchImpl=g
     if(!response.ok||body?.success!==true)fail('attended_cloudflare_operation_failed');return body.result;
   };
   const subdomain=enabled=>cloudflare(paths.subdomain,{method:'POST',headers:{'Cloudflare-Workers-Script-Api-Date':'2025-08-01'},body:JSON.stringify({enabled:false,previews_enabled:enabled})});
+  const resolveVersionUrl=async()=>{
+    versionUrlReads+=1;if(versionUrlReads!==1)fail('attended_version_url_read_budget_exceeded');
+    const requestPath=`/accounts/${enc(account)}/workers/workers/${enc(previewIdentity.reviewedWorkerId)}/versions/${enc(versionId)}`;
+    let response;try{response=await fetchImpl(API+requestPath,{method:'GET',headers:{Authorization:'Bearer '+readToken,Accept:'application/json'},redirect:'error',signal:AbortSignal.timeout(15_000)});}catch{fail('attended_version_url_read_failed');}
+    let body;try{body=await response.json();}catch{fail('attended_version_url_read_failed');}
+    const urls=body?.result?.urls;
+    if(!response.ok||body?.success!==true||body.result?.id!==versionId||!Array.isArray(urls)||urls.length!==1||typeof urls[0]!=='string')fail('attended_version_url_unavailable');
+    try{return deriveVersionPreviewUrl({versionId,versionUrl:urls[0],previewUrlSuffix:previewIdentity.previewUrlSuffix,accountSubdomain:previewIdentity.accountSubdomain,path:ATTENDED_ACCEPTANCE_PATH});}
+    catch{fail('ATTENDED_VERSION_URL_IDENTITY_FAILURE');}
+  };
+  const provePreviewReady=async()=>{
+    let lastDiagnostic='ATTENDED_PREVIEW_ENDPOINT_UNSUPPORTED';
+    for(let attempt=1;attempt<=ATTENDED_PREVIEW_READINESS_MAX_ATTEMPTS;attempt++){
+      previewReadinessAttempts+=1;
+      let response;try{response=await fetchImpl(previewUrl,{method:'GET',redirect:'error',signal:AbortSignal.timeout(15_000)});}catch(error){lastDiagnostic=transportDiagnostic(error);if(attempt<ATTENDED_PREVIEW_READINESS_MAX_ATTEMPTS){await wait(1_000);continue;}fail(lastDiagnostic);}
+      const body=await boundedText(response);
+      if(response.status===404&&body==='Not found'&&response.headers.get('cache-control')==='no-store'&&response.headers.get('content-type')?.startsWith('text/plain'))return;
+      lastDiagnostic=`ATTENDED_PREVIEW_ENDPOINT_UNSUPPORTED_${statusClass(response.status)}`;
+      if(attempt<ATTENDED_PREVIEW_READINESS_MAX_ATTEMPTS){await wait(1_000);continue;}fail(lastDiagnostic);
+    }
+  };
   const runtime=async collectionEnabled=>{
     d1Calls+=1;d1Statements+=1;if(d1Calls>ATTENDED_CONTROL_MAX_D1_CALLS||d1Statements>ATTENDED_CONTROL_MAX_D1_STATEMENTS)fail('attended_control_budget_exceeded');
     const sql=collectionEnabled
@@ -131,12 +163,16 @@ export async function executeLiveAttendedAcceptance({env=process.env,fetchImpl=g
     d1RowsChanged+=changes;if(d1RowsChanged>ATTENDED_CONTROL_MAX_ROWS_CHANGED)fail('attended_control_budget_exceeded');return result;
   };
   const result=await runAttendedAcceptance({admission,versionId,
-    enablePreview:()=>subdomain(true),disablePreview:()=>subdomain(false),enableCollection:()=>runtime(1),disableCollection:()=>runtime(0),
-    invokeOnce:async()=>{if(providerInvocations!==0)fail('attended_second_invocation_forbidden');providerInvocations+=1;
-      let response;try{response=await fetchImpl(previewUrl,{method:'POST',headers:{'x-teamsheet-attended-trigger':trigger},redirect:'error',signal:AbortSignal.timeout(120_000)});}catch{return {requestCount:1,outcome:'AMBIGUOUS'};}
-      return {requestCount:1,outcome:response.status===202?'ACCEPTED':'REJECTED'};
+    enablePreview:async()=>{await subdomain(true);previewUrl=await resolveVersionUrl();await provePreviewReady();},disablePreview:()=>subdomain(false),enableCollection:()=>runtime(1),disableCollection:()=>runtime(0),
+    invokeOnce:async()=>{if(providerInvocations!==0)fail('attended_second_invocation_forbidden');if(!(previewUrl instanceof URL))fail('attended_version_url_unavailable');providerInvocations+=1;
+      let response;try{response=await fetchImpl(previewUrl,{method:'POST',headers:{'x-teamsheet-attended-trigger':trigger},redirect:'error',signal:AbortSignal.timeout(120_000)});}catch(error){return {requestCount:1,outcome:'AMBIGUOUS',diagnostic:transportDiagnostic(error)};}
+      const body=await boundedText(response);
+      if(response.status===202&&body==='Accepted')return {requestCount:1,outcome:'ACCEPTED',diagnostic:'ATTENDED_WORKER_ACCEPTED'};
+      if(response.status===404&&body==='Not found')return {requestCount:1,outcome:'REJECTED',diagnostic:'ATTENDED_WORKER_TRIGGER_REJECTED'};
+      if(response.status===409&&body==='Not accepted')return {requestCount:1,outcome:'REJECTED',diagnostic:'ATTENDED_WORKER_EXECUTION_REJECTED'};
+      return {requestCount:1,outcome:'REJECTED',diagnostic:`ATTENDED_INVOCATION_HTTP_REJECTED_${statusClass(response.status)}`};
     }});
-  return Object.freeze({...result,providerInvocations,controlBudget:Object.freeze({d1Calls,d1Statements,d1RowsChanged})});
+  return Object.freeze({...result,providerInvocations,versionUrlReads,previewReadinessAttempts,controlBudget:Object.freeze({d1Calls,d1Statements,d1RowsChanged})});
 }
-export async function main(){const result=await executeLiveAttendedAcceptance();console.log(JSON.stringify({ok:result.ok===true,classification:result.classification??null,reason:result.reason??null,providerInvocations:result.providerInvocations,retryAuthorized:false,controlBudget:result.controlBudget??null}));return result.ok?0:1;}
+export async function main(){const result=await executeLiveAttendedAcceptance();console.log(JSON.stringify({ok:result.ok===true,classification:result.classification??null,reason:result.reason??null,diagnostic:result.diagnostic??null,providerInvocations:result.providerInvocations,versionUrlReads:result.versionUrlReads,previewReadinessAttempts:result.previewReadinessAttempts,retryAuthorized:false,controlBudget:result.controlBudget??null}));return result.ok?0:1;}
 if(import.meta.url===pathToFileURL(process.argv[1]??'').href)process.exitCode=await main();

@@ -134,13 +134,16 @@ export function validateClosedVersionInventory({versionIds,originalStable,attend
   return true;
 }
 
-export function deriveVersionPreviewUrl({versionId,previewUrlSuffix,accountSubdomain,path}={}){
-  if(!UUID.test(String(versionId||''))||typeof previewUrlSuffix!=='string'||typeof accountSubdomain!=='string'||!/^[a-z0-9-]+$/.test(accountSubdomain))fail('collector_attended_preview_identity_invalid');
+export function deriveVersionPreviewUrl({versionId,versionUrl,previewUrlSuffix,accountSubdomain,path}={}){
+  if(!UUID.test(String(versionId||''))||typeof versionUrl!=='string'||typeof previewUrlSuffix!=='string'||typeof accountSubdomain!=='string'||!/^[a-z0-9-]+$/.test(accountSubdomain))fail('collector_attended_preview_identity_invalid');
   const expectedSuffix='-'+WORKER_NAME+'.'+accountSubdomain+'.workers.dev';
   if(previewUrlSuffix!==expectedSuffix||previewUrlSuffix.includes('/')||previewUrlSuffix.includes('@')||previewUrlSuffix.includes(':'))fail('collector_attended_preview_identity_invalid');
   if(typeof path!=='string'||!path.startsWith('/')||path.includes('?')||path.includes('#'))fail('collector_attended_preview_identity_invalid');
-  const url=new URL('https://'+versionId.slice(0,8)+previewUrlSuffix+path);
-  if(url.protocol!=='https:'||url.port||url.username||url.password||url.search||url.hash||url.pathname!==path||url.hostname!==versionId.slice(0,8)+previewUrlSuffix)return fail('collector_attended_preview_identity_invalid');
+  let base;try{base=new URL(versionUrl);}catch{return fail('collector_attended_preview_identity_invalid');}
+  const prefix=base.hostname.endsWith(expectedSuffix)?base.hostname.slice(0,-expectedSuffix.length):'';
+  if(base.protocol!=='https:'||base.port||base.username||base.password||base.search||base.hash||base.pathname!=='/'||!/^[a-z0-9-]+$/.test(prefix))return fail('collector_attended_preview_identity_invalid');
+  const url=new URL(path,base.origin);
+  if(url.protocol!=='https:'||url.port||url.username||url.password||url.search||url.hash||url.pathname!==path||url.hostname!==base.hostname)return fail('collector_attended_preview_identity_invalid');
   return url;
 }
 

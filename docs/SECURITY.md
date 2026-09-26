@@ -1,3 +1,7 @@
+## Attended Version URL trust boundary
+
+The attended executor no longer manufactures a Version hostname from the Version UUID. After Preview enablement it uses `CLOUDFLARE_ATTENDED_READ_TOKEN` for exactly one Get Worker Version request, requires the exact reviewed Version ID and one routable URL, then validates HTTPS origin and the previously proved Worker/account `workers.dev` suffix before the trigger secret can leave the runner. It proves routing readiness with at most three secret-free GETs whose only accepted result is the immutable Worker’s exact generic 404 signature. Returned URLs and response bodies are used in memory only and are not emitted to workflow output. Only closed diagnostic enums and HTTP status classes are reported. The mutation credential remains limited to the existing Preview and D1 POST allowlist; this remediation adds no mutation authority.
+
 ## Attended protected read/mutation credential separation
 
 Run `35777295834` safely stopped before mutation with sanitized reason `data_platform_binding_mismatch`: the protected executor had reused `CLOUDFLARE_ATTENDED_MUTATION_TOKEN` for its broad final read-only preflight, while the established steward read credential successfully proved the same live foundation immediately before and after. The security response is credential separation, not broader mutation authority.
