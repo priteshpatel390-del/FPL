@@ -1,3 +1,9 @@
+## Attended acceptance — exact Version URL resolution
+
+The attended executor must not derive a routable Worker Version hostname from the Version UUID. After the fresh critical preflight proves the exact reviewed Worker identity and Preview suffix, protected execution enables Version URLs and performs one bounded read-only Get Worker Version call with the attended read credential. The response must identify the exact reviewed Version and contain exactly one routable URL. That URL is accepted only when it is HTTPS, has no credentials/query/fragment/non-root base path, and its hostname ends in the exact proved `-teamsheet-api-football-shadow-collector.<account-subdomain>.workers.dev` suffix. D1 runtime enablement and provider invocation occur only after this resolution succeeds.
+
+The new read is not a mutation and does not alter the two-call/two-statement/two-row D1 control ceiling. The mutation credential remains restricted to the Preview-subdomain and D1 control POST surfaces.
+
 ## Attended acceptance protected credential split
 
 The attended acceptance protected executor uses two Cloudflare credentials with different capabilities. `CLOUDFLARE_ATTENDED_READ_TOKEN` feeds the full final critical preflight and is mapped internally to the existing read-only activation-preflight contract. `CLOUDFLARE_ATTENDED_MUTATION_TOKEN` is never passed to that preflight; it is used only by the executor's closed POST allowlist for the collector Preview toggle and the production D1 collection enable/disable statements. The shared account ID and SHA-256 fingerprint bind both credentials to one approved production account, and identical token values fail before network.
