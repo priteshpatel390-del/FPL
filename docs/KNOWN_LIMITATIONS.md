@@ -1,3 +1,7 @@
+## Attended acceptance — run 36254448484 consumed; Version URL fix not yet live-proven
+
+Run `36254448484` is consumed and must not be rerun. It proved Preview and D1 control mutations can succeed with the current credentials, but its one HTTP invocation attempt did not reach the Worker: durable request-attempt/provider evidence remained zero. The repository remediation removes the unsupported UUID-prefix URL derivation and resolves Cloudflare's exact routable Version URL after Preview enablement. Until a separately approved post-merge live attempt succeeds, this remediation is repository/test evidence only and does not establish a successful API-Football collection.
+
 ## Attended acceptance now requires a separately provisioned protected read token
 
 Run `35777295834` identified the executor's reuse of the attended mutation credential as the failing read boundary: the critical preflight could not prove the separate data-platform Worker binding, while admission and reconciliation using the established steward read token could. The repository remediation requires a new `CLOUDFLARE_ATTENDED_READ_TOKEN` in the `api-football-attended-acceptance` GitHub environment and rejects use of the same value as the mutation token.
