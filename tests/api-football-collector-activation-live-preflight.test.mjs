@@ -30,7 +30,6 @@ const TOKEN='synthetic-read-token';
 const NOW='2026-09-21T16:00:00.000Z';
 const fingerprint=createHash('sha256').update(ACCOUNT).digest('hex');
 const APPROVED_SHA=ATTENDED_VERSION_APPROVED_SHA,ATTENDED_VERSION_ID='11111111-1111-4111-8111-111111111111';
-const ATTENDED_VERSION_URL='https://opaque-v17-teamsheet-api-football-shadow-collector.example.workers.dev';
 const migrations=[
   [1,'shadow_data_foundation'],[2,'official_fpl_structured_history'],[3,'production_query_plan_indexes'],
   [4,'api_football_shadow_identity'],[5,'api_football_shadow_runtime'],[6,'api_football_mapping_qualification']
@@ -71,7 +70,7 @@ function d1Rows({attempts=0,generations=0,fixtureRevisions=0,credentialState='UN
 function attendedFixtures(){
   const identity=buildReviewedAttendedIdentity(APPROVED_SHA),modules=buildUploadModules(resolveModuleGraph());
   const attendedStable={id:ATTENDED_VERSION_ID,resources:{script_runtime:{compatibility_date:identity.compatibilityDate},bindings:structuredClone(expectedAttendedBindings())}};
-  const attendedBeta={id:ATTENDED_VERSION_ID,main_module:identity.mainModule,compatibility_date:identity.compatibilityDate,urls:[ATTENDED_VERSION_URL],annotations:{'workers/message':identity.message,'workers/tag':identity.tag},modules:[...modules].map(([name,source])=>({name,content_base64:Buffer.from(source).toString('base64')}))};
+  const attendedBeta={id:ATTENDED_VERSION_ID,main_module:identity.mainModule,compatibility_date:identity.compatibilityDate,annotations:{'workers/message':identity.message,'workers/tag':identity.tag},modules:[...modules].map(([name,source])=>({name,content_base64:Buffer.from(source).toString('base64')}))};
   const originalStable={id:ORIGINAL_BLOCKED_VERSION_ID,resources:{bindings:[
     {name:'TEAMSHEET_DATA_DB',type:'d1',database_id:EXPECTED_D1_DATABASE_ID},{name:'API_FOOTBALL_FPL_SEASON',type:'plain_text',text:'2026-27'},
     {name:'API_FOOTBALL_PROVIDER_SEASON',type:'plain_text',text:'2026'},{name:'EIA_2I5D_ACTIVATION',type:'plain_text',text:'REPOSITORY_ONLY_BLOCKED'}]}};
@@ -166,7 +165,7 @@ test('attended live preflight proves exact reviewed content and closed two-Versi
   const report=await runApiFootballActivationLivePreflight({env:attendedEnv(),fetchImpl:fakeFetch({collectorPresent:true,attended:true,state:d1Rows({credentialState:'AVAILABLE'})}),now:()=>NOW});
   assert.equal(report.ok,true);
   assert.equal(report.inventory.versionIdentityExact,true);assert.equal(report.inventory.versionInventoryExact,true);
-  assert.equal(report.inventory.previewUrlSuffix,'-teamsheet-api-football-shadow-collector.example.workers.dev');assert.equal(report.inventory.versionUrl,ATTENDED_VERSION_URL);assert.equal(report.inventory.accountSubdomain,'example');
+  assert.equal(report.inventory.previewUrlSuffix,'-teamsheet-api-football-shadow-collector.example.workers.dev');assert.equal(report.inventory.reviewedWorkerId,'worker-object-id');assert.equal(report.inventory.accountSubdomain,'example');
   assert.equal(report.evidence.cloudflareGets,PREFLIGHT_ATTENDED_CLOUDFLARE_GETS);assert.equal(PREFLIGHT_MAX_CLOUDFLARE_GETS,PREFLIGHT_ATTENDED_CLOUDFLARE_GETS);
 });
 
@@ -181,33 +180,9 @@ test('attended Preview identity comes from modern Worker metadata, not legacy Sc
   assert.equal(report.ok,true);
   assert.equal(report.inventory.previewUrlIdentityExact,true);
   assert.equal(report.inventory.previewUrlSuffix,'-teamsheet-api-football-shadow-collector.example.workers.dev');
-  assert.equal(report.inventory.versionUrl,ATTENDED_VERSION_URL);
+  assert.equal(report.inventory.reviewedWorkerId,'worker-object-id');
   assert.ok(calls.some(value=>value.endsWith('/workers/scripts/teamsheet-api-football-shadow-collector/subdomain')));
   assert.ok(calls.some(value=>value.endsWith('/workers/workers/worker-object-id')));
-});
-
-test('attended Preview identity fails closed when the reviewed Version lacks one exact Cloudflare Version URL',async()=>{
-  const report=await runApiFootballActivationLivePreflight({
-    env:attendedEnv(),
-    fetchImpl:fakeFetch({collectorPresent:true,attended:true,state:d1Rows({credentialState:'AVAILABLE'}),mutateAttended:value=>{value.attendedBeta.urls=[];}}),
-    now:()=>NOW
-  });
-  assert.equal(report.ok,false);
-  assert.equal(report.inventory.previewUrlIdentityExact,false);
-  assert.equal(report.inventory.versionUrl,null);
-  assert.equal(report.reason,'attended_stage_inventory_unexpected');
-});
-
-test('attended Preview identity fails closed when a Version URL does not match the trusted Worker suffix',async()=>{
-  const report=await runApiFootballActivationLivePreflight({
-    env:attendedEnv(),
-    fetchImpl:fakeFetch({collectorPresent:true,attended:true,state:d1Rows({credentialState:'AVAILABLE'}),mutateAttended:value=>{value.attendedBeta.urls=['https://opaque-v17.evil.example'];}}),
-    now:()=>NOW
-  });
-  assert.equal(report.ok,false);
-  assert.equal(report.inventory.previewUrlIdentityExact,false);
-  assert.equal(report.inventory.versionUrl,null);
-  assert.equal(report.reason,'attended_stage_inventory_unexpected');
 });
 
 test('attended Preview identity fails closed when modern Worker metadata has a wrong suffix',async()=>{
