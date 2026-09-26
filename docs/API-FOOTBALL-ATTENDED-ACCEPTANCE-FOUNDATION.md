@@ -1,3 +1,9 @@
+## Live evidence — run 36254448484 and exact Version URL remediation
+
+Owner-approved run `36254448484`, attempt 1, on exact main `5a6f7eaf214fa0b921b6311117b7ccdfa227fc19` passed repository/read-only admission and proved both protected control surfaces: Preview enablement succeeded and D1 runtime enable/disable changed exactly two rows in two bounded statements. The executor then made one HTTP invocation attempt. Independent reconciliation nevertheless found request attempts / generations / fixture revisions `0 / 0 / 0` and API-Football requests `0`; collection was disabled, credential `AVAILABLE`, no lease remained, Preview/workers.dev were off, and Deployment/Cron/routes/domains were all zero. The run is consumed.
+
+The executor had been deriving the Version URL as `https://<first-eight-version-uuid><preview-suffix>`. That relationship is not part of the Cloudflare contract. Cloudflare's Worker Version object exposes the routable Version URL directly. The remediation therefore preserves the pre-mutation reviewed Worker/suffix proof, enables Preview, performs one exact read-only Worker Version lookup, requires the exact Version ID plus one validated routable URL, and only then enables D1 collection and invokes the one-shot endpoint. Failure to resolve that URL stops before D1 enablement/provider invocation and proceeds through cleanup. No automatic retry is introduced.
+
 ## Protected credential separation after run 35777295834
 
 Run `35777295834` on exact main `cdcd0ed1ad2a2906b2a3c20aecd125ae3d711e4b` passed fresh read-only admission but the mutation-capable executor's critical preflight stopped as `attended_critical_state_drift__data_platform_binding_mismatch`. Independent read-only reconciliation preserved pristine zero-egress state. The failure therefore identified a credential-capability mismatch in the executor's reuse of its mutation token for a broader read-only proof, not evidence that the production binding itself changed.
