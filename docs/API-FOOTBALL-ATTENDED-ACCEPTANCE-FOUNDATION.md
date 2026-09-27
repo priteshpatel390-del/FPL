@@ -1,3 +1,9 @@
+## Live evidence — run 36346112699 and readiness-window remediation
+
+Run `36346112699`, attempt 1, on exact main `6814e0701e4d56ed387cd781590dde590f8a7d4a` obtained the exact Version URL on its first post-toggle read, then exhausted three secret-free readiness probes with unsupported 4xx signatures. Provider invocation remained 0; D1 collection never enabled; cleanup and independent reconciliation restored/proved pristine state. The run is consumed.
+
+The remediation preserves exact Worker signature and expands readiness to seven probes after deterministic waits of 0, 2, 5, 10, 20, 30 and 45 seconds. Scheduled wait totals 112 seconds; seven separate 15-second request bounds cap worst-case readiness at 217 seconds. Sanitized evidence contains no response text or URL: only closed outcome/mismatch, attempts, signature boolean and optional numeric status. Hash-bound execution evidence plus independent exact pristine state can yield only `ATTENDED_ACCEPTANCE_CLEAN_READINESS_STOP`, still `ok:false`, owner-review-only and non-retryable.
+
 ## Live evidence — run 36254448484 and exact Version URL remediation
 
 Owner-approved run `36254448484`, attempt 1, on exact main `5a6f7eaf214fa0b921b6311117b7ccdfa227fc19` passed repository/read-only admission and proved both protected control surfaces: Preview enablement succeeded and D1 runtime enable/disable changed exactly two rows in two bounded statements. The executor then made one HTTP invocation attempt. Independent reconciliation nevertheless found request attempts / generations / fixture revisions `0 / 0 / 0` and API-Football requests `0`; collection was disabled, credential `AVAILABLE`, no lease remained, Preview/workers.dev were off, and Deployment/Cron/routes/domains were all zero. The run is consumed.

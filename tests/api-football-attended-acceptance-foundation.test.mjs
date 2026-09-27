@@ -7,6 +7,7 @@ import {classifyCollectorActivationPreflight,COLLECTOR_ACTIVATION_PREFLIGHT_VERS
 import {ATTENDED_ACCEPTANCE_PATH,runAttendedHttpRequest} from '../workers/api-football-collector/collector.mjs';
 import {
   ATTENDED_CONTROL_MAX_D1_CALLS,ATTENDED_CONTROL_MAX_D1_STATEMENTS,ATTENDED_CONTROL_MAX_ROWS_CHANGED,
+  ATTENDED_PREVIEW_READINESS_DELAYS_MS,ATTENDED_PREVIEW_READINESS_MAX_ATTEMPTS,ATTENDED_PREVIEW_READINESS_MAX_WAIT_MS,ATTENDED_PREVIEW_READINESS_REQUEST_TIMEOUT_MS,
   credentialLifecycleMutation,runAttendedAcceptance
 } from '../workers/api-football-collector/attended-acceptance.mjs';
 import {classifyAttendedReconciliation} from '../workers/api-football-collector/attended-reconciliation.mjs';
@@ -248,7 +249,27 @@ test('Preview readiness is bounded, non-secret, and blocks D1/provider work unti
   const file='/tmp/attended-admission-preview-readiness.json';fs.writeFileSync(file,JSON.stringify(admission()));let readiness=0,d1Calls=0,triggerCalls=0,previewDisable=0;
   const env={CLOUDFLARE_ACCOUNT_ID:ACCOUNT,CLOUDFLARE_ACCOUNT_FINGERPRINT:FINGERPRINT,CLOUDFLARE_ATTENDED_READ_TOKEN:'read-token',CLOUDFLARE_ATTENDED_MUTATION_TOKEN:'mutation-token',APPROVED_SHA:SHA,API_FOOTBALL_ATTENDED_VERSION_ID:VERSION,API_FOOTBALL_ATTENDED_VERSION_APPROVED_SHA:VERSION_PROVENANCE,API_FOOTBALL_ATTENDED_TRIGGER_SECRET:SECRET,API_FOOTBALL_ATTENDED_ADMISSION_PATH:file};
   const result=await executeLiveAttendedAcceptance({env,wait:async()=>{},criticalRecheck:async()=>criticalAdmission(),fetchImpl:async(url,init={})=>{const value=String(url);if(value.includes(`/workers/workers/${WORKER_ID}/versions/${VERSION}`))return new Response(JSON.stringify({success:true,result:{id:VERSION,urls:[VERSION_URL]}}));if(value.includes('workers.dev')){assert.equal(init.headers?.['x-teamsheet-attended-trigger'],undefined);readiness++;return new Response('edge not ready',{status:404});}if(value.includes('/query')){d1Calls++;return new Response(JSON.stringify({success:true,result:[{success:true,meta:{changes:0}}]}));}if(value.endsWith('/subdomain')&&JSON.parse(init.body).previews_enabled===false)previewDisable++;return new Response(JSON.stringify({success:true,result:{}}));}});
-  assert.equal(result.diagnostic,'ATTENDED_PREVIEW_ENDPOINT_UNSUPPORTED_4XX');assert.equal(readiness,3);assert.equal(result.previewReadinessAttempts,3);assert.equal(d1Calls,1);assert.equal(triggerCalls,0);assert.equal(result.providerInvocations,0);assert.equal(previewDisable,1);fs.unlinkSync(file);
+  assert.equal(result.diagnostic,'ATTENDED_PREVIEW_ENDPOINT_UNSUPPORTED_4XX');assert.equal(readiness,ATTENDED_PREVIEW_READINESS_MAX_ATTEMPTS);assert.equal(result.previewReadinessAttempts,ATTENDED_PREVIEW_READINESS_MAX_ATTEMPTS);assert.deepEqual(result.readinessEvidence,{outcome:'HTTP_RESPONSE_MISMATCH',attempts:ATTENDED_PREVIEW_READINESS_MAX_ATTEMPTS,lastHttpStatus:404,mismatch:'BODY',workerSignatureProved:false});assert.equal(d1Calls,1);assert.equal(triggerCalls,0);assert.equal(result.providerInvocations,0);assert.equal(previewDisable,1);fs.unlinkSync(file);
+});
+
+test('readiness schedule is deterministic and accepts delayed exact Worker signature before D1 and one trigger POST',async()=>{
+  assert.deepEqual(ATTENDED_PREVIEW_READINESS_DELAYS_MS,[0,2_000,5_000,10_000,20_000,30_000,45_000]);assert.equal(ATTENDED_PREVIEW_READINESS_MAX_WAIT_MS,112_000);assert.equal(ATTENDED_PREVIEW_READINESS_REQUEST_TIMEOUT_MS,15_000);
+  const file='/tmp/attended-admission-delayed-readiness.json';fs.writeFileSync(file,JSON.stringify(admission()));const waits=[];let probes=0,collectionEnabled=false,triggers=0;
+  const env={CLOUDFLARE_ACCOUNT_ID:ACCOUNT,CLOUDFLARE_ACCOUNT_FINGERPRINT:FINGERPRINT,CLOUDFLARE_ATTENDED_READ_TOKEN:'read-token',CLOUDFLARE_ATTENDED_MUTATION_TOKEN:'mutation-token',APPROVED_SHA:SHA,API_FOOTBALL_ATTENDED_VERSION_ID:VERSION,API_FOOTBALL_ATTENDED_VERSION_APPROVED_SHA:VERSION_PROVENANCE,API_FOOTBALL_ATTENDED_TRIGGER_SECRET:SECRET,API_FOOTBALL_ATTENDED_ADMISSION_PATH:file};
+  const result=await executeLiveAttendedAcceptance({env,wait:async value=>waits.push(value),criticalRecheck:async()=>criticalAdmission(),fetchImpl:async(url,init={})=>{const value=String(url);if(value.includes(`/workers/workers/${WORKER_ID}/versions/${VERSION}`))return new Response(JSON.stringify({success:true,result:{id:VERSION,urls:[VERSION_URL]}}));if(value.includes('workers.dev')){if(init.method==='GET'){assert.equal(collectionEnabled,false);assert.equal(init.headers?.['x-teamsheet-attended-trigger'],undefined);probes++;return probes<6?new Response('platform response',{status:403}):workerResponse(404,'Not found');}triggers++;return workerResponse(202,'Accepted');}if(value.includes('/query')){collectionEnabled=JSON.parse(init.body).params.length===2;return new Response(JSON.stringify({success:true,result:[{success:true,meta:{changes:1}}]}));}return new Response(JSON.stringify({success:true,result:{}}));}});
+  assert.equal(result.ok,true);assert.equal(probes,6);assert.equal(triggers,1);assert.deepEqual(waits,[2_000,5_000,10_000,20_000,30_000]);assert.deepEqual(result.readinessEvidence,{outcome:'WORKER_SIGNATURE_PROVED',attempts:6,lastHttpStatus:404,mismatch:null,workerSignatureProved:true});fs.unlinkSync(file);
+});
+
+test('readiness transport and timeout failures stay bounded, sanitized and never enable collection or send trigger',async()=>{
+  for(const scenario of [
+    {name:'dns',error:Object.assign(new Error('private host and token'),{cause:{code:'ENOTFOUND'}}),diagnostic:'ATTENDED_PREVIEW_READINESS_DNS_TRANSPORT_FAILURE',outcome:'TRANSPORT_FAILURE'},
+    {name:'timeout',error:Object.assign(new Error('private timeout detail'),{name:'TimeoutError'}),diagnostic:'ATTENDED_PREVIEW_READINESS_TIMEOUT',outcome:'TIMEOUT'}
+  ]){
+    const file=`/tmp/attended-admission-readiness-${scenario.name}.json`;fs.writeFileSync(file,JSON.stringify(admission()));let probes=0,d1Calls=0,triggers=0,previewDisable=0;
+    const env={CLOUDFLARE_ACCOUNT_ID:ACCOUNT,CLOUDFLARE_ACCOUNT_FINGERPRINT:FINGERPRINT,CLOUDFLARE_ATTENDED_READ_TOKEN:'read-token',CLOUDFLARE_ATTENDED_MUTATION_TOKEN:'mutation-token',APPROVED_SHA:SHA,API_FOOTBALL_ATTENDED_VERSION_ID:VERSION,API_FOOTBALL_ATTENDED_VERSION_APPROVED_SHA:VERSION_PROVENANCE,API_FOOTBALL_ATTENDED_TRIGGER_SECRET:SECRET,API_FOOTBALL_ATTENDED_ADMISSION_PATH:file};
+    const result=await executeLiveAttendedAcceptance({env,wait:async()=>{},criticalRecheck:async()=>criticalAdmission(),fetchImpl:async(url,init={})=>{const value=String(url);if(value.includes(`/workers/workers/${WORKER_ID}/versions/${VERSION}`))return new Response(JSON.stringify({success:true,result:{id:VERSION,urls:[VERSION_URL]}}));if(value.includes('workers.dev')){probes++;if(init.headers?.['x-teamsheet-attended-trigger'])triggers++;throw scenario.error;}if(value.includes('/query')){d1Calls++;return new Response(JSON.stringify({success:true,result:[{success:true,meta:{changes:0}}]}));}if(value.endsWith('/subdomain')&&JSON.parse(init.body).previews_enabled===false)previewDisable++;return new Response(JSON.stringify({success:true,result:{}}));}});
+    assert.equal(result.diagnostic,scenario.diagnostic);assert.deepEqual(result.readinessEvidence,{outcome:scenario.outcome,attempts:ATTENDED_PREVIEW_READINESS_MAX_ATTEMPTS,lastHttpStatus:null,mismatch:null,workerSignatureProved:false});assert.equal(probes,ATTENDED_PREVIEW_READINESS_MAX_ATTEMPTS);assert.equal(d1Calls,1);assert.equal(triggers,0);assert.equal(result.providerInvocations,0);assert.equal(previewDisable,1);assert.doesNotMatch(JSON.stringify(result),/private host|private timeout|workers\.dev|token/);fs.unlinkSync(file);
+  }
 });
 
 test('bad fresh Preview identity prevents enablement and trigger-secret egress',async()=>{
@@ -292,6 +313,14 @@ test('reconciliation success is impossible when the underlying post-run prefligh
   ]){
     const result=classifyAttendedReconciliation(reconciliation(value));assert.equal(result.ok,false);assert.equal(result.retryAuthorized,false);
   }
+});
+
+test('reconciliation narrowly classifies cryptographically handed-off zero-provider clean readiness stop',()=>{
+  const report=reconciliation({ok:true,approvedSha:SHA,classification:'READY_FOR_SEPARATELY_APPROVED_ATTENDED_ACCEPTANCE',reason:null,
+    inventory:{reviewedVersionId:VERSION},priorState:{requestAttempts:0,attempt1Count:0,attempt2Count:0,succeededAttemptCount:0,generations:0,committedGenerationCount:0,failedGenerationCount:0,membershipConsistentCount:0,headMatchCount:0,fixtureRevisions:0}});
+  const executionEvidence={version:'api-football-attended-execution-v2',approvedSha:SHA,versionId:VERSION,ok:false,classification:'ATTENDED_EXECUTION_RECONCILIATION_REQUIRED',reason:'attended_execution_requires_reconciliation',diagnostic:'ATTENDED_PREVIEW_ENDPOINT_UNSUPPORTED_4XX',providerInvocations:0,invocationAttempted:false,collectionEnableSucceeded:false,versionUrlReads:1,previewReadinessAttempts:ATTENDED_PREVIEW_READINESS_MAX_ATTEMPTS,readinessEvidence:{outcome:'HTTP_RESPONSE_MISMATCH',attempts:ATTENDED_PREVIEW_READINESS_MAX_ATTEMPTS,lastHttpStatus:403,mismatch:'STATUS',workerSignatureProved:false},retryAuthorized:false,controlBudget:{d1Calls:1,d1Statements:1,d1RowsChanged:0}};
+  const result=classifyAttendedReconciliation(report,{executionEvidence});assert.equal(result.classification,'ATTENDED_ACCEPTANCE_CLEAN_READINESS_STOP');assert.equal(result.reason,'preview_readiness_not_proven');assert.equal(result.retryAuthorized,false);assert.equal(result.ok,false);
+  for(const mutate of [e=>e.providerInvocations=1,e=>e.invocationAttempted=true,e=>e.collectionEnableSucceeded=true,e=>e.readinessEvidence.workerSignatureProved=true,e=>e.controlBudget.d1RowsChanged=1,e=>e.approvedSha='b'.repeat(40)]){const changed=structuredClone(executionEvidence);mutate(changed);assert.equal(classifyAttendedReconciliation(report,{executionEvidence:changed}).reason,'acceptance_state_ambiguous');}
 });
 
 test('abstract attended admission, shipped config, provider contract and model isolation remain pinned',()=>{

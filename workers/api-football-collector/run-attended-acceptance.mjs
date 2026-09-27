@@ -3,7 +3,7 @@ import fs from 'node:fs';
 import {pathToFileURL} from 'node:url';
 import {EXPECTED_D1_DATABASE_ID} from '../data-platform/phase4b/live-contract.mjs';
 import {ATTENDED_ACCEPTANCE_PATH} from './collector.mjs';
-import {ATTENDED_CONTROL_MAX_D1_CALLS,ATTENDED_CONTROL_MAX_D1_STATEMENTS,ATTENDED_CONTROL_MAX_ROWS_CHANGED,ATTENDED_PREVIEW_READINESS_MAX_ATTEMPTS,ATTENDED_VERSION_URL_MAX_READS,runAttendedAcceptance} from './attended-acceptance.mjs';
+import {ATTENDED_CONTROL_MAX_D1_CALLS,ATTENDED_CONTROL_MAX_D1_STATEMENTS,ATTENDED_CONTROL_MAX_ROWS_CHANGED,ATTENDED_PREVIEW_READINESS_DELAYS_MS,ATTENDED_PREVIEW_READINESS_REQUEST_TIMEOUT_MS,ATTENDED_VERSION_URL_MAX_READS,runAttendedAcceptance} from './attended-acceptance.mjs';
 import {ATTENDED_VERSION_APPROVED_SHA,deriveVersionPreviewUrl} from './attended-version.mjs';
 import {runApiFootballActivationLivePreflight} from './activation-live-preflight.mjs';
 
@@ -123,7 +123,8 @@ export async function executeLiveAttendedAcceptance({env=process.env,fetchImpl=g
   const previewIdentity=validateCriticalRecheck(critical,{approvedSha,versionId,versionApprovedSha,accountFingerprint:fingerprint});
 
   const headers={Authorization:'Bearer '+mutationToken,'content-type':'application/json'};
-  const paths=attendedCloudflarePaths(account);let providerInvocations=0,d1Calls=0,d1Statements=0,d1RowsChanged=0,versionUrlReads=0,previewReadinessAttempts=0,previewUrl=null;
+  const paths=attendedCloudflarePaths(account);let providerInvocations=0,d1Calls=0,d1Statements=0,d1RowsChanged=0,versionUrlReads=0,previewReadinessAttempts=0,previewUrl=null,collectionEnableSucceeded=false;
+  let readinessEvidence=Object.freeze({outcome:'NOT_STARTED',attempts:0,lastHttpStatus:null,mismatch:null,workerSignatureProved:false});
   const cloudflare=async(requestPath,init={})=>{
     const method=init.method||'GET';assertAttendedCloudflareRequestAllowed(method,requestPath,{accountId:account});
     let response;try{response=await fetchImpl(API+requestPath,{...init,headers:{...headers,...init.headers},redirect:'error',signal:AbortSignal.timeout(15_000)});}catch{fail('attended_cloudflare_transport_ambiguous');}
@@ -149,14 +150,20 @@ export async function executeLiveAttendedAcceptance({env=process.env,fetchImpl=g
     fail('ATTENDED_VERSION_URL_UNAVAILABLE');
   };
   const provePreviewReady=async()=>{
-    let lastDiagnostic='ATTENDED_PREVIEW_ENDPOINT_UNSUPPORTED';
-    for(let attempt=1;attempt<=ATTENDED_PREVIEW_READINESS_MAX_ATTEMPTS;attempt++){
+    let lastDiagnostic='ATTENDED_PREVIEW_ENDPOINT_UNSUPPORTED',lastHttpStatus=null,mismatch=null;
+    for(let index=0;index<ATTENDED_PREVIEW_READINESS_DELAYS_MS.length;index++){
+      const waitMs=ATTENDED_PREVIEW_READINESS_DELAYS_MS[index];if(waitMs>0)await wait(waitMs);
       previewReadinessAttempts+=1;
-      let response;try{response=await fetchImpl(previewUrl,{method:'GET',redirect:'error',signal:AbortSignal.timeout(15_000)});}catch(error){lastDiagnostic=transportDiagnostic(error);if(attempt<ATTENDED_PREVIEW_READINESS_MAX_ATTEMPTS){await wait(1_000);continue;}fail(lastDiagnostic);}
+      let response;try{response=await fetchImpl(previewUrl,{method:'GET',redirect:'error',signal:AbortSignal.timeout(ATTENDED_PREVIEW_READINESS_REQUEST_TIMEOUT_MS)});}catch(error){const transport=transportDiagnostic(error);lastDiagnostic=transport==='ATTENDED_INVOCATION_TIMEOUT'?'ATTENDED_PREVIEW_READINESS_TIMEOUT':transport==='ATTENDED_INVOCATION_DNS_TRANSPORT_FAILURE'?'ATTENDED_PREVIEW_READINESS_DNS_TRANSPORT_FAILURE':'ATTENDED_PREVIEW_READINESS_TRANSPORT_AMBIGUOUS';lastHttpStatus=null;mismatch=null;if(index+1<ATTENDED_PREVIEW_READINESS_DELAYS_MS.length)continue;readinessEvidence=Object.freeze({outcome:lastDiagnostic==='ATTENDED_PREVIEW_READINESS_TIMEOUT'?'TIMEOUT':'TRANSPORT_FAILURE',attempts:previewReadinessAttempts,lastHttpStatus,mismatch,workerSignatureProved:false});fail(lastDiagnostic);}
       const body=await boundedText(response);
-      if(response.status===404&&body==='Not found'&&response.headers.get('cache-control')==='no-store'&&response.headers.get('content-type')?.startsWith('text/plain'))return;
+      const contentTypeMatches=response.headers.get('content-type')?.startsWith('text/plain')===true;
+      const cacheControlMatches=response.headers.get('cache-control')==='no-store';
+      lastHttpStatus=Number.isInteger(response.status)?response.status:null;
+      mismatch=response.status!==404?'STATUS':body!=='Not found'?'BODY':!cacheControlMatches?'CACHE_CONTROL':!contentTypeMatches?'CONTENT_TYPE':null;
+      if(mismatch===null){readinessEvidence=Object.freeze({outcome:'WORKER_SIGNATURE_PROVED',attempts:previewReadinessAttempts,lastHttpStatus, mismatch:null,workerSignatureProved:true});return;}
       lastDiagnostic=`ATTENDED_PREVIEW_ENDPOINT_UNSUPPORTED_${statusClass(response.status)}`;
-      if(attempt<ATTENDED_PREVIEW_READINESS_MAX_ATTEMPTS){await wait(1_000);continue;}fail(lastDiagnostic);
+      if(index+1<ATTENDED_PREVIEW_READINESS_DELAYS_MS.length)continue;
+      readinessEvidence=Object.freeze({outcome:'HTTP_RESPONSE_MISMATCH',attempts:previewReadinessAttempts,lastHttpStatus,mismatch,workerSignatureProved:false});fail(lastDiagnostic);
     }
   };
   const runtime=async collectionEnabled=>{
@@ -170,7 +177,7 @@ export async function executeLiveAttendedAcceptance({env=process.env,fetchImpl=g
     d1RowsChanged+=changes;if(d1RowsChanged>ATTENDED_CONTROL_MAX_ROWS_CHANGED)fail('attended_control_budget_exceeded');return result;
   };
   const result=await runAttendedAcceptance({admission,versionId,
-    enablePreview:async()=>{await subdomain(true);previewUrl=await resolveVersionUrl();await provePreviewReady();},disablePreview:()=>subdomain(false),enableCollection:()=>runtime(1),disableCollection:()=>runtime(0),
+    enablePreview:async()=>{await subdomain(true);previewUrl=await resolveVersionUrl();await provePreviewReady();},disablePreview:()=>subdomain(false),enableCollection:async()=>{await runtime(1);collectionEnableSucceeded=true;},disableCollection:()=>runtime(0),
     invokeOnce:async()=>{if(providerInvocations!==0)fail('attended_second_invocation_forbidden');if(!(previewUrl instanceof URL))fail('attended_version_url_unavailable');providerInvocations+=1;
       let response;try{response=await fetchImpl(previewUrl,{method:'POST',headers:{'x-teamsheet-attended-trigger':trigger},redirect:'error',signal:AbortSignal.timeout(120_000)});}catch(error){return {requestCount:1,outcome:'AMBIGUOUS',diagnostic:transportDiagnostic(error)};}
       const body=await boundedText(response);
@@ -179,7 +186,7 @@ export async function executeLiveAttendedAcceptance({env=process.env,fetchImpl=g
       if(response.status===409&&body==='Not accepted')return {requestCount:1,outcome:'REJECTED',diagnostic:'ATTENDED_WORKER_EXECUTION_REJECTED'};
       return {requestCount:1,outcome:'REJECTED',diagnostic:`ATTENDED_INVOCATION_HTTP_REJECTED_${statusClass(response.status)}`};
     }});
-  return Object.freeze({...result,providerInvocations,versionUrlReads,previewReadinessAttempts,controlBudget:Object.freeze({d1Calls,d1Statements,d1RowsChanged})});
+  return Object.freeze({...result,providerInvocations,versionUrlReads,previewReadinessAttempts,readinessEvidence,collectionEnableSucceeded,controlBudget:Object.freeze({d1Calls,d1Statements,d1RowsChanged})});
 }
-export async function main(){const result=await executeLiveAttendedAcceptance();console.log(JSON.stringify({ok:result.ok===true,classification:result.classification??null,reason:result.reason??null,diagnostic:result.diagnostic??null,providerInvocations:result.providerInvocations,versionUrlReads:result.versionUrlReads,previewReadinessAttempts:result.previewReadinessAttempts,retryAuthorized:false,controlBudget:result.controlBudget??null}));return result.ok?0:1;}
+export async function main(){const result=await executeLiveAttendedAcceptance();const output=Object.freeze({version:'api-football-attended-execution-v2',approvedSha:process.env.APPROVED_SHA??null,versionId:process.env.API_FOOTBALL_ATTENDED_VERSION_ID??null,ok:result.ok===true,classification:result.classification??null,reason:result.reason??null,diagnostic:result.diagnostic??null,providerInvocations:result.providerInvocations,invocationAttempted:result.invocationAttempted===true,collectionEnableSucceeded:result.collectionEnableSucceeded===true,versionUrlReads:result.versionUrlReads,previewReadinessAttempts:result.previewReadinessAttempts,readinessEvidence:result.readinessEvidence??null,retryAuthorized:false,controlBudget:result.controlBudget??null});const outputPath=process.env.API_FOOTBALL_ATTENDED_EXECUTION_REPORT_PATH;if(outputPath)fs.writeFileSync(outputPath,JSON.stringify(output,null,2)+'\n',{mode:0o600});console.log(JSON.stringify(output));return result.ok?0:1;}
 if(import.meta.url===pathToFileURL(process.argv[1]??'').href)process.exitCode=await main();

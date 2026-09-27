@@ -1,3 +1,7 @@
+## Current gate — attended readiness remediation after consumed run 36346112699
+
+Repository remediation only: bounded propagation-aware readiness, sanitized execution handoff and precise independently proven clean readiness stop. No new attended dispatch, provider call, production mutation or activation is authorized. After review/merge/exact-main verification, any fresh live acceptance remains a separate owner gate.
+
 ## Current API-Football checkpoint
 
 Attended one-shot acceptance foundation PR #286 is merged and post-merge verified on `fda5a45ccd86928f60d91e8e34ded79ff49064da`. The current checkpoint is the **repository-only attended preparation foundation**: exact singleton-original admission, at most one secret-bearing inactive Version creation, independent two-Version proof, exactly one fail-closed `UNPROVISIONED -> AVAILABLE` D1 statement, and independent read-only closeout. No live preparation is authorized by implementation or merge. See [attended preparation foundation](API-FOOTBALL-ATTENDED-PREPARATION-FOUNDATION.md).
