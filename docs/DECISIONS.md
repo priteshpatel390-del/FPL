@@ -2,7 +2,7 @@
 
 **Evidence:** attended run `36254448484` successfully crossed Preview and D1 mutation gates and attempted one invocation, while independent reconciliation still observed zero collector request-attempt rows and zero API-Football requests.
 
-**Decision:** prefer Cloudflare’s exact returned URL over local `versionId.slice(0,8)` synthesis even though Cloudflare documentation and Wrangler currently describe that format; returned identity is the stronger fail-closed authority. Add a bounded secret-free Worker readiness proof before collection enablement and preserve closed invocation diagnostics. After Preview enablement, resolve the exact reviewed Version once through Cloudflare's read-only Worker Version endpoint and validate its returned routable URL against the already-proved Worker/account Preview suffix before enabling collection or sending the trigger secret.
+**Decision:** prefer Cloudflare’s exact returned URL over local `versionId.slice(0,8)` synthesis even though Cloudflare documentation and Wrangler describe that format; returned identity is the stronger fail-closed authority. Because a live read-only response proves `urls` is empty while Preview is disabled, enable Preview first and permit at most three read-only Version reads for publication, followed by at most three secret-free Worker-signature readiness reads. D1 enablement and trigger-secret egress remain blocked until both gates pass. Preserve closed diagnostics and never retry the trigger-bearing POST.
 
 **Preserved boundaries:** no extra mutation, no retry, no provider request-count change, no model/product integration, and no widening of the mutation credential.
 

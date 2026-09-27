@@ -3,7 +3,7 @@ import fs from 'node:fs';
 import {pathToFileURL} from 'node:url';
 import {EXPECTED_D1_DATABASE_ID} from '../data-platform/phase4b/live-contract.mjs';
 import {ATTENDED_ACCEPTANCE_PATH} from './collector.mjs';
-import {ATTENDED_CONTROL_MAX_D1_CALLS,ATTENDED_CONTROL_MAX_D1_STATEMENTS,ATTENDED_CONTROL_MAX_ROWS_CHANGED,ATTENDED_PREVIEW_READINESS_MAX_ATTEMPTS,runAttendedAcceptance} from './attended-acceptance.mjs';
+import {ATTENDED_CONTROL_MAX_D1_CALLS,ATTENDED_CONTROL_MAX_D1_STATEMENTS,ATTENDED_CONTROL_MAX_ROWS_CHANGED,ATTENDED_PREVIEW_READINESS_MAX_ATTEMPTS,ATTENDED_VERSION_URL_MAX_READS,runAttendedAcceptance} from './attended-acceptance.mjs';
 import {ATTENDED_VERSION_APPROVED_SHA,deriveVersionPreviewUrl} from './attended-version.mjs';
 import {runApiFootballActivationLivePreflight} from './activation-live-preflight.mjs';
 
@@ -132,14 +132,21 @@ export async function executeLiveAttendedAcceptance({env=process.env,fetchImpl=g
   };
   const subdomain=enabled=>cloudflare(paths.subdomain,{method:'POST',headers:{'Cloudflare-Workers-Script-Api-Date':'2025-08-01'},body:JSON.stringify({enabled:false,previews_enabled:enabled})});
   const resolveVersionUrl=async()=>{
-    versionUrlReads+=1;if(versionUrlReads!==1)fail('attended_version_url_read_budget_exceeded');
     const requestPath=`/accounts/${enc(account)}/workers/workers/${enc(previewIdentity.reviewedWorkerId)}/versions/${enc(versionId)}`;
-    let response;try{response=await fetchImpl(API+requestPath,{method:'GET',headers:{Authorization:'Bearer '+readToken,Accept:'application/json'},redirect:'error',signal:AbortSignal.timeout(15_000)});}catch{fail('attended_version_url_read_failed');}
-    let body;try{body=await response.json();}catch{fail('attended_version_url_read_failed');}
-    const urls=body?.result?.urls;
-    if(!response.ok||body?.success!==true||body.result?.id!==versionId||!Array.isArray(urls)||urls.length!==1||typeof urls[0]!=='string')fail('attended_version_url_unavailable');
-    try{return deriveVersionPreviewUrl({versionId,versionUrl:urls[0],previewUrlSuffix:previewIdentity.previewUrlSuffix,accountSubdomain:previewIdentity.accountSubdomain,path:ATTENDED_ACCEPTANCE_PATH});}
-    catch{fail('ATTENDED_VERSION_URL_IDENTITY_FAILURE');}
+    for(let read=1;read<=ATTENDED_VERSION_URL_MAX_READS;read++){
+      versionUrlReads+=1;
+      let response;try{response=await fetchImpl(API+requestPath,{method:'GET',headers:{Authorization:'Bearer '+readToken,Accept:'application/json'},redirect:'error',signal:AbortSignal.timeout(15_000)});}catch(error){if(read<ATTENDED_VERSION_URL_MAX_READS){await wait(1_000);continue;}fail(transportDiagnostic(error)==='ATTENDED_INVOCATION_TIMEOUT'?'ATTENDED_VERSION_URL_READ_TIMEOUT':'ATTENDED_VERSION_URL_READ_FAILURE');}
+      let body;try{body=await response.json();}catch{fail('ATTENDED_VERSION_URL_RESPONSE_INVALID');}
+      if(!response.ok||body?.success!==true||body.result?.id!==versionId)fail('ATTENDED_VERSION_URL_IDENTITY_FAILURE');
+      const urls=body.result.urls;
+      if(Array.isArray(urls)&&urls.length===1&&typeof urls[0]==='string'){
+        try{return deriveVersionPreviewUrl({versionId,versionUrl:urls[0],previewUrlSuffix:previewIdentity.previewUrlSuffix,accountSubdomain:previewIdentity.accountSubdomain,path:ATTENDED_ACCEPTANCE_PATH});}
+        catch{fail('ATTENDED_VERSION_URL_IDENTITY_FAILURE');}
+      }
+      if(!Array.isArray(urls)||urls.length>1||urls.some(url=>typeof url!=='string'))fail('ATTENDED_VERSION_URL_RESPONSE_INVALID');
+      if(read<ATTENDED_VERSION_URL_MAX_READS){await wait(1_000);continue;}
+    }
+    fail('ATTENDED_VERSION_URL_UNAVAILABLE');
   };
   const provePreviewReady=async()=>{
     let lastDiagnostic='ATTENDED_PREVIEW_ENDPOINT_UNSUPPORTED';
