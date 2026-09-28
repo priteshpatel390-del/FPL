@@ -36,8 +36,9 @@ export function classifyAttendedReconciliation(report,{executionEvidence}={}){
     report?.modelUiImportCount===0&&report?.rawPayloadStoragePresent===false&&report?.evidence?.productionMutations===0&&report?.evidence?.apiFootballRequests===0&&report?.evidence?.secretValuesRead===0;
   const readiness=executionEvidence?.readinessEvidence;
   const signatureChecks=readiness?.signatureChecks;
+  const expectedMismatch=signatureChecks&&!signatureChecks.statusMatches?'STATUS':signatureChecks&&!signatureChecks.bodyMatches?'BODY':signatureChecks&&!signatureChecks.cacheControlMatches?'CACHE_CONTROL':signatureChecks&&!signatureChecks.contentTypeMatches?'CONTENT_TYPE':null;
   const signatureChecksValid=readiness?.outcome==='HTTP_RESPONSE_MISMATCH'
-    ?signatureChecks&&['statusMatches','bodyMatches','cacheControlMatches','contentTypeMatches'].every(key=>typeof signatureChecks[key]==='boolean')&&Object.keys(signatureChecks).length===4&&!Object.values(signatureChecks).every(Boolean)
+    ?signatureChecks&&['statusMatches','bodyMatches','cacheControlMatches','contentTypeMatches'].every(key=>typeof signatureChecks[key]==='boolean')&&Object.keys(signatureChecks).length===4&&expectedMismatch!==null&&readiness.mismatch===expectedMismatch
     :signatureChecks===null;
   const cleanReadinessExecution=executionEvidence?.version==='api-football-attended-execution-v2'&&executionEvidence.approvedSha===report?.approvedSha&&
     executionEvidence.versionId===inventory.reviewedVersionId&&executionEvidence.ok===false&&executionEvidence.classification==='ATTENDED_EXECUTION_RECONCILIATION_REQUIRED'&&

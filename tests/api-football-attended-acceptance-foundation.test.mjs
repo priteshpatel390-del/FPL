@@ -342,6 +342,12 @@ test('reconciliation narrowly classifies cryptographically handed-off zero-provi
   const executionEvidence={version:'api-football-attended-execution-v2',approvedSha:SHA,versionId:VERSION,ok:false,classification:'ATTENDED_EXECUTION_RECONCILIATION_REQUIRED',reason:'attended_execution_requires_reconciliation',diagnostic:'ATTENDED_PREVIEW_ENDPOINT_UNSUPPORTED_4XX',providerInvocations:0,invocationAttempted:false,collectionEnableSucceeded:false,versionUrlReads:1,previewReadinessAttempts:ATTENDED_PREVIEW_READINESS_MAX_ATTEMPTS,readinessEvidence:{outcome:'HTTP_RESPONSE_MISMATCH',attempts:ATTENDED_PREVIEW_READINESS_MAX_ATTEMPTS,lastHttpStatus:403,mismatch:'STATUS',signatureChecks:{statusMatches:false,bodyMatches:false,cacheControlMatches:false,contentTypeMatches:true},workerSignatureProved:false},retryAuthorized:false,controlBudget:{d1Calls:1,d1Statements:1,d1RowsChanged:0}};
   const result=classifyAttendedReconciliation(report,{executionEvidence});assert.equal(result.classification,'ATTENDED_ACCEPTANCE_CLEAN_READINESS_STOP');assert.equal(result.reason,'preview_readiness_not_proven');assert.equal(result.retryAuthorized,false);assert.equal(result.ok,false);
   for(const mutate of [e=>e.providerInvocations=1,e=>e.invocationAttempted=true,e=>e.collectionEnableSucceeded=true,e=>e.readinessEvidence.workerSignatureProved=true,e=>e.controlBudget.d1RowsChanged=1,e=>e.approvedSha='b'.repeat(40)]){const changed=structuredClone(executionEvidence);mutate(changed);assert.equal(classifyAttendedReconciliation(report,{executionEvidence:changed}).reason,'acceptance_state_ambiguous');}
+  for(const mutate of [
+    e=>e.readinessEvidence.signatureChecks={statusMatches:false,bodyMatches:false,cacheControlMatches:false},
+    e=>e.readinessEvidence.signatureChecks.extra=false,
+    e=>e.readinessEvidence.signatureChecks={statusMatches:true,bodyMatches:true,cacheControlMatches:true,contentTypeMatches:true},
+    e=>{e.readinessEvidence.signatureChecks={statusMatches:true,bodyMatches:false,cacheControlMatches:true,contentTypeMatches:true};e.readinessEvidence.mismatch='CACHE_CONTROL';}
+  ]){const changed=structuredClone(executionEvidence);mutate(changed);assert.equal(classifyAttendedReconciliation(report,{executionEvidence:changed}).reason,'acceptance_state_ambiguous');}
 });
 
 test('abstract attended admission, shipped config, provider contract and model isolation remain pinned',()=>{
