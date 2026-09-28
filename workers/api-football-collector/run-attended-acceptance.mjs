@@ -124,7 +124,7 @@ export async function executeLiveAttendedAcceptance({env=process.env,fetchImpl=g
 
   const headers={Authorization:'Bearer '+mutationToken,'content-type':'application/json'};
   const paths=attendedCloudflarePaths(account);let providerInvocations=0,d1Calls=0,d1Statements=0,d1RowsChanged=0,versionUrlReads=0,previewReadinessAttempts=0,previewUrl=null,collectionEnableSucceeded=false;
-  let readinessEvidence=Object.freeze({outcome:'NOT_STARTED',attempts:0,lastHttpStatus:null,mismatch:null,workerSignatureProved:false});
+  let readinessEvidence=Object.freeze({outcome:'NOT_STARTED',attempts:0,lastHttpStatus:null,mismatch:null,signatureChecks:null,workerSignatureProved:false});
   const cloudflare=async(requestPath,init={})=>{
     const method=init.method||'GET';assertAttendedCloudflareRequestAllowed(method,requestPath,{accountId:account});
     let response;try{response=await fetchImpl(API+requestPath,{...init,headers:{...headers,...init.headers},redirect:'error',signal:AbortSignal.timeout(15_000)});}catch{fail('attended_cloudflare_transport_ambiguous');}
@@ -150,20 +150,21 @@ export async function executeLiveAttendedAcceptance({env=process.env,fetchImpl=g
     fail('ATTENDED_VERSION_URL_UNAVAILABLE');
   };
   const provePreviewReady=async()=>{
-    let lastDiagnostic='ATTENDED_PREVIEW_ENDPOINT_UNSUPPORTED',lastHttpStatus=null,mismatch=null;
+    let lastDiagnostic='ATTENDED_PREVIEW_ENDPOINT_UNSUPPORTED',lastHttpStatus=null,mismatch=null,signatureChecks=null;
     for(let index=0;index<ATTENDED_PREVIEW_READINESS_DELAYS_MS.length;index++){
       const waitMs=ATTENDED_PREVIEW_READINESS_DELAYS_MS[index];if(waitMs>0)await wait(waitMs);
       previewReadinessAttempts+=1;
-      let response;try{response=await fetchImpl(previewUrl,{method:'GET',redirect:'error',signal:AbortSignal.timeout(ATTENDED_PREVIEW_READINESS_REQUEST_TIMEOUT_MS)});}catch(error){const transport=transportDiagnostic(error);lastDiagnostic=transport==='ATTENDED_INVOCATION_TIMEOUT'?'ATTENDED_PREVIEW_READINESS_TIMEOUT':transport==='ATTENDED_INVOCATION_DNS_TRANSPORT_FAILURE'?'ATTENDED_PREVIEW_READINESS_DNS_TRANSPORT_FAILURE':'ATTENDED_PREVIEW_READINESS_TRANSPORT_AMBIGUOUS';lastHttpStatus=null;mismatch=null;if(index+1<ATTENDED_PREVIEW_READINESS_DELAYS_MS.length)continue;readinessEvidence=Object.freeze({outcome:lastDiagnostic==='ATTENDED_PREVIEW_READINESS_TIMEOUT'?'TIMEOUT':'TRANSPORT_FAILURE',attempts:previewReadinessAttempts,lastHttpStatus,mismatch,workerSignatureProved:false});fail(lastDiagnostic);}
+      let response;try{response=await fetchImpl(previewUrl,{method:'GET',redirect:'error',signal:AbortSignal.timeout(ATTENDED_PREVIEW_READINESS_REQUEST_TIMEOUT_MS)});}catch(error){const transport=transportDiagnostic(error);lastDiagnostic=transport==='ATTENDED_INVOCATION_TIMEOUT'?'ATTENDED_PREVIEW_READINESS_TIMEOUT':transport==='ATTENDED_INVOCATION_DNS_TRANSPORT_FAILURE'?'ATTENDED_PREVIEW_READINESS_DNS_TRANSPORT_FAILURE':'ATTENDED_PREVIEW_READINESS_TRANSPORT_AMBIGUOUS';lastHttpStatus=null;mismatch=null;signatureChecks=null;if(index+1<ATTENDED_PREVIEW_READINESS_DELAYS_MS.length)continue;readinessEvidence=Object.freeze({outcome:lastDiagnostic==='ATTENDED_PREVIEW_READINESS_TIMEOUT'?'TIMEOUT':'TRANSPORT_FAILURE',attempts:previewReadinessAttempts,lastHttpStatus,mismatch,signatureChecks,workerSignatureProved:false});fail(lastDiagnostic);}
       const body=await boundedText(response);
       const contentTypeMatches=response.headers.get('content-type')?.startsWith('text/plain')===true;
       const cacheControlMatches=response.headers.get('cache-control')==='no-store';
       lastHttpStatus=Number.isInteger(response.status)?response.status:null;
-      mismatch=response.status!==404?'STATUS':body!=='Not found'?'BODY':!cacheControlMatches?'CACHE_CONTROL':!contentTypeMatches?'CONTENT_TYPE':null;
-      if(mismatch===null){readinessEvidence=Object.freeze({outcome:'WORKER_SIGNATURE_PROVED',attempts:previewReadinessAttempts,lastHttpStatus, mismatch:null,workerSignatureProved:true});return;}
+      signatureChecks=Object.freeze({statusMatches:response.status===404,bodyMatches:body==='Not found',cacheControlMatches,contentTypeMatches});
+      mismatch=!signatureChecks.statusMatches?'STATUS':!signatureChecks.bodyMatches?'BODY':!signatureChecks.cacheControlMatches?'CACHE_CONTROL':!signatureChecks.contentTypeMatches?'CONTENT_TYPE':null;
+      if(mismatch===null){readinessEvidence=Object.freeze({outcome:'WORKER_SIGNATURE_PROVED',attempts:previewReadinessAttempts,lastHttpStatus,mismatch:null,signatureChecks,workerSignatureProved:true});return;}
       lastDiagnostic=`ATTENDED_PREVIEW_ENDPOINT_UNSUPPORTED_${statusClass(response.status)}`;
       if(index+1<ATTENDED_PREVIEW_READINESS_DELAYS_MS.length)continue;
-      readinessEvidence=Object.freeze({outcome:'HTTP_RESPONSE_MISMATCH',attempts:previewReadinessAttempts,lastHttpStatus,mismatch,workerSignatureProved:false});fail(lastDiagnostic);
+      readinessEvidence=Object.freeze({outcome:'HTTP_RESPONSE_MISMATCH',attempts:previewReadinessAttempts,lastHttpStatus,mismatch,signatureChecks,workerSignatureProved:false});fail(lastDiagnostic);
     }
   };
   const runtime=async collectionEnabled=>{

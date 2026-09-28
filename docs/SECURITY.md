@@ -1,3 +1,7 @@
+## Closed attended readiness diagnostics after run 36474159770
+
+Readiness remains unauthenticated and secret-free. It follows no redirect, uses the exact API-returned HTTPS Version host and exact attended path, and runs before collection enablement. Evidence records only four booleans for status/body/cache-control/content-type equality, bounded numeric HTTP status and closed outcome/mismatch enums. Raw body, arbitrary header values, Version URL and trigger secret are not retained. Any mismatch keeps D1 disabled, provider invocation at zero, cleanup mandatory and retry unauthorized.
+
 ## Attended run 36346112699 diagnostic and reconciliation boundary
 
 Readiness uses seven secret-free probes after fixed waits of 0/2/5/10/20/30/45 seconds. Evidence retains only closed outcome and mismatch enums, attempt count, Worker-signature boolean and optional numeric HTTP status; it excludes response text, URL, headers, errors and credentials. Protected execution writes a sanitized evidence file whose SHA-256 is passed separately and verified before independent reconciliation. Only matching execution identity, zero invocation/collection enablement and independently pristine exact state can yield non-success `ATTENDED_ACCEPTANCE_CLEAN_READINESS_STOP`; every mismatch remains generic and non-retryable.

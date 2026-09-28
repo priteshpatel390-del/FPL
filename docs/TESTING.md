@@ -1,3 +1,7 @@
+## Attended Version URL signature diagnostics
+
+Permanent tests cover wrong 404 body, wrong cache-control, wrong content-type and exact signature success. They require all four closed comparison booleans, reject raw response body/header retention, keep readiness trigger-secret-free, keep collection disabled until exact proof, and preserve clean-stop/no-retry reconciliation.
+
 ## Attended run 36346112699 readiness and reconciliation regression coverage
 
 Permanent tests reproduce persistent non-Worker 4xx, delayed eventual exact signature, DNS/transport failure and timeout across the seven-attempt 112-second deterministic schedule. They prove no readiness request carries trigger secret, no readiness failure enables collection or invokes provider, Preview cleanup always runs, one trigger POST remains maximum, and diagnostics exclude raw body/URL/error/credentials. Reconciliation tests require hash-bound execution identity plus independently pristine foundational/runtime/topology state before returning non-success `ATTENDED_ACCEPTANCE_CLEAN_READINESS_STOP`; any tamper or uncertainty remains generic, fail-closed and non-retryable.

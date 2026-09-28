@@ -35,6 +35,10 @@ export function classifyAttendedReconciliation(report,{executionEvidence}={}){
     inventory.previewUrlIdentityExact===true&&inventory.secretBindingPresent===true&&JSON.stringify(inventory.secretBindingNames)===JSON.stringify(['API_FOOTBALL_API_KEY','API_FOOTBALL_ATTENDED_TRIGGER_SECRET'])&&
     report?.modelUiImportCount===0&&report?.rawPayloadStoragePresent===false&&report?.evidence?.productionMutations===0&&report?.evidence?.apiFootballRequests===0&&report?.evidence?.secretValuesRead===0;
   const readiness=executionEvidence?.readinessEvidence;
+  const signatureChecks=readiness?.signatureChecks;
+  const signatureChecksValid=readiness?.outcome==='HTTP_RESPONSE_MISMATCH'
+    ?signatureChecks&&['statusMatches','bodyMatches','cacheControlMatches','contentTypeMatches'].every(key=>typeof signatureChecks[key]==='boolean')&&Object.keys(signatureChecks).length===4&&!Object.values(signatureChecks).every(Boolean)
+    :signatureChecks===null;
   const cleanReadinessExecution=executionEvidence?.version==='api-football-attended-execution-v2'&&executionEvidence.approvedSha===report?.approvedSha&&
     executionEvidence.versionId===inventory.reviewedVersionId&&executionEvidence.ok===false&&executionEvidence.classification==='ATTENDED_EXECUTION_RECONCILIATION_REQUIRED'&&
     executionEvidence.reason==='attended_execution_requires_reconciliation'&&['ATTENDED_PREVIEW_ENDPOINT_UNSUPPORTED_4XX','ATTENDED_PREVIEW_READINESS_DNS_TRANSPORT_FAILURE','ATTENDED_PREVIEW_READINESS_TIMEOUT','ATTENDED_PREVIEW_READINESS_TRANSPORT_AMBIGUOUS'].includes(executionEvidence.diagnostic)&&
@@ -43,7 +47,7 @@ export function classifyAttendedReconciliation(report,{executionEvidence}={}){
     readiness&&['HTTP_RESPONSE_MISMATCH','TRANSPORT_FAILURE','TIMEOUT'].includes(readiness.outcome)&&readiness.workerSignatureProved===false&&
     Number.isInteger(readiness.attempts)&&readiness.attempts===executionEvidence.previewReadinessAttempts&&readiness.attempts===ATTENDED_PREVIEW_READINESS_MAX_ATTEMPTS&&
     (readiness.lastHttpStatus===null||(Number.isInteger(readiness.lastHttpStatus)&&readiness.lastHttpStatus>=100&&readiness.lastHttpStatus<=599))&&
-    [null,'STATUS','BODY','CACHE_CONTROL','CONTENT_TYPE'].includes(readiness.mismatch)&&executionEvidence.controlBudget?.d1Calls===1&&executionEvidence.controlBudget?.d1Statements===1&&executionEvidence.controlBudget?.d1RowsChanged===0;
+    [null,'STATUS','BODY','CACHE_CONTROL','CONTENT_TYPE'].includes(readiness.mismatch)&&signatureChecksValid&&executionEvidence.controlBudget?.d1Calls===1&&executionEvidence.controlBudget?.d1Statements===1&&executionEvidence.controlBudget?.d1RowsChanged===0;
   if(cleanPristineState&&cleanReadinessExecution)return safe({...base,classification:ATTENDED_CLEAN_READINESS_STOP,reason:'preview_readiness_not_proven'});
 
   const historyLooksSuccessful=runtime.credentialState==='AVAILABLE'&&history.requestAttempts===5&&history.attempt1Count===5&&history.attempt2Count===0&&
