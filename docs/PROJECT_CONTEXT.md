@@ -1,3 +1,7 @@
+## API-Football attended run 36346112699 — bounded readiness remediation
+
+Run `36346112699` on exact main `6814e0701e4d56ed387cd781590dde590f8a7d4a` proved exact Version URL publication on the first read, then returned unsupported 4xx responses for all three secret-free readiness probes. Collection enablement and authenticated invocation never occurred. Final independent observation proved pristine zero-provider state and complete cleanup. The run is consumed. Repository remediation retains the exact Worker signature but expands deterministic readiness observation to seven probes across 112 seconds of scheduled wait, adds closed status/mismatch evidence, and narrows reconciliation only when hash-bound execution evidence and independently pristine state both prove a zero-provider readiness stop.
+
 ## API-Football attended run 36254448484 — exact Version URL remediation
 
 Owner-approved run `36254448484`, attempt 1, on exact main `5a6f7eaf214fa0b921b6311117b7ccdfa227fc19` proved the protected mutation path now works: Preview was enabled, the runtime D1 flag was enabled and later disabled, and cleanup restored Preview off. The executor issued one HTTP invocation attempt, but the independently read production state remained at 0 request attempts, 0 generations, 0 fixture revisions and 0 API-Football requests. Credential state remained `AVAILABLE`, no lease remained, and Deployment/Cron/routes/domains stayed zero. The run is consumed.

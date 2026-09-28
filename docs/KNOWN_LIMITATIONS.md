@@ -1,3 +1,7 @@
+## Attended run 36346112699 consumed; exact edge 4xx remains unavailable
+
+Run `36346112699` is consumed. Its repository diagnostic retained only HTTP class, not exact status or mismatch dimension, so the historical response cannot distinguish propagation-edge status from another non-Worker signature. Repository remediation records safe numeric status and closed mismatch category for a future separately approved run and allows a longer finite readiness window, but cannot prove future live propagation or successful collection.
+
 ## Attended acceptance — run 36254448484 consumed; Version URL fix not yet live-proven
 
 Run `36249006161` is also consumed; it reached protected execution but changed zero D1 rows, made zero invocation attempts, and left pristine state. Run `36254448484` is consumed and must not be rerun. It proved Preview and D1 control mutations can succeed with the current credentials, but its one HTTP invocation attempt did not reach the Worker: durable request-attempt/provider evidence remained zero. The repository remediation replaces local URL synthesis with Cloudflare’s exact routable Version URL, proves the Worker endpoint is ready with a bounded secret-free GET before enabling collection, and emits closed sanitized transport/status diagnostics. Until a separately approved post-merge live attempt succeeds, this remediation is repository/test evidence only and does not establish a successful API-Football collection.

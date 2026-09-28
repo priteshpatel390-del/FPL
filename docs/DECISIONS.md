@@ -1,3 +1,9 @@
+## Decision — bounded 112-second attended readiness window and precise clean stop
+
+**Evidence:** run `36346112699` published the exact Version URL immediately but three probes across roughly two seconds all produced a non-Worker 4xx signature, with zero invocation and pristine reconciliation. Cloudflare provides no repository-pinned Version URL propagation SLA.
+
+**Decision:** retain exact Worker signature and use seven probes after deterministic waits of 0/2/5/10/20/30/45 seconds. Emit only closed outcome/mismatch enums and numeric status. Carry hash-bound sanitized execution evidence into reconciliation. Classify a clean readiness stop only when execution proves zero invocation/collection enablement and independent preflight proves pristine exact state; keep `ok:false` and `retryAuthorized:false`.
+
 ## Decision — trust Cloudflare's exact Worker Version URL, not a derived UUID prefix
 
 **Evidence:** attended run `36254448484` successfully crossed Preview and D1 mutation gates and attempted one invocation, while independent reconciliation still observed zero collector request-attempt rows and zero API-Football requests.
