@@ -1,3 +1,7 @@
+## Gate B lifecycle-observation coverage
+
+Permanent tests pin the exact Script Subdomain-only mutation allowlist, exact root and attended secret-free GETs, redirect blocking, closed four-dimension Worker-signature evidence, bounded HTTP status, mismatch ordering, transport sanitization, zero provider/D1/Version mutation counters, rejection of any trigger-secret presence, cleanup after ambiguous enable submission, and independent reconciliation against pristine `ATTENDED_ACCEPTANCE` state. Workflow tests require manual exact-main first-attempt execution and forbid provider secrets, D1 mutation endpoints, Version upload/deployment/schedule/route/domain surfaces. Full-suite and deterministic production-build evidence remains required on the exact PR head before merge.
+
 ## Attended Version URL signature diagnostics
 
 Permanent tests cover wrong 404 body, wrong cache-control, wrong content-type and exact signature success. They require all four closed comparison booleans, reject raw response body/header retention, keep readiness trigger-secret-free, keep collection disabled until exact proof, and preserve clean-stop/no-retry reconciliation.
