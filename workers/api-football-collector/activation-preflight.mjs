@@ -97,7 +97,7 @@ export function classifyCollectorActivationPreflight(evidence,{now}={}){
     return safe({ok:true,stage,classification:COLLECTOR_ATTENDED_STAGE_READY,secretBindingPresent:true});
   }
   if(stage===COLLECTOR_PREFLIGHT_LIFECYCLE_CLONE_CLOSEOUT_STAGE){
-    if(!exactAttendedInventory(inventory,{requireOriginalBytes:true,requirePreviewIdentity:true})||inventory.cloneVersionIdentityExact!==true||
+    if(!exactAttendedInventory(inventory,{requirePreviewIdentity:true})||inventory.cloneVersionIdentityExact!==true||
       typeof inventory.cloneVersionId!=='string'||inventory.cloneVersionId===inventory.reviewedVersionId)return stop(stage,'lifecycle_clone_inventory_unexpected');
     if(evidence.runtime.credentialState!=='AVAILABLE')return stop(stage,'credential_state_unexpected');
     const pristine=pristineFirstAcceptance(evidence,stage);if(!pristine.ok)return pristine;
