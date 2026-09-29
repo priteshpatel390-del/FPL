@@ -192,7 +192,7 @@ export async function runVersionUrlCreationExperiment({env=process.env,fetchImpl
     previewEnableAttempted,previewEnableSucceeded,previewDisableSucceeded,previewMutationSubmissions,
     versionMutationSubmissions,versionUploadDisposition,
     oldRootProbe,oldAttendedProbe,cloneRootProbe,cloneAttendedProbe,
-    secretBindingsSubmitted:2,triggerSecretRequestEgress:0,providerRequests:0,d1Mutations:0,deploymentMutations:0,cronRouteDomainMutations:0,
+    secretBindingsSubmitted:versionMutationSubmissions===1?2:0,triggerSecretRequestEgress:0,providerRequests:0,d1Mutations:0,deploymentMutations:0,cronRouteDomainMutations:0,
     retryAuthorized:false
   });
 }
