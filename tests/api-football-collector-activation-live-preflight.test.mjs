@@ -11,6 +11,7 @@ import {
   assertActivationReadOnlySql,
   buildAuthority,
   PREFLIGHT_ATTENDED_CLOUDFLARE_GETS,
+  PREFLIGHT_LIFECYCLE_CLONE_CLOUDFLARE_GETS,
   PREFLIGHT_MAX_CLOUDFLARE_GETS,
   PREFLIGHT_REPOSITORY_CLOUDFLARE_GETS,
   PREFLIGHT_MAX_D1_QUERY_CALLS,
@@ -166,7 +167,7 @@ test('attended live preflight proves exact reviewed content and closed two-Versi
   assert.equal(report.ok,true);
   assert.equal(report.inventory.versionIdentityExact,true);assert.equal(report.inventory.versionInventoryExact,true);
   assert.equal(report.inventory.previewUrlSuffix,'-teamsheet-api-football-shadow-collector.example.workers.dev');assert.equal(report.inventory.reviewedWorkerId,'worker-object-id');assert.equal(report.inventory.accountSubdomain,'example');
-  assert.equal(report.evidence.cloudflareGets,PREFLIGHT_ATTENDED_CLOUDFLARE_GETS);assert.equal(PREFLIGHT_MAX_CLOUDFLARE_GETS,PREFLIGHT_ATTENDED_CLOUDFLARE_GETS);
+  assert.equal(report.evidence.cloudflareGets,PREFLIGHT_ATTENDED_CLOUDFLARE_GETS);assert.equal(PREFLIGHT_MAX_CLOUDFLARE_GETS,PREFLIGHT_LIFECYCLE_CLONE_CLOUDFLARE_GETS);
 });
 
 test('attended Preview identity comes from modern Worker metadata, not legacy Script Subdomain shape',async()=>{
