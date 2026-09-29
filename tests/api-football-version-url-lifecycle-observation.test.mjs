@@ -121,7 +121,7 @@ test('transport evidence is closed and still performs Preview cleanup',async()=>
       return controlResponse();
     }
   });
-  assert.equal(result.ok,true);assert.equal(result.routing,'EXISTING_VERSION_ROUTABILITY_NOT_PROVEN');assert.equal(probe,2);assert.equal(disable,1);
+  assert.equal(result.ok,false);assert.equal(result.classification,'LIFECYCLE_OBSERVATION_RECONCILIATION_REQUIRED');assert.equal(result.routing,'LIFECYCLE_OBSERVATION_INCOMPLETE');assert.equal(result.retryAuthorized,false);assert.equal(probe,2);assert.equal(disable,1);
   assert.deepEqual(result.rootProbe,{outcome:'TRANSPORT_FAILURE',lastHttpStatus:null,mismatch:null,signatureChecks:null,workerSignatureProved:false});
   assert.doesNotMatch(JSON.stringify(result),/private remote detail/);fs.unlinkSync(file);
 });
