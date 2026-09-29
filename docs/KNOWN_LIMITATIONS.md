@@ -1,3 +1,9 @@
+## Gate B narrows the lifecycle question but does not prove the cause
+
+Run `36569336154` established that later enabling Version URLs for historical attended Version `04d79556-3070-429f-9944-b5b53d799842` yields HTTP responses that do not match the reviewed Worker signature. This rules out a pure DNS/timeout explanation for that run but does not identify the serving component or prove that creation-time enablement is the cause. Gate C is designed to compare the old Version with one equivalent Version created while URLs are enabled. Even if only the new Version proves routable, the result supports the creation-time lifecycle hypothesis but still does not expose undocumented Cloudflare internals.
+
+The Gate C terminal inventory intentionally contains a third inactive secret-bearing Version if creation succeeds. Existing attended-acceptance gates that require the historical closed two-Version inventory will then fail closed until a later separately approved design explicitly handles that retained clone.
+
 ## Existing attended Version routability remains unresolved until Gate B
 
 The API can publish the exact URL for attended Version `04d79556-3070-429f-9944-b5b53d799842` after Version URLs are enabled, but retained evidence still does not prove whether requests route to that Version because it was created while Version URLs were disabled. Gate B is designed to resolve only this uncertainty using two secret-free probes. Even if both probes fail the immutable Worker signature, that result alone does not prove a replacement Version is required or identify which Cloudflare serving component produced the response.

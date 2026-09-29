@@ -1,3 +1,9 @@
+## Decision — test creation-time Version URL lifecycle with one retained inactive clone
+
+**Evidence:** Gate B run `36569336154` enabled Version URLs for the already-existing attended Version and received real HTTP 404 responses on both reviewed paths, but body/cache-control/content-type did not match the immutable Worker signature. Transport was not ambiguous, and final reconciliation restored pristine state with zero provider/D1 activity. Cloudflare documents Version URLs as available after version creation when enabled and separately documents Version upload as creating a Version without deploying it.
+
+**Decision:** isolate creation timing directly. Gate C may create exactly one new inactive runtime-equivalent clone while Version URLs are already enabled and compare old/new routing in the same window. The clone must use the pinned attended module hashes, compatibility date, D1/plain-text/secret binding contract and current experiment audit annotations. It remains inactive and retained after the experiment so the evidence is inspectable; no automatic deletion/retry or attended execution follows. A routing difference is descriptive evidence, not by itself proof of Cloudflare internals or authorization to run the provider.
+
 ## Decision — isolate existing-Version lifecycle before replacement-Version work
 
 **Evidence:** run `36474159770` proved URL publication but not immutable Worker routing, while the attended Version was originally created with Version URLs disabled. Current evidence cannot prove whether later enablement should retroactively route that existing Version.

@@ -1,0 +1,272 @@
+# Owner-gated creation-time lifecycle experiment. Repository presence does not authorize dispatch.
+name: API-Football Version URL Creation Experiment
+
+on:
+  workflow_dispatch:
+    inputs:
+      approved_sha:
+        description: Exact current main SHA approved for the creation-time lifecycle experiment
+        required: true
+        type: string
+      attended_version_id:
+        description: Exact historical attended Version UUID used as the A/B control
+        required: true
+        type: string
+
+permissions:
+  contents: read
+  actions: read
+  checks: read
+
+concurrency:
+  group: api-football-version-url-creation-experiment
+  cancel-in-progress: false
+
+jobs:
+  repository-gate:
+    if: github.event_name == 'workflow_dispatch' && github.run_attempt == 1
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    outputs:
+      approved_sha: ${{ steps.identity.outputs.approved_sha }}
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          ref: ${{ inputs.approved_sha }}
+          fetch-depth: 0
+          persist-credentials: false
+      - id: identity
+        env:
+          APPROVED_SHA: ${{ inputs.approved_sha }}
+          ATTENDED_VERSION_ID: ${{ inputs.attended_version_id }}
+          EVENT_NAME: ${{ github.event_name }}
+          EVENT_REF: ${{ github.ref }}
+          EVENT_REPOSITORY: ${{ github.repository }}
+          EVENT_SHA: ${{ github.sha }}
+          EVENT_RUN_ATTEMPT: ${{ github.run_attempt }}
+        run: |
+          set -euo pipefail
+          test "$EVENT_NAME" = workflow_dispatch
+          test "$EVENT_RUN_ATTEMPT" = 1
+          test "$EVENT_REF" = refs/heads/main
+          test "$EVENT_REPOSITORY" = priteshpatel390-del/FPL
+          printf '%s' "$APPROVED_SHA" | grep -Eq '^[0-9a-f]{40}$'
+          test "$ATTENDED_VERSION_ID" = "04d79556-3070-429f-9944-b5b53d799842"
+          test "$EVENT_SHA" = "$APPROVED_SHA"
+          test "$(git rev-parse HEAD)" = "$APPROVED_SHA"
+          test "$(git ls-remote https://github.com/priteshpatel390-del/FPL.git refs/heads/main | cut -f1)" = "$APPROVED_SHA"
+          test -z "$(git status --porcelain --untracked-files=all)"
+          echo "approved_sha=$APPROVED_SHA" >> "$GITHUB_OUTPUT"
+      - name: Require exact-head Verify Teamsheet success
+        env:
+          GH_TOKEN: ${{ github.token }}
+          APPROVED_SHA: ${{ steps.identity.outputs.approved_sha }}
+        run: |
+          set -euo pipefail
+          response="$RUNNER_TEMP/check-runs.json"
+          gh api "repos/${{ github.repository }}/commits/$APPROVED_SHA/check-runs" > "$response"
+          node --input-type=module - "$response" <<'NODE'
+          import fs from 'node:fs';
+          const body=JSON.parse(fs.readFileSync(process.argv[2],'utf8'));
+          if(!(body.check_runs??[]).some(row=>row.name==='Tests and deterministic build'&&row.status==='completed'&&row.conclusion==='success'&&row.head_sha===process.env.APPROVED_SHA&&row.app?.slug==='github-actions'&&row.details_url?.startsWith('https://github.com/priteshpatel390-del/FPL/actions/runs/')))throw new Error('exact-head Verify Teamsheet success is absent');
+          NODE
+      - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
+        with:
+          node-version: 24.19.0
+      - name: Run focused experiment tests
+        run: |
+          node --test tests/api-football-version-url-creation-experiment.test.mjs tests/api-football-version-url-lifecycle-observation.test.mjs tests/api-football-collector-activation-live-preflight.test.mjs
+          test -z "$(git status --porcelain --untracked-files=all)"
+
+  fresh-readonly-admission:
+    if: github.event_name == 'workflow_dispatch' && github.run_attempt == 1
+    needs: repository-gate
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    environment:
+      name: data-steward-readonly
+      deployment: false
+    outputs:
+      classification: ${{ steps.handoff.outputs.classification }}
+      artifact_sha256: ${{ steps.handoff.outputs.artifact_sha256 }}
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          ref: ${{ needs.repository-gate.outputs.approved_sha }}
+          persist-credentials: false
+      - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
+        with:
+          node-version: 24.19.0
+      - name: Reconfirm exact protected main
+        env:
+          APPROVED_SHA: ${{ needs.repository-gate.outputs.approved_sha }}
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "$APPROVED_SHA"
+          test "$(git ls-remote https://github.com/priteshpatel390-del/FPL.git refs/heads/main | cut -f1)" = "$APPROVED_SHA"
+          test -z "$(git status --porcelain --untracked-files=all)"
+      - name: Prove exact two-Version pristine starting state
+        env:
+          APPROVED_SHA: ${{ needs.repository-gate.outputs.approved_sha }}
+          API_FOOTBALL_PREFLIGHT_STAGE: ATTENDED_ACCEPTANCE
+          API_FOOTBALL_ATTENDED_VERSION_ID: ${{ inputs.attended_version_id }}
+          API_FOOTBALL_ATTENDED_VERSION_APPROVED_SHA: 69bb84fadbcce94e9fece3ff438d985866cce183
+          DATA_STEWARD_CLOUDFLARE_ACCOUNT_ID: ${{ secrets.DATA_STEWARD_CLOUDFLARE_ACCOUNT_ID }}
+          DATA_STEWARD_CLOUDFLARE_ACCOUNT_FINGERPRINT: ${{ vars.DATA_STEWARD_CLOUDFLARE_ACCOUNT_FINGERPRINT }}
+          DATA_STEWARD_CLOUDFLARE_READ_TOKEN: ${{ secrets.DATA_STEWARD_CLOUDFLARE_READ_TOKEN }}
+          API_FOOTBALL_ACTIVATION_PREFLIGHT_REPORT_PATH: ${{ runner.temp }}/creation-experiment-admission.json
+        run: node workers/api-football-collector/activation-live-preflight.mjs
+      - id: handoff
+        env:
+          REPORT: ${{ runner.temp }}/creation-experiment-admission.json
+          APPROVED_SHA: ${{ needs.repository-gate.outputs.approved_sha }}
+          ATTENDED_VERSION_ID: ${{ inputs.attended_version_id }}
+          ACCOUNT_FINGERPRINT: ${{ vars.DATA_STEWARD_CLOUDFLARE_ACCOUNT_FINGERPRINT }}
+        run: |
+          set -euo pipefail
+          node --input-type=module - <<'NODE'
+          import fs from 'node:fs';import {createHash} from 'node:crypto';
+          const bytes=fs.readFileSync(process.env.REPORT),r=JSON.parse(bytes);
+          if(r.ok!==true||r.approvedSha!==process.env.APPROVED_SHA||r.stage!=='ATTENDED_ACCEPTANCE'||
+            r.classification!=='READY_FOR_SEPARATELY_APPROVED_ATTENDED_ACCEPTANCE'||r.accountFingerprint!==process.env.ACCOUNT_FINGERPRINT||
+            r.inventory?.reviewedVersionId!==process.env.ATTENDED_VERSION_ID||r.inventory?.versionIdentityExact!==true||
+            r.inventory?.versionInventoryExact!==true||r.inventory?.previewUrlIdentityExact!==true||r.inventory?.previewUrls!==false||
+            r.inventory?.workersDev!==false||r.inventory?.deploymentCount!==0||r.inventory?.cronCount!==0||r.inventory?.routeCount!==0||
+            r.inventory?.customDomainCount!==0||r.runtime?.collectionEnabled!==0||r.runtime?.credentialState!=='AVAILABLE'||
+            r.priorState?.requestAttempts!==0||r.priorState?.generations!==0||r.priorState?.fixtureRevisions!==0||
+            r.evidence?.productionMutations!==0||r.evidence?.apiFootballRequests!==0||r.evidence?.secretValuesRead!==0)throw new Error('creation experiment admission invalid');
+          fs.appendFileSync(process.env.GITHUB_OUTPUT,`classification=${r.classification}\nartifact_sha256=${createHash('sha256').update(bytes).digest('hex')}\n`);
+          NODE
+      - uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6
+        with:
+          name: api-football-version-url-creation-admission
+          path: ${{ runner.temp }}/creation-experiment-admission.json
+          retention-days: 7
+
+  protected-creation-experiment:
+    if: github.event_name == 'workflow_dispatch' && github.run_attempt == 1 && needs.fresh-readonly-admission.outputs.classification == 'READY_FOR_SEPARATELY_APPROVED_ATTENDED_ACCEPTANCE'
+    needs: [repository-gate, fresh-readonly-admission]
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    environment:
+      name: api-football-attended-preparation-version
+      deployment: false
+    outputs:
+      clone_version_id: ${{ steps.handoff.outputs.clone_version_id }}
+      artifact_sha256: ${{ steps.handoff.outputs.artifact_sha256 }}
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          ref: ${{ needs.repository-gate.outputs.approved_sha }}
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
+        with:
+          node-version: 24.19.0
+      - uses: actions/download-artifact@95815c38cf2ff2164869cbab79da8d1f422bc89e # v4
+        with:
+          name: api-football-version-url-creation-admission
+          path: ${{ runner.temp }}/creation-admission
+      - name: Reconfirm exact main and bound admission before mutation
+        env:
+          APPROVED_SHA: ${{ needs.repository-gate.outputs.approved_sha }}
+          REPORT: ${{ runner.temp }}/creation-admission/creation-experiment-admission.json
+          EXPECTED_ARTIFACT_SHA256: ${{ needs.fresh-readonly-admission.outputs.artifact_sha256 }}
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "$APPROVED_SHA"
+          test "$(git ls-remote https://github.com/priteshpatel390-del/FPL.git refs/heads/main | cut -f1)" = "$APPROVED_SHA"
+          test "$(sha256sum "$REPORT" | cut -d' ' -f1)" = "$EXPECTED_ARTIFACT_SHA256"
+          test -z "$(git status --porcelain --untracked-files=all)"
+      - name: Create one runtime-equivalent Version while Version URLs are enabled and compare routing
+        id: experiment
+        continue-on-error: true
+        env:
+          APPROVED_SHA: ${{ needs.repository-gate.outputs.approved_sha }}
+          API_FOOTBALL_ATTENDED_ADMISSION_PATH: ${{ runner.temp }}/creation-admission/creation-experiment-admission.json
+          API_FOOTBALL_VERSION_URL_CREATION_EXPERIMENT_REPORT_PATH: ${{ runner.temp }}/creation-experiment.json
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          CLOUDFLARE_ACCOUNT_FINGERPRINT: ${{ vars.CLOUDFLARE_ACCOUNT_FINGERPRINT }}
+          CLOUDFLARE_ATTENDED_VERSION_UPLOAD_TOKEN: ${{ secrets.CLOUDFLARE_ATTENDED_VERSION_UPLOAD_TOKEN }}
+          API_FOOTBALL_API_KEY: ${{ secrets.API_FOOTBALL_API_KEY }}
+          API_FOOTBALL_ATTENDED_TRIGGER_SECRET: ${{ secrets.API_FOOTBALL_ATTENDED_TRIGGER_SECRET }}
+        run: node workers/api-football-collector/run-version-url-creation-experiment.mjs
+      - id: handoff
+        if: always()
+        env:
+          REPORT: ${{ runner.temp }}/creation-experiment.json
+          APPROVED_SHA: ${{ needs.repository-gate.outputs.approved_sha }}
+        run: |
+          set -euo pipefail
+          test -f "$REPORT"
+          node --input-type=module - <<'NODE'
+          import fs from 'node:fs';import {createHash} from 'node:crypto';
+          const bytes=fs.readFileSync(process.env.REPORT),r=JSON.parse(bytes);
+          if(r.version!=='api-football-version-url-creation-experiment-v1'||r.approvedSha!==process.env.APPROVED_SHA||
+            r.sourceVersionId!=='04d79556-3070-429f-9944-b5b53d799842'||r.sourceVersionApprovedSha!=='69bb84fadbcce94e9fece3ff438d985866cce183'||
+            r.retryAuthorized!==false||r.triggerSecretRequestEgress!==0||r.providerRequests!==0||r.d1Mutations!==0||
+            r.deploymentMutations!==0||r.cronRouteDomainMutations!==0||r.versionMutationSubmissions>1||r.previewMutationSubmissions>2)throw new Error('creation experiment evidence invalid');
+          if(r.cloneVersionId!=null&&!/^[0-9a-f-]{36}$/i.test(r.cloneVersionId))throw new Error('clone Version identity invalid');
+          fs.appendFileSync(process.env.GITHUB_OUTPUT,`clone_version_id=${r.cloneVersionId??''}\nartifact_sha256=${createHash('sha256').update(bytes).digest('hex')}\n`);
+          NODE
+      - uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6
+        if: always()
+        with:
+          name: api-football-version-url-creation-experiment
+          path: ${{ runner.temp }}/creation-experiment.json
+          if-no-files-found: error
+          retention-days: 7
+      - name: Preserve protected experiment outcome
+        if: steps.experiment.outcome != 'success'
+        run: exit 1
+
+  final-readonly-reconciliation:
+    if: ${{ always() && github.event_name == 'workflow_dispatch' && github.run_attempt == 1 && needs.repository-gate.result == 'success' }}
+    needs: [repository-gate, fresh-readonly-admission, protected-creation-experiment]
+    runs-on: ubuntu-latest
+    timeout-minutes: 14
+    environment:
+      name: data-steward-readonly
+      deployment: false
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          ref: ${{ needs.repository-gate.outputs.approved_sha }}
+          persist-credentials: false
+      - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
+        with:
+          node-version: 24.19.0
+      - uses: actions/download-artifact@95815c38cf2ff2164869cbab79da8d1f422bc89e # v4
+        if: needs.protected-creation-experiment.outputs.artifact_sha256 != ''
+        with:
+          name: api-football-version-url-creation-experiment
+          path: ${{ runner.temp }}/creation-experiment
+      - name: Verify experiment evidence handoff
+        if: needs.protected-creation-experiment.outputs.artifact_sha256 != ''
+        env:
+          REPORT: ${{ runner.temp }}/creation-experiment/creation-experiment.json
+          EXPECTED_SHA256: ${{ needs.protected-creation-experiment.outputs.artifact_sha256 }}
+        run: |
+          set -euo pipefail
+          test "$(sha256sum "$REPORT" | cut -d' ' -f1)" = "$EXPECTED_SHA256"
+      - name: Independently reconcile two- or three-Version safe state
+        id: reconcile
+        continue-on-error: true
+        env:
+          APPROVED_SHA: ${{ needs.repository-gate.outputs.approved_sha }}
+          DATA_STEWARD_CLOUDFLARE_ACCOUNT_ID: ${{ secrets.DATA_STEWARD_CLOUDFLARE_ACCOUNT_ID }}
+          DATA_STEWARD_CLOUDFLARE_ACCOUNT_FINGERPRINT: ${{ vars.DATA_STEWARD_CLOUDFLARE_ACCOUNT_FINGERPRINT }}
+          DATA_STEWARD_CLOUDFLARE_READ_TOKEN: ${{ secrets.DATA_STEWARD_CLOUDFLARE_READ_TOKEN }}
+          API_FOOTBALL_VERSION_URL_CREATION_EXPERIMENT_REPORT_PATH: ${{ runner.temp }}/creation-experiment/creation-experiment.json
+          API_FOOTBALL_VERSION_URL_CREATION_RECONCILIATION_PATH: ${{ runner.temp }}/creation-reconciliation.json
+        run: node workers/api-football-collector/version-url-creation-experiment-reconciliation.mjs
+      - uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6
+        if: always()
+        with:
+          name: api-football-version-url-creation-reconciliation
+          path: ${{ runner.temp }}/creation-reconciliation.json
+          if-no-files-found: error
+          retention-days: 7
+      - name: Require independently reconciled completed experiment
+        if: steps.reconcile.outcome != 'success'
+        run: exit 1

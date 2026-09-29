@@ -1,3 +1,7 @@
+## Current gate — creation-time Version URL A/B experiment
+
+Gate B is live-complete and reconciled. The approved next checkpoint is Gate C repository implementation for one A/B experiment comparing the historical attended Version with one newly created runtime-equivalent inactive clone created while Version URLs are enabled. Required evidence: exact-main repository gate, exact two-Version admission, one Preview enable, one Version-upload submission, four secret-free HTTP probes, Preview disable, and independent two-/three-Version closeout with zero D1/provider/Deployment/Cron/route/domain activity. Normal merge approval remains separate. After the live experiment, stop for owner review; do not infer authorization for attended acceptance or clone cleanup.
+
 ## Current gate — existing-Version URL lifecycle observation
 
 Gate A diagnostics are merged. The next approved scope is Gate B: implement and, only after normal merge plus exact-main verification, run one zero-provider lifecycle observation against the existing attended Version. Completion requires exact before/after pristine-state proof, Version URLs restored disabled, two closed secret-free probe results and zero D1/provider/Version mutations. A non-routable result does not automatically advance to replacement-Version creation; that would require a new owner decision.

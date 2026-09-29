@@ -164,6 +164,57 @@ export function buildAttendedVersionUploadForm(approvedSha,secrets,{readFile}={}
   return form;
 }
 
+export function buildLifecycleCloneIdentity(approvedSha,{readFile}={}){
+  if(!HEX40.test(String(approvedSha||'')))fail('collector_lifecycle_clone_approved_sha_invalid');
+  const modules=buildUploadModules(resolveModuleGraph(readFile?{readFile}:{}));
+  const actual=Object.fromEntries([...modules].map(([name,source])=>[name,sha256(source)]));
+  if(JSON.stringify(Object.keys(actual).sort())!==JSON.stringify(Object.keys(ATTENDED_VERSION_MODULE_SHA256).sort())||
+    Object.entries(ATTENDED_VERSION_MODULE_SHA256).some(([name,expected])=>actual[name]!==expected))fail('collector_lifecycle_clone_source_drift');
+  return Object.freeze({
+    approvedSha,sourceVersionId:ATTENDED_VERSION_ID,sourceVersionApprovedSha:ATTENDED_VERSION_APPROVED_SHA,
+    mainModule:ENTRY_MODULE,compatibilityDate:EXPECTED_COMPATIBILITY_DATE,
+    message:'API-Football lifecycle clone of '+ATTENDED_VERSION_ID+' on '+approvedSha,
+    tag:'api-football-lifecycle-clone-'+approvedSha.slice(0,12),moduleSha256:ATTENDED_VERSION_MODULE_SHA256
+  });
+}
+
+export function buildLifecycleCloneVersionUploadMetadata(approvedSha,{apiKey,triggerSecret}={},options={}){
+  const identity=buildLifecycleCloneIdentity(approvedSha,options);
+  if(typeof apiKey!=='string'||!apiKey||typeof triggerSecret!=='string'||triggerSecret.length<32||apiKey===triggerSecret)fail('collector_lifecycle_clone_secret_material_invalid');
+  return {
+    main_module:ENTRY_MODULE,compatibility_date:EXPECTED_COMPATIBILITY_DATE,
+    bindings:expectedAttendedBindings().map(binding=>binding.type==='secret_text'?{...binding,text:binding.name==='API_FOOTBALL_API_KEY'?apiKey:triggerSecret}:{...binding}),
+    annotations:{'workers/message':identity.message,'workers/tag':identity.tag}
+  };
+}
+
+export function buildLifecycleCloneVersionUploadForm(approvedSha,secrets,{readFile}={}){
+  const options=readFile?{readFile}:{};
+  const metadata=buildLifecycleCloneVersionUploadMetadata(approvedSha,secrets,options),modules=buildUploadModules(resolveModuleGraph(options));
+  const form=new FormData();form.set('metadata',JSON.stringify(metadata));
+  for(const [name,source] of [...modules].sort(([a],[b])=>a.localeCompare(b)))form.set(name,new File([source],name,{type:'application/javascript+module'}));
+  return form;
+}
+
+export function validateLifecycleCloneVersion({stableVersion,betaVersion,versionId,identity}={}){
+  validateReviewedAttendedVersion({stableVersion,betaVersion,versionId,identity});
+  if(identity?.sourceVersionId!==ATTENDED_VERSION_ID||identity?.sourceVersionApprovedSha!==ATTENDED_VERSION_APPROVED_SHA||
+    JSON.stringify(identity.moduleSha256)!==JSON.stringify(ATTENDED_VERSION_MODULE_SHA256))fail('collector_lifecycle_clone_identity_invalid');
+  return true;
+}
+
+export function validateLifecycleExperimentInventory({versionIds,originalStable,attendedStable,attendedBeta,cloneVersionId,cloneStable,cloneBeta,cloneIdentity}={}){
+  if(!Array.isArray(versionIds)||versionIds.length!==3||new Set(versionIds).size!==3||
+    !versionIds.includes(ORIGINAL_BLOCKED_VERSION_ID)||!versionIds.includes(ATTENDED_VERSION_ID)||!versionIds.includes(cloneVersionId)||
+    cloneVersionId===ORIGINAL_BLOCKED_VERSION_ID||cloneVersionId===ATTENDED_VERSION_ID)fail('collector_lifecycle_clone_inventory_drift');
+  validateClosedVersionInventory({
+    versionIds:[ORIGINAL_BLOCKED_VERSION_ID,ATTENDED_VERSION_ID],originalStable,attendedVersionId:ATTENDED_VERSION_ID,
+    attendedStable,attendedBeta,identity:buildImmutableAttendedVersionIdentity()
+  });
+  validateLifecycleCloneVersion({stableVersion:cloneStable,betaVersion:cloneBeta,versionId:cloneVersionId,identity:cloneIdentity});
+  return true;
+}
+
 export async function prepareFinalAttendedVersion({request,readVersions,accountId,approvedSha,secrets,beforeIds=[ORIGINAL_BLOCKED_VERSION_ID]}={}){
   if(!Array.isArray(beforeIds)||beforeIds.length!==1||beforeIds[0]!==ORIGINAL_BLOCKED_VERSION_ID)fail('collector_attended_preparation_inventory_invalid');
   const result=await performVersionUpload({request,readVersions,accountId,multipart:buildAttendedVersionUploadForm(approvedSha,secrets),beforeIds});

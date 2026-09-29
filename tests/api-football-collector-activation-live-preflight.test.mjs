@@ -11,6 +11,7 @@ import {
   assertActivationReadOnlySql,
   buildAuthority,
   PREFLIGHT_ATTENDED_CLOUDFLARE_GETS,
+  PREFLIGHT_LIFECYCLE_CLONE_CLOUDFLARE_GETS,
   PREFLIGHT_MAX_CLOUDFLARE_GETS,
   PREFLIGHT_REPOSITORY_CLOUDFLARE_GETS,
   PREFLIGHT_MAX_D1_QUERY_CALLS,
@@ -19,9 +20,11 @@ import {
 } from '../workers/api-football-collector/activation-live-preflight.mjs';
 import {
   COLLECTOR_PREFLIGHT_REPOSITORY_STAGE,
-  COLLECTOR_REPOSITORY_STAGE_READY
+  COLLECTOR_REPOSITORY_STAGE_READY,
+  COLLECTOR_PREFLIGHT_LIFECYCLE_CLONE_CLOSEOUT_STAGE,
+  COLLECTOR_LIFECYCLE_CLONE_CLOSEOUT_READY
 } from '../workers/api-football-collector/activation-preflight.mjs';
-import {ATTENDED_VERSION_APPROVED_SHA,buildReviewedAttendedIdentity,expectedAttendedBindings,ORIGINAL_BLOCKED_VERSION_ID} from '../workers/api-football-collector/attended-version.mjs';
+import {ATTENDED_VERSION_APPROVED_SHA,ATTENDED_VERSION_ID as HISTORICAL_ATTENDED_VERSION_ID,buildImmutableAttendedVersionIdentity,buildLifecycleCloneIdentity,buildReviewedAttendedIdentity,expectedAttendedBindings,ORIGINAL_BLOCKED_VERSION_ID} from '../workers/api-football-collector/attended-version.mjs';
 import {buildUploadModules,resolveModuleGraph} from '../workers/api-football-collector/stage-inactive-version.mjs';
 
 const root=path.resolve(import.meta.dirname,'..');
@@ -166,7 +169,56 @@ test('attended live preflight proves exact reviewed content and closed two-Versi
   assert.equal(report.ok,true);
   assert.equal(report.inventory.versionIdentityExact,true);assert.equal(report.inventory.versionInventoryExact,true);
   assert.equal(report.inventory.previewUrlSuffix,'-teamsheet-api-football-shadow-collector.example.workers.dev');assert.equal(report.inventory.reviewedWorkerId,'worker-object-id');assert.equal(report.inventory.accountSubdomain,'example');
-  assert.equal(report.evidence.cloudflareGets,PREFLIGHT_ATTENDED_CLOUDFLARE_GETS);assert.equal(PREFLIGHT_MAX_CLOUDFLARE_GETS,PREFLIGHT_ATTENDED_CLOUDFLARE_GETS);
+  assert.equal(report.evidence.cloudflareGets,PREFLIGHT_ATTENDED_CLOUDFLARE_GETS);assert.equal(PREFLIGHT_MAX_CLOUDFLARE_GETS,PREFLIGHT_LIFECYCLE_CLONE_CLOUDFLARE_GETS);
+});
+
+test('lifecycle clone closeout proves exact three-Version inventory with pristine runtime',async()=>{
+  const cloneVersionId='22222222-2222-4222-8222-222222222222';
+  const attendedIdentity=buildImmutableAttendedVersionIdentity(),cloneIdentity=buildLifecycleCloneIdentity(APPROVED_SHA),modules=buildUploadModules(resolveModuleGraph());
+  const moduleRows=[...modules].map(([name,source])=>({name,content_base64:Buffer.from(source).toString('base64')}));
+  const attendedStable={id:HISTORICAL_ATTENDED_VERSION_ID,resources:{script_runtime:{compatibility_date:attendedIdentity.compatibilityDate},bindings:structuredClone(expectedAttendedBindings())}};
+  const attendedBeta={id:HISTORICAL_ATTENDED_VERSION_ID,main_module:attendedIdentity.mainModule,compatibility_date:attendedIdentity.compatibilityDate,annotations:{'workers/message':attendedIdentity.message,'workers/tag':attendedIdentity.tag},modules:moduleRows};
+  const cloneStable={id:cloneVersionId,resources:{script_runtime:{compatibility_date:cloneIdentity.compatibilityDate},bindings:structuredClone(expectedAttendedBindings())}};
+  const cloneBeta={id:cloneVersionId,main_module:cloneIdentity.mainModule,compatibility_date:cloneIdentity.compatibilityDate,annotations:{'workers/message':cloneIdentity.message,'workers/tag':cloneIdentity.tag},modules:moduleRows};
+  const originalStable={id:ORIGINAL_BLOCKED_VERSION_ID,resources:{bindings:[
+    {name:'TEAMSHEET_DATA_DB',type:'d1',database_id:EXPECTED_D1_DATABASE_ID},{name:'API_FOOTBALL_FPL_SEASON',type:'plain_text',text:'2026-27'},
+    {name:'API_FOOTBALL_PROVIDER_SEASON',type:'plain_text',text:'2026'},{name:'EIA_2I5D_ACTIVATION',type:'plain_text',text:'REPOSITORY_ONLY_BLOCKED'}]}};
+  const state=d1Rows({credentialState:'AVAILABLE'}),bySql=new Map(Object.entries(ACTIVATION_QUERIES).map(([key,sql])=>[sql,key]));
+  const fetchImpl=async(url,init={})=>{
+    const value=String(url);
+    if(value.includes('/d1/database/')&&value.includes('?fields='))return json({uuid:EXPECTED_D1_DATABASE_ID,name:'teamsheet-data',file_size:123});
+    if(value.includes('/workers/scripts/teamsheet-data-platform/settings'))return json({bindings:[{name:'TEAMSHEET_DATA_DB',type:'d1',database_id:EXPECTED_D1_DATABASE_ID}]});
+    if(value.includes('/workers/scripts/teamsheet-api-football-shadow-collector/versions/'+cloneVersionId))return json(cloneStable);
+    if(value.includes('/workers/scripts/teamsheet-api-football-shadow-collector/versions/'+HISTORICAL_ATTENDED_VERSION_ID))return json(attendedStable);
+    if(value.includes('/workers/scripts/teamsheet-api-football-shadow-collector/versions/'+ORIGINAL_BLOCKED_VERSION_ID))return json(originalStable);
+    if(value.includes('/workers/scripts/teamsheet-api-football-shadow-collector/versions?'))return json({items:[{id:ORIGINAL_BLOCKED_VERSION_ID},{id:HISTORICAL_ATTENDED_VERSION_ID},{id:cloneVersionId}]});
+    if(value.includes('/workers/workers?'))return json([{id:'worker-object-id',name:'teamsheet-api-football-shadow-collector'}]);
+    if(value.includes('/workers/workers/worker-object-id/versions/'+cloneVersionId+'?include=modules'))return json(cloneBeta);
+    if(value.includes('/workers/workers/worker-object-id/versions/'+HISTORICAL_ATTENDED_VERSION_ID+'?include=modules'))return json(attendedBeta);
+    if(value.endsWith('/workers/workers/worker-object-id'))return json({id:'worker-object-id',name:'teamsheet-api-football-shadow-collector',subdomain:{enabled:false,previews_enabled:false,preview_url_suffix:'-teamsheet-api-football-shadow-collector.example.workers.dev'}});
+    if(value.includes('/workers/scripts/teamsheet-api-football-shadow-collector/subdomain'))return json({enabled:false,previews_enabled:false});
+    if(value.endsWith('/workers/subdomain'))return json({subdomain:'example'});
+    if(value.endsWith('/workers/domains'))return json([]);
+    if(value.endsWith('/workers/scripts'))return json([{id:'teamsheet-api-football-shadow-collector',routes:[]}]);
+    if(value.includes('/workers/scripts/teamsheet-api-football-shadow-collector/schedules'))return json({schedules:[]});
+    if(value.includes('/workers/scripts/teamsheet-api-football-shadow-collector/deployments'))return json({deployments:[]});
+    if(value.endsWith('/query')){
+      const body=JSON.parse(init.body),result=body.batch.map(({sql})=>{const key=bySql.get(sql);assert.ok(key);const results=state[key];return {success:true,results,meta:{rows_read:Array.isArray(results)?results.length:0,rows_written:0}};});
+      return json(result);
+    }
+    throw new Error('unexpected URL '+value);
+  };
+  const report=await runApiFootballActivationLivePreflight({
+    env:{...env(),APPROVED_SHA,API_FOOTBALL_PREFLIGHT_STAGE:COLLECTOR_PREFLIGHT_LIFECYCLE_CLONE_CLOSEOUT_STAGE,
+      API_FOOTBALL_ATTENDED_VERSION_ID:HISTORICAL_ATTENDED_VERSION_ID,API_FOOTBALL_ATTENDED_VERSION_APPROVED_SHA:ATTENDED_VERSION_APPROVED_SHA,
+      API_FOOTBALL_LIFECYCLE_CLONE_VERSION_ID:cloneVersionId},
+    fetchImpl,now:()=>NOW
+  });
+  assert.equal(report.ok,true);assert.equal(report.classification,COLLECTOR_LIFECYCLE_CLONE_CLOSEOUT_READY);
+  assert.equal(report.inventory.reviewedVersionId,HISTORICAL_ATTENDED_VERSION_ID);assert.equal(report.inventory.cloneVersionId,cloneVersionId);
+  assert.equal(report.inventory.versionIdentityExact,true);assert.equal(report.inventory.cloneVersionIdentityExact,true);assert.equal(report.inventory.versionInventoryExact,true);
+  assert.equal(report.inventory.previewUrls,false);assert.equal(report.inventory.workersDev,false);assert.equal(report.inventory.deploymentCount,0);
+  assert.equal(report.evidence.cloudflareGets,PREFLIGHT_LIFECYCLE_CLONE_CLOUDFLARE_GETS);
 });
 
 test('attended Preview identity comes from modern Worker metadata, not legacy Script Subdomain shape',async()=>{

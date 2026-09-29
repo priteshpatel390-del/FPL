@@ -1,3 +1,9 @@
+## Gate C creation-time lifecycle coverage
+
+Permanent tests pin: exact two-endpoint mutation allowlisting; one Version-upload submission; two Preview-toggle submissions; byte-equivalence of the clone to immutable attended module hashes; exact runtime binding/compatibility contract; secret material present only in synthetic multipart upload tests; four header-free old/new routing probes; no trigger-header/API-Football/D1/deployment/schedule/route/domain/delete surface; cleanup after ambiguous Preview enable; closed A/B routing classifications; exact three-Version closeout; and fail-closed reconciliation for provider activity, Preview drift or inconsistent evidence.
+
+The shared activation preflight now has a dedicated `VERSION_URL_CREATION_EXPERIMENT_CLOSEOUT` stage with a 16-GET ceiling and one existing bounded D1 read batch. It proves historical attended identity plus clone identity and pristine runtime without re-reading redundant immutable original-Version module bytes. Full-suite `./run-tests.sh`, deterministic production builds, root/dist equality and build provenance remain required on the exact PR head before merge.
+
 ## Gate B lifecycle-observation coverage
 
 Permanent tests pin the exact Script Subdomain-only mutation allowlist, exact root and attended secret-free GETs, redirect blocking, closed four-dimension Worker-signature evidence, bounded HTTP status, mismatch ordering, transport sanitization, zero provider/D1/Version mutation counters, rejection of any trigger-secret presence, cleanup after ambiguous enable submission, and independent reconciliation against pristine `ATTENDED_ACCEPTANCE` state. Workflow tests require manual exact-main first-attempt execution and forbid provider secrets, D1 mutation endpoints, Version upload/deployment/schedule/route/domain surfaces. Full-suite and deterministic production-build evidence remains required on the exact PR head before merge.
