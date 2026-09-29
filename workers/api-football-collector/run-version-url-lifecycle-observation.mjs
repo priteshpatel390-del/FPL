@@ -107,7 +107,7 @@ export async function runVersionUrlLifecycleObservation({env=process.env,fetchIm
   },fetchImpl,stage:'ATTENDED_ACCEPTANCE'});
   const previewIdentity=validateCriticalRecheck(critical,{approvedSha,versionId,versionApprovedSha,accountFingerprint:fingerprint});
 
-  let previewEnableSucceeded=false,previewDisableSucceeded=false,previewMutations=0,versionUrlReads=0;
+  let previewEnableAttempted=false,previewEnableSucceeded=false,previewDisableSucceeded=false,previewMutations=0,versionUrlReads=0;
   let rootProbe=null,attendedProbe=null,observationFailure=null;
   const controlPath=lifecycleControlPath(account);
   const setPreview=async enabled=>{
@@ -135,7 +135,7 @@ export async function runVersionUrlLifecycleObservation({env=process.env,fetchIm
   };
 
   try{
-    await setPreview(true);previewEnableSucceeded=true;
+    previewEnableAttempted=true;await setPreview(true);previewEnableSucceeded=true;
     const versionUrl=await resolveVersionUrl();
     const rootUrl=deriveVersionPreviewUrl({versionId,versionUrl,previewUrlSuffix:previewIdentity.previewUrlSuffix,accountSubdomain:previewIdentity.accountSubdomain,path:'/'});
     const attendedUrl=deriveVersionPreviewUrl({versionId,versionUrl,previewUrlSuffix:previewIdentity.previewUrlSuffix,accountSubdomain:previewIdentity.accountSubdomain,path:ATTENDED_ACCEPTANCE_PATH});
@@ -145,7 +145,7 @@ export async function runVersionUrlLifecycleObservation({env=process.env,fetchIm
     const known=new Set(['lifecycle_preview_toggle_transport_ambiguous','lifecycle_preview_toggle_response_invalid','lifecycle_preview_toggle_rejected','lifecycle_version_url_read_transport_ambiguous','lifecycle_version_url_response_invalid','lifecycle_version_url_identity_failure','lifecycle_version_url_unavailable','collector_attended_preview_identity_invalid']);
     observationFailure=known.has(error?.message)?error.message:'lifecycle_observation_failed_unknown';
   }finally{
-    if(previewEnableSucceeded){
+    if(previewEnableAttempted){
       try{await setPreview(false);previewDisableSucceeded=true;}
       catch{previewDisableSucceeded=false;}
     }
@@ -159,7 +159,7 @@ export async function runVersionUrlLifecycleObservation({env=process.env,fetchIm
     version:VERSION_URL_LIFECYCLE_OBSERVATION_VERSION,approvedSha,versionId,ok,
     classification:ok?'LIFECYCLE_OBSERVATION_COMPLETE_RECONCILIATION_REQUIRED':'LIFECYCLE_OBSERVATION_RECONCILIATION_REQUIRED',
     reason:ok?'observation_complete_requires_reconciliation':(observationFailure??(cleanupSafe?'observation_incomplete':'preview_cleanup_unproved')),
-    routing,versionUrlReads,previewMutations,previewEnableSucceeded,previewDisableSucceeded,
+    routing,versionUrlReads,previewMutations,previewEnableAttempted,previewEnableSucceeded,previewDisableSucceeded,
     rootProbe,attendedProbe,providerRequests:0,d1Mutations:0,versionMutations:0,triggerSecretReads:0,retryAuthorized:false
   });
 }
@@ -169,7 +169,7 @@ export async function main(){
   try{output=await runVersionUrlLifecycleObservation();}
   catch(error){
     const approvedSha=process.env.APPROVED_SHA??null,versionId=process.env.API_FOOTBALL_ATTENDED_VERSION_ID??null;
-    output=Object.freeze({version:VERSION_URL_LIFECYCLE_OBSERVATION_VERSION,approvedSha,versionId,ok:false,classification:'LIFECYCLE_OBSERVATION_RECONCILIATION_REQUIRED',reason:'lifecycle_pre_mutation_gate_failed',routing:'LIFECYCLE_OBSERVATION_INCOMPLETE',versionUrlReads:0,previewMutations:0,previewEnableSucceeded:false,previewDisableSucceeded:false,rootProbe:null,attendedProbe:null,providerRequests:0,d1Mutations:0,versionMutations:0,triggerSecretReads:0,retryAuthorized:false});
+    output=Object.freeze({version:VERSION_URL_LIFECYCLE_OBSERVATION_VERSION,approvedSha,versionId,ok:false,classification:'LIFECYCLE_OBSERVATION_RECONCILIATION_REQUIRED',reason:'lifecycle_pre_mutation_gate_failed',routing:'LIFECYCLE_OBSERVATION_INCOMPLETE',versionUrlReads:0,previewMutations:0,previewEnableAttempted:false,previewEnableSucceeded:false,previewDisableSucceeded:false,rootProbe:null,attendedProbe:null,providerRequests:0,d1Mutations:0,versionMutations:0,triggerSecretReads:0,retryAuthorized:false});
   }
   const outputPath=process.env.API_FOOTBALL_VERSION_URL_LIFECYCLE_REPORT_PATH;
   if(outputPath)fs.writeFileSync(outputPath,JSON.stringify(output,null,2)+'\n',{mode:0o600});
