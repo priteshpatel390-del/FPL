@@ -1,3 +1,7 @@
+## Existing attended Version routability remains unresolved until Gate B
+
+The API can publish the exact URL for attended Version `04d79556-3070-429f-9944-b5b53d799842` after Version URLs are enabled, but retained evidence still does not prove whether requests route to that Version because it was created while Version URLs were disabled. Gate B is designed to resolve only this uncertainty using two secret-free probes. Even if both probes fail the immutable Worker signature, that result alone does not prove a replacement Version is required or identify which Cloudflare serving component produced the response.
+
 ## Attended Version URL 404 remains source-unattributed
 
 Consumed run `36474159770` observed seven HTTP 404 responses at the exact API-returned attended Version host, with final `BODY` mismatch. Because retained evidence did not include the other signature dimensions and intentionally retained no raw response, it cannot identify whether Cloudflare edge/platform routing or another upstream path served the response. It does prove the immutable Worker signature was absent and that waiting 112 scheduled seconds did not fix it. No DNS-propagation claim is supported.
