@@ -743,6 +743,20 @@ test('API-Football discovery stays isolated from production, live config and mig
       assert.doesNotMatch(source,/API_FOOTBALL_ATTENDED_TRIGGER_SECRET|secrets\.API_FOOTBALL_API_KEY|x-apisports-key|v3\.football\.api-sports\.io|\/d1\/database\/|wrangler\s+deploy|versions\s+upload|\/deployments|\/schedules|workers\/routes|workers\/domains|^\s{2}schedule:/im);
       continue;
     }
+    if(file==='api-football-version-url-creation-experiment.yml'){
+      assert.match(source,/name: API-Football Version URL Creation Experiment/);
+      assert.match(source,/name: api-football-attended-preparation-version/);
+      assert.match(source,/name: data-steward-readonly/);
+      assert.match(source,/CLOUDFLARE_ATTENDED_VERSION_UPLOAD_TOKEN/);
+      assert.match(source,/API_FOOTBALL_API_KEY/);
+      assert.match(source,/API_FOOTBALL_ATTENDED_TRIGGER_SECRET/);
+      assert.match(source,/run-version-url-creation-experiment\.mjs/);
+      assert.match(source,/version-url-creation-experiment-reconciliation\.mjs/);
+      assert.match(source,/github\.run_attempt == 1/);
+      assert.match(source,/Tests and deterministic build/);
+      assert.doesNotMatch(source,/x-teamsheet-attended-trigger|x-apisports-key|v3\.football\.api-sports\.io|\/d1\/database\/|wrangler\s+deploy|\/deployments|\/schedules|workers\/routes|workers\/domains|method:\s*DELETE|^\s{2}schedule:/im);
+      continue;
+    }
     if(file==='api-football-attended-preparation-start-readonly.yml'){
       assert.match(source,/name: data-steward-readonly/);
       assert.match(source,/DATA_STEWARD_CLOUDFLARE_READ_TOKEN/);
