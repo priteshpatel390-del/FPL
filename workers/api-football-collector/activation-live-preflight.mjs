@@ -40,7 +40,7 @@ export const PREFLIGHT_REPOSITORY_CLOUDFLARE_GETS=5;
 export const PREFLIGHT_ATTENDED_CLOUDFLARE_GETS=14;
 export const PREFLIGHT_PREPARATION_START_CLOUDFLARE_GETS=11;
 export const PREFLIGHT_PREPARATION_VERSION_CLOUDFLARE_GETS=13;
-export const PREFLIGHT_LIFECYCLE_CLONE_CLOUDFLARE_GETS=17;
+export const PREFLIGHT_LIFECYCLE_CLONE_CLOUDFLARE_GETS=16;
 export const PREFLIGHT_MAX_CLOUDFLARE_GETS=Math.max(PREFLIGHT_ATTENDED_CLOUDFLARE_GETS,PREFLIGHT_PREPARATION_VERSION_CLOUDFLARE_GETS,PREFLIGHT_LIFECYCLE_CLONE_CLOUDFLARE_GETS);
 export const PREFLIGHT_MAX_D1_QUERY_CALLS=1;
 
@@ -282,7 +282,7 @@ export async function runApiFootballActivationLivePreflight({env=process.env,fet
     const worker=Array.isArray(collectorReads.betaWorkers.result)?collectorReads.betaWorkers.result.find(row=>row?.name===EXPECTED_COLLECTOR_WORKER):null;
     if(!worker?.id)return fail('activation_attended_worker_identity_unavailable');
     if(attendedStage||lifecycleCloneCloseoutStage)collectorReads.betaWorker=await readJson(boundedFetch,apiPath(accountId,'/workers/workers/'+encodeURIComponent(worker.id)),{token});
-    if(preparationStage||lifecycleCloneCloseoutStage){
+    if(preparationStage){
       collectorReads.originalBeta=await readJson(boundedFetch,apiPath(accountId,'/workers/workers/'+encodeURIComponent(worker.id)+'/versions/'+ORIGINAL_BLOCKED_VERSION_ID+'?include=modules'),{token});
       collectorReads.attendedBeta=preparationStartStage?collectorReads.originalBeta:await readJson(boundedFetch,apiPath(accountId,'/workers/workers/'+encodeURIComponent(worker.id)+'/versions/'+encodeURIComponent(selectedVersionId)+'?include=modules'),{token});
     }else{
@@ -294,7 +294,7 @@ export async function runApiFootballActivationLivePreflight({env=process.env,fet
     }
     const required=[collectorReads.subdomain,collectorReads.domains,collectorReads.scripts,collectorReads.versions,collectorReads.originalStable,collectorReads.betaWorkers,collectorReads.attendedBeta];
     if(attendedStage||lifecycleCloneCloseoutStage)required.push(collectorReads.accountSubdomain,collectorReads.betaWorker);
-    if(preparationStage||lifecycleCloneCloseoutStage)required.push(collectorReads.originalBeta);
+    if(preparationStage)required.push(collectorReads.originalBeta);
     if(lifecycleCloneCloseoutStage)required.push(collectorReads.cloneStable,collectorReads.cloneBeta);
     if(required.some(read=>!read?.ok))return fail('activation_attended_inventory_unreadable');
   }
@@ -323,12 +323,12 @@ export async function runApiFootballActivationLivePreflight({env=process.env,fet
     const versionIds=(Array.isArray(collectorReads.versions.result?.items)?collectorReads.versions.result.items:Array.isArray(collectorReads.versions.result)?collectorReads.versions.result:[]).map(row=>row?.id).filter(Boolean);
     try{
       validateLifecycleExperimentInventory({
-        versionIds,originalStable:collectorReads.originalStable.result,originalBeta:collectorReads.originalBeta.result,
+        versionIds,originalStable:collectorReads.originalStable.result,
         attendedStable:collectorReads.settings.result,attendedBeta:collectorReads.attendedBeta.result,
         cloneVersionId,cloneStable:collectorReads.cloneStable.result,cloneBeta:collectorReads.cloneBeta.result,
         cloneIdentity:buildLifecycleCloneIdentity(approvedSha)
       });
-      originalVersionIdentityExact=true;versionIdentityExact=true;versionInventoryExact=true;cloneVersionIdentityExact=true;
+      versionIdentityExact=true;versionInventoryExact=true;cloneVersionIdentityExact=true;
     }catch{}
   }else if(attendedStage){
     const versionIds=(Array.isArray(collectorReads.versions.result?.items)?collectorReads.versions.result.items:Array.isArray(collectorReads.versions.result)?collectorReads.versions.result:[]).map(row=>row?.id).filter(Boolean);
