@@ -1,3 +1,7 @@
+## Gate B security boundary — no provider-capable request
+
+The Version URL lifecycle observation deliberately omits `API_FOOTBALL_ATTENDED_TRIGGER_SECRET` and `API_FOOTBALL_API_KEY` from the workflow environment. Repository code rejects an injected trigger secret before network. The mutation credential is accepted by a closed helper only for the exact collector Script Subdomain POST used to toggle `previews_enabled`; there is no D1 mutation, Version upload/delete, Deployment, Cron, route/domain or Access path. Version-host requests are GET-only, header-free, redirect-disabled and bounded. Evidence never stores the Version URL, response body, remote header values, tokens, secrets or account ID; it keeps only closed comparison booleans/enums, bounded HTTP status and fixed counters. Any enable submission, including an ambiguous one, forces a disable attempt before exit and independent reconciliation must prove Preview disabled.
+
 ## Closed attended readiness diagnostics after run 36474159770
 
 Readiness remains unauthenticated and secret-free. It follows no redirect, uses the exact API-returned HTTPS Version host and exact attended path, and runs before collection enablement. Evidence records only four booleans for status/body/cache-control/content-type equality, bounded numeric HTTP status and closed outcome/mismatch enums. Raw body, arbitrary header values, Version URL and trigger secret are not retained. Any mismatch keeps D1 disabled, provider invocation at zero, cleanup mandatory and retry unauthorized.
