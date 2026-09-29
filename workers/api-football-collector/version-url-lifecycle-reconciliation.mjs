@@ -8,7 +8,7 @@ export const VERSION_URL_LIFECYCLE_RECONCILIATION_VERSION='api-football-version-
 const safe=value=>Object.freeze(value);
 
 function exactObservationShape(evidence){
-  const keys=['approvedSha','attendedProbe','classification','d1Mutations','ok','previewDisableSucceeded','previewEnableSucceeded','previewMutations','providerRequests','reason','retryAuthorized','rootProbe','routing','triggerSecretReads','version','versionId','versionMutations','versionUrlReads'];
+  const keys=['approvedSha','attendedProbe','classification','d1Mutations','ok','previewDisableSucceeded','previewEnableAttempted','previewEnableSucceeded','previewMutations','providerRequests','reason','retryAuthorized','rootProbe','routing','triggerSecretReads','version','versionId','versionMutations','versionUrlReads'];
   return evidence&&typeof evidence==='object'&&JSON.stringify(Object.keys(evidence).sort())===JSON.stringify(keys.sort());
 }
 
@@ -28,7 +28,7 @@ export function classifyVersionUrlLifecycleReconciliation(report,{observationEvi
   if(!exactObservationShape(evidence)||evidence.version!==VERSION_URL_LIFECYCLE_OBSERVATION_VERSION||evidence.approvedSha!==report.approvedSha||evidence.versionId!==inventory.reviewedVersionId)return stop('observation_identity_invalid');
   if(evidence.ok!==true||evidence.classification!=='LIFECYCLE_OBSERVATION_COMPLETE_RECONCILIATION_REQUIRED'||evidence.reason!=='observation_complete_requires_reconciliation'||evidence.retryAuthorized!==false)return stop('observation_completion_invalid');
   if(evidence.providerRequests!==0||evidence.d1Mutations!==0||evidence.versionMutations!==0||evidence.triggerSecretReads!==0)return stop('forbidden_activity_detected');
-  if(evidence.previewEnableSucceeded!==true||evidence.previewDisableSucceeded!==true||evidence.previewMutations!==2)return stop('preview_cleanup_unproved');
+  if(evidence.previewEnableAttempted!==true||evidence.previewEnableSucceeded!==true||evidence.previewDisableSucceeded!==true||evidence.previewMutations!==2)return stop('preview_cleanup_unproved');
   if(!Number.isInteger(evidence.versionUrlReads)||evidence.versionUrlReads<1||evidence.versionUrlReads>3)return stop('version_url_read_count_invalid');
   if(!validateLifecycleProbeEvidence(evidence.rootProbe)||!validateLifecycleProbeEvidence(evidence.attendedProbe))return stop('probe_evidence_invalid');
   const routing=classifyLifecycleRouting({rootProbe:evidence.rootProbe,attendedProbe:evidence.attendedProbe});
