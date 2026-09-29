@@ -153,6 +153,9 @@ test('probe evidence shape and mismatch ordering are closed',()=>{
   assert.equal(validateLifecycleProbeEvidence(wrong),true);
   assert.equal(validateLifecycleProbeEvidence({...wrong,mismatch:'CACHE_CONTROL'}),false);
   assert.equal(validateLifecycleProbeEvidence({...wrong,signatureChecks:{...wrong.signatureChecks,extra:false}}),false);
+  assert.equal(validateLifecycleProbeEvidence({...wrong,lastHttpStatus:99}),false);
+  assert.equal(validateLifecycleProbeEvidence({...wrong,lastHttpStatus:600}),false);
+  assert.equal(validateLifecycleProbeEvidence({...wrong,lastHttpStatus:404.5}),false);
   assert.equal(classifyLifecycleRouting({rootProbe:good,attendedProbe:wrong}),'EXISTING_VERSION_ROUTABLE_ROOT_ONLY');
 });
 
