@@ -1,3 +1,9 @@
+## Decision — isolate existing-Version lifecycle before replacement-Version work
+
+**Evidence:** run `36474159770` proved URL publication but not immutable Worker routing, while the attended Version was originally created with Version URLs disabled. Current evidence cannot prove whether later enablement should retroactively route that existing Version.
+
+**Decision:** observe that single lifecycle variable directly before considering any replacement Version. Gate B may only enable Version URLs, read the exact existing Version URL, make secret-free GETs to root and attended path, disable Version URLs and independently reconcile pristine state. Both “routable” and “not proven routable” are valid observational outcomes; neither authorizes retry, replacement upload or attended execution. The protected observer receives no trigger secret and exposes no D1/provider mutation surface.
+
 ## Decision — preserve exact readiness signature and expose closed dimensions
 
 After consumed run `36474159770`, retain exact HTTP 404 / `Not found` / `cache-control: no-store` / text-plain Worker proof. Do not treat arbitrary 404/4xx or longer waiting as readiness. Record each comparison independently as a boolean without retaining remote content. Current Cloudflare documentation supports creation-time Version URL availability only when Version URLs are enabled; because attended Version `04d79556-3070-429f-9944-b5b53d799842` was created with Preview disabled, later API URL publication is insufficient proof of routability. This does not establish the serving component or require a replacement Version.
