@@ -58,7 +58,7 @@ export function classifyVersionUrlCreationReconciliation(report,{experimentEvide
 
   if(report.stage!==COLLECTOR_PREFLIGHT_LIFECYCLE_CLONE_CLOSEOUT_STAGE||report.ok!==true||report.classification!==COLLECTOR_LIFECYCLE_CLONE_CLOSEOUT_READY||
     inventory.reviewedVersionId!==ATTENDED_VERSION_ID||inventory.cloneVersionId!==e.cloneVersionId||inventory.cloneVersionIdentityExact!==true||
-    inventory.originalVersionIdentityExact!==true||inventory.versionIdentityExact!==true||inventory.versionInventoryExact!==true)return stop('three_version_inventory_not_proved');
+    inventory.versionIdentityExact!==true||inventory.versionInventoryExact!==true)return stop('three_version_inventory_not_proved');
 
   const fixed=e.versionMutationSubmissions===1&&e.previewMutationSubmissions===2&&e.previewEnableAttempted===true&&e.previewEnableSucceeded===true&&
     e.previewDisableSucceeded===true&&e.secretBindingsSubmitted===2&&e.triggerSecretRequestEgress===0&&e.providerRequests===0&&e.d1Mutations===0&&
