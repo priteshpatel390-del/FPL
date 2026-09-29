@@ -151,7 +151,7 @@ export async function runVersionUrlLifecycleObservation({env=process.env,fetchIm
     }
   }
 
-  const probesComplete=validateLifecycleProbeEvidence(rootProbe)&&validateLifecycleProbeEvidence(attendedProbe);
+  const probesComplete=validateLifecycleProbeEvidence(rootProbe)&&validateLifecycleProbeEvidence(attendedProbe)&&rootProbe.outcome==='HTTP_RESPONSE'&&attendedProbe.outcome==='HTTP_RESPONSE';
   const cleanupSafe=previewEnableSucceeded===false||previewDisableSucceeded===true;
   const ok=probesComplete&&cleanupSafe;
   const routing=probesComplete?classifyLifecycleRouting({rootProbe,attendedProbe}):'LIFECYCLE_OBSERVATION_INCOMPLETE';
