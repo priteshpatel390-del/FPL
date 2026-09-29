@@ -1,3 +1,7 @@
+## Attended Version URL readiness evidence
+
+Attended readiness keeps the secret-free exact-path GET ahead of D1 enablement and trigger egress. Each HTTP observation now records four independent closed booleans (`statusMatches`, `bodyMatches`, `cacheControlMatches`, `contentTypeMatches`) plus bounded status and the existing mismatch enum. It stores no response body, header value or Version URL. Exact success still requires all four immutable Worker-signature dimensions. Transport failures carry no signature booleans. Independent reconciliation validates this closed shape before allowing the non-success `ATTENDED_ACCEPTANCE_CLEAN_READINESS_STOP` classification.
+
 ## Attended readiness propagation window and execution handoff
 
 After exact URL publication, readiness uses seven secret-free probes with pre-attempt waits `0, 2, 5, 10, 20, 30, 45` seconds. Total scheduled wait is 112 seconds; each request has a separate 15-second timeout, making the worst-case readiness phase finite at 217 seconds. Only exact immutable Worker generic-rejection status/body/headers proves reachability. D1 enablement and trigger egress remain downstream. Sanitized execution evidence is hash-bound between protected execution and independent reconciliation; only matching exact-main/Version identity plus pristine zero-history state may produce the non-success `ATTENDED_ACCEPTANCE_CLEAN_READINESS_STOP`.

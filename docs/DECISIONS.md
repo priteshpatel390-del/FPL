@@ -1,3 +1,7 @@
+## Decision — preserve exact readiness signature and expose closed dimensions
+
+After consumed run `36474159770`, retain exact HTTP 404 / `Not found` / `cache-control: no-store` / text-plain Worker proof. Do not treat arbitrary 404/4xx or longer waiting as readiness. Record each comparison independently as a boolean without retaining remote content. Current Cloudflare documentation supports creation-time Version URL availability only when Version URLs are enabled; because attended Version `04d79556-3070-429f-9944-b5b53d799842` was created with Preview disabled, later API URL publication is insufficient proof of routability. This does not establish the serving component or require a replacement Version.
+
 ## Decision — bounded 112-second attended readiness window and precise clean stop
 
 **Evidence:** run `36346112699` published the exact Version URL immediately but three probes across roughly two seconds all produced a non-Worker 4xx signature, with zero invocation and pristine reconciliation. Cloudflare provides no repository-pinned Version URL propagation SLA.

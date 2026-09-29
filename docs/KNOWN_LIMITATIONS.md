@@ -1,3 +1,9 @@
+## Attended Version URL 404 remains source-unattributed
+
+Consumed run `36474159770` observed seven HTTP 404 responses at the exact API-returned attended Version host, with final `BODY` mismatch. Because retained evidence did not include the other signature dimensions and intentionally retained no raw response, it cannot identify whether Cloudflare edge/platform routing or another upstream path served the response. It does prove the immutable Worker signature was absent and that waiting 112 scheduled seconds did not fix it. No DNS-propagation claim is supported.
+
+Version `04d79556-3070-429f-9944-b5b53d799842` was created by run `35732104482` while Version URLs were disabled. Current Cloudflare documentation says Version URLs are public and available after version creation if enabled, but does not specify retroactive routing after later enablement. The later API-returned URL therefore leaves existing-Version routability uncertain. A replacement Version may differ by being created while Version URLs are enabled, but is not proven necessary and must not be created without a separate owner gate.
+
 ## Attended run 36346112699 consumed; exact edge 4xx remains unavailable
 
 Run `36346112699` is consumed. Its repository diagnostic retained only HTTP class, not exact status or mismatch dimension, so the historical response cannot distinguish propagation-edge status from another non-Worker signature. Repository remediation records safe numeric status and closed mismatch category for a future separately approved run and allows a longer finite readiness window, but cannot prove future live propagation or successful collection.

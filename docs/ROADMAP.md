@@ -1,3 +1,7 @@
+## Next API-Football owner gate after run 36474159770
+
+Do not rerun attended acceptance. Next useful live gate is a separately approved zero-provider Version URL lifecycle observation: enable Worker-level Version URLs, perform bounded secret-free GETs against the exact API-returned Version host at `/` and `/__teamsheet/api-football/attended-one-shot`, retain only closed signature/header/body-match categories, then disable Version URLs and independently reconcile. It must have no API-Football or trigger secret, no D1 mutation and no Version upload. Only that evidence can distinguish existing-Version routability from a platform-generated 404. A future Version upload remains a separate later decision, not the default diagnostic.
+
 ## Current gate — attended readiness remediation after consumed run 36346112699
 
 Repository remediation only: bounded propagation-aware readiness, sanitized execution handoff and precise independently proven clean readiness stop. No new attended dispatch, provider call, production mutation or activation is authorized. After review/merge/exact-main verification, any fresh live acceptance remains a separate owner gate.
