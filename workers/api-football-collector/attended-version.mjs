@@ -203,12 +203,14 @@ export function validateLifecycleCloneVersion({stableVersion,betaVersion,version
   return true;
 }
 
-export function validateLifecycleExperimentInventory({versionIds,originalStable,originalBeta,attendedStable,attendedBeta,cloneVersionId,cloneStable,cloneBeta,cloneIdentity}={}){
+export function validateLifecycleExperimentInventory({versionIds,originalStable,attendedStable,attendedBeta,cloneVersionId,cloneStable,cloneBeta,cloneIdentity}={}){
   if(!Array.isArray(versionIds)||versionIds.length!==3||new Set(versionIds).size!==3||
     !versionIds.includes(ORIGINAL_BLOCKED_VERSION_ID)||!versionIds.includes(ATTENDED_VERSION_ID)||!versionIds.includes(cloneVersionId)||
     cloneVersionId===ORIGINAL_BLOCKED_VERSION_ID||cloneVersionId===ATTENDED_VERSION_ID)fail('collector_lifecycle_clone_inventory_drift');
-  validateOriginalBlockedVersion({stableVersion:originalStable,betaVersion:originalBeta});
-  validateReviewedAttendedVersion({stableVersion:attendedStable,betaVersion:attendedBeta,versionId:ATTENDED_VERSION_ID,identity:buildImmutableAttendedVersionIdentity()});
+  validateClosedVersionInventory({
+    versionIds:[ORIGINAL_BLOCKED_VERSION_ID,ATTENDED_VERSION_ID],originalStable,attendedVersionId:ATTENDED_VERSION_ID,
+    attendedStable,attendedBeta,identity:buildImmutableAttendedVersionIdentity()
+  });
   validateLifecycleCloneVersion({stableVersion:cloneStable,betaVersion:cloneBeta,versionId:cloneVersionId,identity:cloneIdentity});
   return true;
 }
