@@ -68,7 +68,7 @@ export function classifyLifecycleRouting({rootProbe,attendedProbe}={}){
   return 'EXISTING_VERSION_ROUTABILITY_NOT_PROVEN';
 }
 
-async function probeVersionUrl(url,{fetchImpl}){
+export async function probeVersionUrl(url,{fetchImpl}){
   try{
     const response=await fetchImpl(url,{method:'GET',redirect:'error',signal:AbortSignal.timeout(VERSION_URL_LIFECYCLE_REQUEST_TIMEOUT_MS)});
     const body=await boundedText(response);
