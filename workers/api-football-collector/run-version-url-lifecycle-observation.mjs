@@ -55,7 +55,7 @@ export function validateLifecycleProbeEvidence(probe){
   if(!checks||JSON.stringify(Object.keys(checks).sort())!==JSON.stringify(['bodyMatches','cacheControlMatches','contentTypeMatches','statusMatches']))return false;
   if(!Object.values(checks).every(value=>typeof value==='boolean'))return false;
   const mismatch=expectedMismatch(checks);
-  if(probe.lastHttpStatus===null||probe.mismatch!==mismatch||probe.workerSignatureProved!==(mismatch===null))return false;
+  if(!Number.isInteger(probe.lastHttpStatus)||probe.lastHttpStatus<100||probe.lastHttpStatus>599||probe.mismatch!==mismatch||probe.workerSignatureProved!==(mismatch===null))return false;
   return true;
 }
 
