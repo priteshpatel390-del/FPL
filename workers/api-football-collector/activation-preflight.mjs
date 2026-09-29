@@ -6,10 +6,12 @@ export const COLLECTOR_PREFLIGHT_ATTENDED_STAGE='ATTENDED_ACCEPTANCE';
 export const COLLECTOR_PREFLIGHT_PREPARATION_START_STAGE='ATTENDED_PREPARATION_START';
 export const COLLECTOR_PREFLIGHT_PREPARATION_VERSION_STAGE='ATTENDED_PREPARATION_VERSION_READY';
 export const COLLECTOR_PREFLIGHT_PREPARATION_CLOSEOUT_STAGE='ATTENDED_PREPARATION_CLOSEOUT';
+export const COLLECTOR_PREFLIGHT_LIFECYCLE_CLONE_CLOSEOUT_STAGE='VERSION_URL_CREATION_EXPERIMENT_CLOSEOUT';
 export const COLLECTOR_REPOSITORY_STAGE_READY='READY_FOR_REPOSITORY_INFRASTRUCTURE_STAGING';
 export const COLLECTOR_PREPARATION_START_READY='READY_FOR_ATTENDED_VERSION_PREPARATION';
 export const COLLECTOR_PREPARATION_VERSION_READY='READY_FOR_ATTENDED_CREDENTIAL_PREPARATION';
 export const COLLECTOR_ATTENDED_STAGE_READY='READY_FOR_SEPARATELY_APPROVED_ATTENDED_ACCEPTANCE';
+export const COLLECTOR_LIFECYCLE_CLONE_CLOSEOUT_READY='VERSION_URL_CREATION_EXPERIMENT_RECONCILED';
 const MIGRATIONS=Object.freeze([
   [1,'shadow_data_foundation'],[2,'official_fpl_structured_history'],[3,'production_query_plan_indexes'],
   [4,'api_football_shadow_identity'],[5,'api_football_shadow_runtime'],[6,'api_football_mapping_qualification']
@@ -60,7 +62,7 @@ export function classifyCollectorActivationPreflight(evidence,{now}={}){
   const allowedStages=[
     COLLECTOR_PREFLIGHT_REPOSITORY_STAGE,COLLECTOR_PREFLIGHT_ATTENDED_STAGE,
     COLLECTOR_PREFLIGHT_PREPARATION_START_STAGE,COLLECTOR_PREFLIGHT_PREPARATION_VERSION_STAGE,
-    COLLECTOR_PREFLIGHT_PREPARATION_CLOSEOUT_STAGE
+    COLLECTOR_PREFLIGHT_PREPARATION_CLOSEOUT_STAGE,COLLECTOR_PREFLIGHT_LIFECYCLE_CLONE_CLOSEOUT_STAGE
   ];
   if(!allowedStages.includes(stage))return stop('UNKNOWN_STAGE','preflight_stage_invalid');
   const shared=sharedEvidence(evidence,stage,{now});if(!shared.ok)return shared;
@@ -93,6 +95,13 @@ export function classifyCollectorActivationPreflight(evidence,{now}={}){
     if(evidence.runtime.credentialState!=='AVAILABLE')return stop(stage,'credential_state_unexpected');
     const pristine=pristineFirstAcceptance(evidence,stage);if(!pristine.ok)return pristine;
     return safe({ok:true,stage,classification:COLLECTOR_ATTENDED_STAGE_READY,secretBindingPresent:true});
+  }
+  if(stage===COLLECTOR_PREFLIGHT_LIFECYCLE_CLONE_CLOSEOUT_STAGE){
+    if(!exactAttendedInventory(inventory,{requireOriginalBytes:true,requirePreviewIdentity:true})||inventory.cloneVersionIdentityExact!==true||
+      typeof inventory.cloneVersionId!=='string'||inventory.cloneVersionId===inventory.reviewedVersionId)return stop(stage,'lifecycle_clone_inventory_unexpected');
+    if(evidence.runtime.credentialState!=='AVAILABLE')return stop(stage,'credential_state_unexpected');
+    const pristine=pristineFirstAcceptance(evidence,stage);if(!pristine.ok)return pristine;
+    return safe({ok:true,stage,classification:COLLECTOR_LIFECYCLE_CLONE_CLOSEOUT_READY,secretBindingPresent:true});
   }
   if(!exactAttendedInventory(inventory,{requirePreviewIdentity:true}))return stop(stage,'attended_stage_inventory_unexpected');
   if(evidence.runtime.credentialState!=='AVAILABLE')return stop(stage,'credential_state_unexpected');
