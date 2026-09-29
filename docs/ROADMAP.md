@@ -1,3 +1,7 @@
+## Current gate — existing-Version URL lifecycle observation
+
+Gate A diagnostics are merged. The next approved scope is Gate B: implement and, only after normal merge plus exact-main verification, run one zero-provider lifecycle observation against the existing attended Version. Completion requires exact before/after pristine-state proof, Version URLs restored disabled, two closed secret-free probe results and zero D1/provider/Version mutations. A non-routable result does not automatically advance to replacement-Version creation; that would require a new owner decision.
+
 ## Next API-Football owner gate after run 36474159770
 
 Do not rerun attended acceptance. Next useful live gate is a separately approved zero-provider Version URL lifecycle observation: enable Worker-level Version URLs, perform bounded secret-free GETs against the exact API-returned Version host at `/` and `/__teamsheet/api-football/attended-one-shot`, retain only closed signature/header/body-match categories, then disable Version URLs and independently reconcile. It must have no API-Football or trigger secret, no D1 mutation and no Version upload. Only that evidence can distinguish existing-Version routability from a platform-generated 404. A future Version upload remains a separate later decision, not the default diagnostic.
