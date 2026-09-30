@@ -1,3 +1,7 @@
+## Current gate — replacement inactive collector foundation
+
+Gate C and disposable root-cause diagnostics are consumed evidence and are not rerunnable authority. Approved work is repository-only preparation of `teamsheet-api-football-shadow-collector-v2`: exact-main admission, original collector read-only proof, absent replacement proof, initial create with workers.dev false/Preview true, one reviewed Version upload, two secret-free exact Worker-signature GETs, Preview disable as a cleanup obligation on success or any later stop, and independent reconciliation distinguishing success, clean safe stop and owner attention. Merge and live dispatch remain separate owner gates. No replacement resource, credential provisioning, Deployment, provider request or D1 mutation is authorized now.
+
 ## Current gate — creation-time Version URL A/B experiment
 
 Gate B is live-complete and reconciled. The approved next checkpoint is Gate C repository implementation for one A/B experiment comparing the historical attended Version with one newly created runtime-equivalent inactive clone created while Version URLs are enabled. Required evidence: exact-main repository gate, exact two-Version admission, one Preview enable, one Version-upload submission, four secret-free HTTP probes, Preview disable, and independent two-/three-Version closeout with zero D1/provider/Deployment/Cron/route/domain activity. Normal merge approval remains separate. After the live experiment, stop for owner review; do not infer authorization for attended acceptance or clone cleanup.

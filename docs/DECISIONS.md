@@ -1,3 +1,9 @@
+## Decision — replace the incorrectly provisioned inactive collector object
+
+**Facts:** Gate C run `36629921145` proved old and newly uploaded Versions on the existing Worker both failed routing. Same-account disposable controls then proved initial shell state, not zero Deployment history or direct API upload, is decisive: initial `{enabled:false, previews_enabled:true}` routed immediately with zero Deployments; initial false/false remained unroutable after later enablement, including enable-before-upload. Deployment alone and workers.dev alone failed; full production topology bootstrapped routing but is unsafe for this collector.
+
+**Decision:** retain original collector and all three Versions unchanged. Prepare separate `teamsheet-api-football-shadow-collector-v2`, whose first creation request has workers.dev disabled and Version URLs enabled. Permit one reviewed Version, two secret-free exact-signature GETs and one Preview disable submitted as a cleanup obligation on success and on every later stop once the shell is known; a failed-but-clean attempt is a non-success clean safe stop. Do not toggle-to-repair, deploy, enable workers.dev, create topology or call provider. Cloudflare's missing internal route state remains inference; externally observed lifecycle condition is fact.
+
 ## Decision — test creation-time Version URL lifecycle with one retained inactive clone
 
 **Evidence:** Gate B run `36569336154` enabled Version URLs for the already-existing attended Version and received real HTTP 404 responses on both reviewed paths, but body/cache-control/content-type did not match the immutable Worker signature. Transport was not ambiguous, and final reconciliation restored pristine state with zero provider/D1 activity. Cloudflare documents Version URLs as available after version creation when enabled and separately documents Version upload as creating a Version without deploying it.

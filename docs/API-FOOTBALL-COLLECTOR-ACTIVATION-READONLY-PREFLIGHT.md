@@ -1,3 +1,7 @@
+## Original/replacement inventory separation
+
+Replacement foundation retains existing lifecycle-clone closeout preflight as independent proof of original collector's exact three-Version pristine state. Replacement identity and one-Version inactive state are separately read and reconciled; old collector admission is not weakened to include replacement resources.
+
 > **Preparation extension — 22 September 2026:** the same bounded read-only live-observation machinery now supports separately classified attended-preparation START, VERSION_READY and CLOSEOUT observations. Preparation stages additionally pin the accepted original Version's creation SHA and 17 module-byte hashes. Repository implementation does not authorize dispatch. See [attended preparation foundation](API-FOOTBALL-ATTENDED-PREPARATION-FOUNDATION.md).
 
 ## Attended-stage remediation

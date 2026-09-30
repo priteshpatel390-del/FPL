@@ -1,3 +1,7 @@
+## Replacement foundation supersedes further existing-Worker routing experiments
+
+Gate C run `36629921145` is complete: old and clone Version routing classifications matched and neither proved reviewed Worker dispatch. Disposable controls proved the existing Worker object's initial false/false subdomain provisioning is the externally observable cause; `deriveVersionPreviewUrl()` remains correct. Existing collector attended acceptance is not rerunnable. A separately named replacement created Preview-capable at initial shell creation must first pass two secret-free exact-signature GETs and return to Preview-disabled inactive state before any future attended proposal. See [replacement foundation](API-FOOTBALL-REPLACEMENT-INACTIVE-COLLECTOR-FOUNDATION.md).
+
 ## Gate C candidate — creation-time Version URL A/B experiment
 
 Gate B run `36569336154` established a clean negative routing result for the historical attended Version under later Preview enablement. Gate C is separately owner-approved to test the remaining creation-time hypothesis with one new inactive clone. The clone is built from the same 17 reviewed module byte sequences and the same compatibility/D1/plain-text/secret binding contract as historical attended Version `04d79556-3070-429f-9944-b5b53d799842`; only the Version ID and audit annotations differ.

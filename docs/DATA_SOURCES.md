@@ -1,3 +1,7 @@
+## Replacement collector foundation — no source change
+
+Replacement inactive collector work changes only Cloudflare Worker identity/provisioning. It adds no data source, provider request, retention, model input or production decision path. API-Football remains shadow-only and dormant; existing provider credential is used only as an opaque `secret_text` field in a future owner-gated replacement Version upload. Secret-free routing probes cannot call provider.
+
 ## API-Football attended preparation data boundary
 
 The attended preparation foundation adds no data source and performs **zero API-Football requests**. Official FPL remains the fresh exact-20 authority and the committed 20/20 mapping remains a required admission invariant. Preparation may only prove Worker/Version metadata plus the existing production D1 control state, create one inactive secret-bearing Version under a later owner gate, and transition the runtime credential marker from `UNPROVISIONED` to `AVAILABLE` under a separate later gate. It does not ingest provider payloads, fixture workload, player data or any model input. See [attended preparation foundation](API-FOOTBALL-ATTENDED-PREPARATION-FOUNDATION.md).
