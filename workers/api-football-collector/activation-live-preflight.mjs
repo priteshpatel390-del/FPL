@@ -262,10 +262,12 @@ export async function runApiFootballActivationLivePreflight({env=process.env,fet
   const approvedSha=liveVersionStage?env.APPROVED_SHA:null;
   const versionApprovedSha=liveVersionStage?env.API_FOOTBALL_ATTENDED_VERSION_APPROVED_SHA:null;
   const cloneVersionId=lifecycleCloneCloseoutStage?env.API_FOOTBALL_LIFECYCLE_CLONE_VERSION_ID:null;
+  const cloneApprovedSha=lifecycleCloneCloseoutStage?env.API_FOOTBALL_LIFECYCLE_CLONE_APPROVED_SHA:null;
   if(liveVersionStage&&(typeof selectedVersionId!=='string'||!/^[0-9a-f-]{36}$/i.test(selectedVersionId)))return fail('activation_attended_version_identity_invalid');
   if(liveVersionStage&&!/^[0-9a-f]{40}$/.test(String(approvedSha||'')))return fail('activation_attended_approved_sha_invalid');
   if(liveVersionStage&&!/^[0-9a-f]{40}$/.test(String(versionApprovedSha||'')))return fail('activation_attended_version_approved_sha_invalid');
   if(lifecycleCloneCloseoutStage&&(typeof cloneVersionId!=='string'||!/^[0-9a-f-]{36}$/i.test(cloneVersionId)||cloneVersionId===selectedVersionId))return fail('activation_lifecycle_clone_version_identity_invalid');
+  if(lifecycleCloneCloseoutStage&&!/^[0-9a-f]{40}$/.test(String(cloneApprovedSha||'')))return fail('activation_lifecycle_clone_approved_sha_invalid');
   const collectorReads={
     settings:await readJson(boundedFetch,workerPath(accountId,EXPECTED_COLLECTOR_WORKER,liveVersionStage?'/versions/'+encodeURIComponent(selectedVersionId):'/settings'),{token}),
     schedules:await readJson(boundedFetch,workerPath(accountId,EXPECTED_COLLECTOR_WORKER,'/schedules'),{token}),
@@ -326,7 +328,7 @@ export async function runApiFootballActivationLivePreflight({env=process.env,fet
         versionIds,originalStable:collectorReads.originalStable.result,
         attendedStable:collectorReads.settings.result,attendedBeta:collectorReads.attendedBeta.result,
         cloneVersionId,cloneStable:collectorReads.cloneStable.result,cloneBeta:collectorReads.cloneBeta.result,
-        cloneIdentity:buildLifecycleCloneIdentity(approvedSha)
+        cloneIdentity:buildLifecycleCloneIdentity(cloneApprovedSha)
       });
       versionIdentityExact=true;versionInventoryExact=true;cloneVersionIdentityExact=true;
     }catch{}
@@ -363,7 +365,7 @@ export async function runApiFootballActivationLivePreflight({env=process.env,fet
   return Object.freeze({
     ok:classified.ok===true,
     version:API_FOOTBALL_ACTIVATION_LIVE_PREFLIGHT_VERSION,
-    observedAt:nowIso,approvedSha:approvedSha??null,versionApprovedSha:versionApprovedSha??null,accountFingerprint,stage,
+    observedAt:nowIso,approvedSha:approvedSha??null,versionApprovedSha:versionApprovedSha??null,cloneApprovedSha:cloneApprovedSha??null,accountFingerprint,stage,
     classification:classified.classification,reason:classified.reason??null,
     migrationCount:built.evidence.migrations.length,
     foreignKeyViolations:built.evidence.foreignKeyViolations,
