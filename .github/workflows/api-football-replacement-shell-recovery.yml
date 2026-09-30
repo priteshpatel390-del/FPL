@@ -1,0 +1,255 @@
+# Owner-gated continuation for the exact shell-only state left by consumed run 36770767679.
+name: API-Football Replacement Shell Recovery
+
+on:
+  workflow_dispatch:
+    inputs:
+      approved_sha:
+        description: Exact current main SHA approved for shell-only recovery execution
+        required: true
+        type: string
+
+permissions:
+  contents: read
+  actions: read
+  checks: read
+
+concurrency:
+  group: api-football-replacement-shell-recovery
+  cancel-in-progress: false
+
+jobs:
+  repository-gate:
+    if: github.event_name == 'workflow_dispatch' && github.run_attempt == 1
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    outputs:
+      approved_sha: ${{ steps.identity.outputs.approved_sha }}
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09
+        with:
+          ref: ${{ inputs.approved_sha }}
+          fetch-depth: 0
+          persist-credentials: false
+      - id: identity
+        env:
+          APPROVED_SHA: ${{ inputs.approved_sha }}
+          EVENT_NAME: ${{ github.event_name }}
+          EVENT_REF: ${{ github.ref }}
+          EVENT_REPOSITORY: ${{ github.repository }}
+          EVENT_SHA: ${{ github.sha }}
+          EVENT_RUN_ATTEMPT: ${{ github.run_attempt }}
+        run: |
+          set -euo pipefail
+          test "$EVENT_NAME" = workflow_dispatch
+          test "$EVENT_RUN_ATTEMPT" = 1
+          test "$EVENT_REF" = refs/heads/main
+          test "$EVENT_REPOSITORY" = priteshpatel390-del/FPL
+          printf '%s' "$APPROVED_SHA" | grep -Eq '^[0-9a-f]{40}$'
+          test "$EVENT_SHA" = "$APPROVED_SHA"
+          test "$(git rev-parse HEAD)" = "$APPROVED_SHA"
+          test "$(git ls-remote https://github.com/priteshpatel390-del/FPL.git refs/heads/main | cut -f1)" = "$APPROVED_SHA"
+          test -z "$(git status --porcelain --untracked-files=all)"
+          echo "approved_sha=$APPROVED_SHA" >> "$GITHUB_OUTPUT"
+      - name: Require exact-head Verify Teamsheet success
+        env:
+          GH_TOKEN: ${{ github.token }}
+          APPROVED_SHA: ${{ steps.identity.outputs.approved_sha }}
+        run: |
+          set -euo pipefail
+          gh api "repos/${{ github.repository }}/commits/$APPROVED_SHA/check-runs" > "$RUNNER_TEMP/check-runs.json"
+          node --input-type=module - "$RUNNER_TEMP/check-runs.json" <<'NODE'
+          import fs from 'node:fs';
+          const body=JSON.parse(fs.readFileSync(process.argv[2],'utf8'));
+          if(!(body.check_runs??[]).some(row=>row.name==='Tests and deterministic build'&&row.status==='completed'&&row.conclusion==='success'&&row.head_sha===process.env.APPROVED_SHA&&row.app?.slug==='github-actions'&&row.details_url?.startsWith('https://github.com/priteshpatel390-del/FPL/actions/runs/')))throw new Error('exact-head Verify Teamsheet success is absent');
+          NODE
+      - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444
+        with:
+          node-version: 24.19.0
+      - name: Run focused recovery tests
+        run: |
+          node --test tests/api-football-replacement-foundation.test.mjs tests/api-football-replacement-shell-recovery.test.mjs tests/api-football-collector-activation-live-preflight.test.mjs
+          test -z "$(git status --porcelain --untracked-files=all)"
+
+  fresh-readonly-admission:
+    if: github.event_name == 'workflow_dispatch' && github.run_attempt == 1
+    needs: repository-gate
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    environment:
+      name: data-steward-readonly
+      deployment: false
+    outputs:
+      admission_sha256: ${{ steps.handoff.outputs.admission_sha256 }}
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09
+        with:
+          ref: ${{ needs.repository-gate.outputs.approved_sha }}
+          persist-credentials: false
+      - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444
+        with:
+          node-version: 24.19.0
+      - name: Re-prove original collector exact three-Version pristine state
+        env:
+          APPROVED_SHA: ${{ needs.repository-gate.outputs.approved_sha }}
+          API_FOOTBALL_PREFLIGHT_STAGE: VERSION_URL_CREATION_EXPERIMENT_CLOSEOUT
+          API_FOOTBALL_ATTENDED_VERSION_ID: 04d79556-3070-429f-9944-b5b53d799842
+          API_FOOTBALL_ATTENDED_VERSION_APPROVED_SHA: 69bb84fadbcce94e9fece3ff438d985866cce183
+          API_FOOTBALL_LIFECYCLE_CLONE_VERSION_ID: 7405abc0-8358-4156-8226-b6cc7bcf244f
+          API_FOOTBALL_LIFECYCLE_CLONE_APPROVED_SHA: cdb7d7ba140c38395893f223c42aee90d33b8b59
+          DATA_STEWARD_CLOUDFLARE_ACCOUNT_ID: ${{ secrets.DATA_STEWARD_CLOUDFLARE_ACCOUNT_ID }}
+          DATA_STEWARD_CLOUDFLARE_ACCOUNT_FINGERPRINT: ${{ vars.DATA_STEWARD_CLOUDFLARE_ACCOUNT_FINGERPRINT }}
+          DATA_STEWARD_CLOUDFLARE_READ_TOKEN: ${{ secrets.DATA_STEWARD_CLOUDFLARE_READ_TOKEN }}
+          API_FOOTBALL_ACTIVATION_PREFLIGHT_REPORT_PATH: ${{ runner.temp }}/replacement-recovery-original-admission.json
+        run: node workers/api-football-collector/activation-live-preflight.mjs
+      - name: Prove exact replacement shell-only inactive state
+        env:
+          APPROVED_SHA: ${{ needs.repository-gate.outputs.approved_sha }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.DATA_STEWARD_CLOUDFLARE_ACCOUNT_ID }}
+          CLOUDFLARE_ACCOUNT_FINGERPRINT: ${{ vars.DATA_STEWARD_CLOUDFLARE_ACCOUNT_FINGERPRINT }}
+          CLOUDFLARE_REPLACEMENT_READ_TOKEN: ${{ secrets.DATA_STEWARD_CLOUDFLARE_READ_TOKEN }}
+          API_FOOTBALL_REPLACEMENT_RECOVERY_ADMISSION_PATH: ${{ runner.temp }}/replacement-recovery-admission.json
+        run: node workers/api-football-collector/replacement-shell-recovery-preflight.mjs
+      - id: handoff
+        env:
+          ORIGINAL: ${{ runner.temp }}/replacement-recovery-original-admission.json
+          ADMISSION: ${{ runner.temp }}/replacement-recovery-admission.json
+          APPROVED_SHA: ${{ needs.repository-gate.outputs.approved_sha }}
+        run: |
+          set -euo pipefail
+          node --input-type=module - <<'NODE'
+          import fs from 'node:fs';import {createHash} from 'node:crypto';
+          const original=JSON.parse(fs.readFileSync(process.env.ORIGINAL,'utf8')),admission=JSON.parse(fs.readFileSync(process.env.ADMISSION,'utf8'));
+          if(original.ok!==true||original.approvedSha!==process.env.APPROVED_SHA||original.stage!=='VERSION_URL_CREATION_EXPERIMENT_CLOSEOUT'||admission.ok!==true||admission.approvedSha!==process.env.APPROVED_SHA||admission.workerId!=='af6b59302acf49728e7deeb2f951397f'||admission.replacementState!=='SHELL_ONLY'||admission.versionCount!==0||admission.workersDev!==false||admission.previewUrls!==false||admission.deploymentCount!==0||admission.cronCount!==0||admission.routeCount!==0||admission.customDomainCount!==0||admission.productionMutations!==0||admission.apiFootballRequests!==0||admission.secretValuesRead!==0||admission.retryAuthorized!==false)throw new Error('replacement recovery admission invalid');
+          const bytes=fs.readFileSync(process.env.ADMISSION);fs.appendFileSync(process.env.GITHUB_OUTPUT,'admission_sha256='+createHash('sha256').update(bytes).digest('hex')+'\n');
+          NODE
+      - name: Stage sanitized admission artifact
+        run: |
+          mkdir -p "$RUNNER_TEMP/replacement-recovery-admission"
+          cp "$RUNNER_TEMP/replacement-recovery-original-admission.json" "$RUNNER_TEMP/replacement-recovery-admission/original.json"
+          cp "$RUNNER_TEMP/replacement-recovery-admission.json" "$RUNNER_TEMP/replacement-recovery-admission/admission.json"
+      - uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f
+        with:
+          name: api-football-replacement-shell-recovery-admission
+          path: ${{ runner.temp }}/replacement-recovery-admission
+          retention-days: 7
+
+  protected-replacement-shell-recovery:
+    if: github.event_name == 'workflow_dispatch' && github.run_attempt == 1
+    needs: [repository-gate, fresh-readonly-admission]
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    environment:
+      name: api-football-replacement-foundation
+      deployment: false
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09
+        with:
+          ref: ${{ needs.repository-gate.outputs.approved_sha }}
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444
+        with:
+          node-version: 24.19.0
+      - uses: actions/download-artifact@95815c38cf2ff2164869cbab79da8d1f422bc89e
+        with:
+          name: api-football-replacement-shell-recovery-admission
+          path: ${{ runner.temp }}/replacement-recovery-admission
+      - name: Reconfirm exact main and admission handoff
+        env:
+          APPROVED_SHA: ${{ needs.repository-gate.outputs.approved_sha }}
+          ADMISSION_SHA256: ${{ needs.fresh-readonly-admission.outputs.admission_sha256 }}
+          ADMISSION: ${{ runner.temp }}/replacement-recovery-admission/admission.json
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "$APPROVED_SHA"
+          test "$(git ls-remote https://github.com/priteshpatel390-del/FPL.git refs/heads/main | cut -f1)" = "$APPROVED_SHA"
+          node --input-type=module - <<'NODE'
+          import fs from 'node:fs';import {createHash} from 'node:crypto';
+          const bytes=fs.readFileSync(process.env.ADMISSION),r=JSON.parse(bytes);
+          if(createHash('sha256').update(bytes).digest('hex')!==process.env.ADMISSION_SHA256||r.ok!==true||r.approvedSha!==process.env.APPROVED_SHA||r.workerId!=='af6b59302acf49728e7deeb2f951397f'||r.replacementState!=='SHELL_ONLY')throw new Error('replacement recovery handoff invalid');
+          NODE
+      - id: execute
+        name: Enable Preview on the exact existing shell, upload one reviewed Version, probe routing and restore Preview disabled
+        continue-on-error: true
+        env:
+          APPROVED_SHA: ${{ needs.repository-gate.outputs.approved_sha }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          CLOUDFLARE_ACCOUNT_FINGERPRINT: ${{ vars.CLOUDFLARE_ACCOUNT_FINGERPRINT }}
+          CLOUDFLARE_REPLACEMENT_READ_TOKEN: ${{ secrets.CLOUDFLARE_REPLACEMENT_READ_TOKEN }}
+          CLOUDFLARE_REPLACEMENT_MUTATION_TOKEN: ${{ secrets.CLOUDFLARE_REPLACEMENT_MUTATION_TOKEN }}
+          API_FOOTBALL_API_KEY: ${{ secrets.API_FOOTBALL_API_KEY }}
+          API_FOOTBALL_ATTENDED_TRIGGER_SECRET: ${{ secrets.API_FOOTBALL_ATTENDED_TRIGGER_SECRET }}
+          API_FOOTBALL_REPLACEMENT_RECOVERY_REPORT_PATH: ${{ runner.temp }}/replacement-recovery-execution.json
+        run: node workers/api-football-collector/replacement-shell-recovery.mjs
+      - id: handoff
+        if: always()
+        env:
+          REPORT: ${{ runner.temp }}/replacement-recovery-execution.json
+          APPROVED_SHA: ${{ needs.repository-gate.outputs.approved_sha }}
+        run: |
+          set -euo pipefail
+          node --input-type=module - <<'NODE'
+          import fs from 'node:fs';
+          const r=JSON.parse(fs.readFileSync(process.env.REPORT,'utf8')),classes=['REPLACEMENT_SHELL_RECOVERY_RECONCILIATION_REQUIRED','REPLACEMENT_SHELL_RECOVERY_CLEAN_SAFE_STOP','REPLACEMENT_SHELL_RECOVERY_OWNER_ATTENTION_REQUIRED'];
+          if(!classes.includes(r.classification)||r.approvedSha!==process.env.APPROVED_SHA||r.workerId!=='af6b59302acf49728e7deeb2f951397f'||r.createShellMutations!==0||r.retryAuthorized!==false||r.mutationCounts?.enablePreview>1||r.mutationCounts?.uploadVersion>1||r.mutationCounts?.disablePreview>1||r.deploymentsCreated!==0||r.workersDevEnabled!==0||r.cronRouteDomainMutations!==0||r.accessMutations!==0||r.d1Mutations!==0||r.providerRequests!==0||r.triggerHeaderRequests!==0)throw new Error('replacement recovery execution evidence invalid');
+          NODE
+      - uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f
+        if: always()
+        with:
+          name: api-football-replacement-shell-recovery-execution
+          path: ${{ runner.temp }}/replacement-recovery-execution.json
+          retention-days: 7
+          if-no-files-found: error
+      - name: Preserve protected recovery outcome
+        if: steps.execute.outcome != 'success'
+        run: exit 1
+
+  final-readonly-reconciliation:
+    if: always() && needs.repository-gate.result == 'success' && needs.fresh-readonly-admission.result == 'success' && needs.protected-replacement-shell-recovery.result != 'skipped'
+    needs: [repository-gate, fresh-readonly-admission, protected-replacement-shell-recovery]
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    environment:
+      name: data-steward-readonly
+      deployment: false
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09
+        with:
+          ref: ${{ needs.repository-gate.outputs.approved_sha }}
+          persist-credentials: false
+      - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444
+        with:
+          node-version: 24.19.0
+      - uses: actions/download-artifact@95815c38cf2ff2164869cbab79da8d1f422bc89e
+        with:
+          name: api-football-replacement-shell-recovery-execution
+          path: ${{ runner.temp }}/replacement-recovery-execution
+      - name: Independently re-prove original collector and D1/runtime state
+        env:
+          APPROVED_SHA: ${{ needs.repository-gate.outputs.approved_sha }}
+          API_FOOTBALL_PREFLIGHT_STAGE: VERSION_URL_CREATION_EXPERIMENT_CLOSEOUT
+          API_FOOTBALL_ATTENDED_VERSION_ID: 04d79556-3070-429f-9944-b5b53d799842
+          API_FOOTBALL_ATTENDED_VERSION_APPROVED_SHA: 69bb84fadbcce94e9fece3ff438d985866cce183
+          API_FOOTBALL_LIFECYCLE_CLONE_VERSION_ID: 7405abc0-8358-4156-8226-b6cc7bcf244f
+          API_FOOTBALL_LIFECYCLE_CLONE_APPROVED_SHA: cdb7d7ba140c38395893f223c42aee90d33b8b59
+          DATA_STEWARD_CLOUDFLARE_ACCOUNT_ID: ${{ secrets.DATA_STEWARD_CLOUDFLARE_ACCOUNT_ID }}
+          DATA_STEWARD_CLOUDFLARE_ACCOUNT_FINGERPRINT: ${{ vars.DATA_STEWARD_CLOUDFLARE_ACCOUNT_FINGERPRINT }}
+          DATA_STEWARD_CLOUDFLARE_READ_TOKEN: ${{ secrets.DATA_STEWARD_CLOUDFLARE_READ_TOKEN }}
+          API_FOOTBALL_ACTIVATION_PREFLIGHT_REPORT_PATH: ${{ runner.temp }}/replacement-recovery-original-final.json
+        run: node workers/api-football-collector/activation-live-preflight.mjs
+      - name: Independently reconcile exact inactive replacement state
+        env:
+          APPROVED_SHA: ${{ needs.repository-gate.outputs.approved_sha }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.DATA_STEWARD_CLOUDFLARE_ACCOUNT_ID }}
+          CLOUDFLARE_REPLACEMENT_READ_TOKEN: ${{ secrets.DATA_STEWARD_CLOUDFLARE_READ_TOKEN }}
+          API_FOOTBALL_REPLACEMENT_RECOVERY_EXECUTION_PATH: ${{ runner.temp }}/replacement-recovery-execution/replacement-recovery-execution.json
+          API_FOOTBALL_REPLACEMENT_RECOVERY_ORIGINAL_REPORT_PATH: ${{ runner.temp }}/replacement-recovery-original-final.json
+          API_FOOTBALL_REPLACEMENT_RECOVERY_RECONCILIATION_PATH: ${{ runner.temp }}/replacement-recovery-reconciliation.json
+        run: node workers/api-football-collector/replacement-shell-recovery-reconciliation.mjs
+      - uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f
+        if: always()
+        with:
+          name: api-football-replacement-shell-recovery-reconciliation
+          path: ${{ runner.temp }}/replacement-recovery-reconciliation.json
+          retention-days: 7
