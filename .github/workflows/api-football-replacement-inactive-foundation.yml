@@ -96,6 +96,7 @@ jobs:
           API_FOOTBALL_ATTENDED_VERSION_ID: 04d79556-3070-429f-9944-b5b53d799842
           API_FOOTBALL_ATTENDED_VERSION_APPROVED_SHA: 69bb84fadbcce94e9fece3ff438d985866cce183
           API_FOOTBALL_LIFECYCLE_CLONE_VERSION_ID: 7405abc0-8358-4156-8226-b6cc7bcf244f
+          API_FOOTBALL_LIFECYCLE_CLONE_APPROVED_SHA: cdb7d7ba140c38395893f223c42aee90d33b8b59
           DATA_STEWARD_CLOUDFLARE_ACCOUNT_ID: ${{ secrets.DATA_STEWARD_CLOUDFLARE_ACCOUNT_ID }}
           DATA_STEWARD_CLOUDFLARE_ACCOUNT_FINGERPRINT: ${{ vars.DATA_STEWARD_CLOUDFLARE_ACCOUNT_FINGERPRINT }}
           DATA_STEWARD_CLOUDFLARE_READ_TOKEN: ${{ secrets.DATA_STEWARD_CLOUDFLARE_READ_TOKEN }}
@@ -105,12 +106,13 @@ jobs:
         env:
           REPORT: ${{ runner.temp }}/replacement-admission.json
           APPROVED_SHA: ${{ needs.repository-gate.outputs.approved_sha }}
+          CLONE_APPROVED_SHA: cdb7d7ba140c38395893f223c42aee90d33b8b59
         run: |
           set -euo pipefail
           node --input-type=module - <<'NODE'
           import fs from 'node:fs';import {createHash} from 'node:crypto';
           const bytes=fs.readFileSync(process.env.REPORT),r=JSON.parse(bytes),i=r.inventory??{};
-          if(r.ok!==true||r.approvedSha!==process.env.APPROVED_SHA||r.stage!=='VERSION_URL_CREATION_EXPERIMENT_CLOSEOUT'||i.versionInventoryExact!==true||i.cloneVersionIdentityExact!==true||i.workersDev!==false||i.previewUrls!==false||i.deploymentCount!==0||i.cronCount!==0||i.routeCount!==0||i.customDomainCount!==0||r.runtime?.collectionEnabled!==0||r.runtime?.credentialState!=='AVAILABLE'||r.runtime?.activeLease!==false||r.priorState?.requestAttempts!==0||r.priorState?.generations!==0||r.priorState?.fixtureRevisions!==0||r.evidence?.productionMutations!==0||r.evidence?.apiFootballRequests!==0||r.evidence?.secretValuesRead!==0)throw new Error('replacement admission invalid');
+          if(r.ok!==true||r.approvedSha!==process.env.APPROVED_SHA||r.cloneApprovedSha!==process.env.CLONE_APPROVED_SHA||r.stage!=='VERSION_URL_CREATION_EXPERIMENT_CLOSEOUT'||i.versionInventoryExact!==true||i.cloneVersionIdentityExact!==true||i.workersDev!==false||i.previewUrls!==false||i.deploymentCount!==0||i.cronCount!==0||i.routeCount!==0||i.customDomainCount!==0||r.runtime?.collectionEnabled!==0||r.runtime?.credentialState!=='AVAILABLE'||r.runtime?.activeLease!==false||r.priorState?.requestAttempts!==0||r.priorState?.generations!==0||r.priorState?.fixtureRevisions!==0||r.evidence?.productionMutations!==0||r.evidence?.apiFootballRequests!==0||r.evidence?.secretValuesRead!==0)throw new Error('replacement admission invalid');
           fs.appendFileSync(process.env.GITHUB_OUTPUT,`artifact_sha256=${createHash('sha256').update(bytes).digest('hex')}\n`);
           NODE
       - uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6
@@ -220,6 +222,7 @@ jobs:
           API_FOOTBALL_ATTENDED_VERSION_ID: 04d79556-3070-429f-9944-b5b53d799842
           API_FOOTBALL_ATTENDED_VERSION_APPROVED_SHA: 69bb84fadbcce94e9fece3ff438d985866cce183
           API_FOOTBALL_LIFECYCLE_CLONE_VERSION_ID: 7405abc0-8358-4156-8226-b6cc7bcf244f
+          API_FOOTBALL_LIFECYCLE_CLONE_APPROVED_SHA: cdb7d7ba140c38395893f223c42aee90d33b8b59
           DATA_STEWARD_CLOUDFLARE_ACCOUNT_ID: ${{ secrets.DATA_STEWARD_CLOUDFLARE_ACCOUNT_ID }}
           DATA_STEWARD_CLOUDFLARE_ACCOUNT_FINGERPRINT: ${{ vars.DATA_STEWARD_CLOUDFLARE_ACCOUNT_FINGERPRINT }}
           DATA_STEWARD_CLOUDFLARE_READ_TOKEN: ${{ secrets.DATA_STEWARD_CLOUDFLARE_READ_TOKEN }}

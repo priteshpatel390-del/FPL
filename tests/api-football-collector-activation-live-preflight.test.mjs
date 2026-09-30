@@ -172,9 +172,10 @@ test('attended live preflight proves exact reviewed content and closed two-Versi
   assert.equal(report.evidence.cloudflareGets,PREFLIGHT_ATTENDED_CLOUDFLARE_GETS);assert.equal(PREFLIGHT_MAX_CLOUDFLARE_GETS,PREFLIGHT_LIFECYCLE_CLONE_CLOUDFLARE_GETS);
 });
 
-test('lifecycle clone closeout proves exact three-Version inventory with pristine runtime',async()=>{
+test('lifecycle clone closeout keeps immutable clone provenance separate from later execution head',async()=>{
   const cloneVersionId='22222222-2222-4222-8222-222222222222';
-  const attendedIdentity=buildImmutableAttendedVersionIdentity(),cloneIdentity=buildLifecycleCloneIdentity(APPROVED_SHA),modules=buildUploadModules(resolveModuleGraph());
+  const cloneApprovedSha='cdb7d7ba140c38395893f223c42aee90d33b8b59',executionSha='b'.repeat(40);
+  const attendedIdentity=buildImmutableAttendedVersionIdentity(),cloneIdentity=buildLifecycleCloneIdentity(cloneApprovedSha),modules=buildUploadModules(resolveModuleGraph());
   const moduleRows=[...modules].map(([name,source])=>({name,content_base64:Buffer.from(source).toString('base64')}));
   const attendedStable={id:HISTORICAL_ATTENDED_VERSION_ID,resources:{script_runtime:{compatibility_date:attendedIdentity.compatibilityDate},bindings:structuredClone(expectedAttendedBindings())}};
   const attendedBeta={id:HISTORICAL_ATTENDED_VERSION_ID,main_module:attendedIdentity.mainModule,compatibility_date:attendedIdentity.compatibilityDate,annotations:{'workers/message':attendedIdentity.message,'workers/tag':attendedIdentity.tag},modules:moduleRows};
@@ -209,16 +210,27 @@ test('lifecycle clone closeout proves exact three-Version inventory with pristin
     throw new Error('unexpected URL '+value);
   };
   const report=await runApiFootballActivationLivePreflight({
-    env:{...env(),APPROVED_SHA,API_FOOTBALL_PREFLIGHT_STAGE:COLLECTOR_PREFLIGHT_LIFECYCLE_CLONE_CLOSEOUT_STAGE,
+    env:{...env(),APPROVED_SHA:executionSha,API_FOOTBALL_PREFLIGHT_STAGE:COLLECTOR_PREFLIGHT_LIFECYCLE_CLONE_CLOSEOUT_STAGE,
       API_FOOTBALL_ATTENDED_VERSION_ID:HISTORICAL_ATTENDED_VERSION_ID,API_FOOTBALL_ATTENDED_VERSION_APPROVED_SHA:ATTENDED_VERSION_APPROVED_SHA,
-      API_FOOTBALL_LIFECYCLE_CLONE_VERSION_ID:cloneVersionId},
+      API_FOOTBALL_LIFECYCLE_CLONE_VERSION_ID:cloneVersionId,API_FOOTBALL_LIFECYCLE_CLONE_APPROVED_SHA:cloneApprovedSha},
     fetchImpl,now:()=>NOW
   });
   assert.equal(report.ok,true);assert.equal(report.classification,COLLECTOR_LIFECYCLE_CLONE_CLOSEOUT_READY);
+  assert.equal(report.approvedSha,executionSha);assert.equal(report.cloneApprovedSha,cloneApprovedSha);
   assert.equal(report.inventory.reviewedVersionId,HISTORICAL_ATTENDED_VERSION_ID);assert.equal(report.inventory.cloneVersionId,cloneVersionId);
   assert.equal(report.inventory.versionIdentityExact,true);assert.equal(report.inventory.cloneVersionIdentityExact,true);assert.equal(report.inventory.versionInventoryExact,true);
   assert.equal(report.inventory.previewUrls,false);assert.equal(report.inventory.workersDev,false);assert.equal(report.inventory.deploymentCount,0);
   assert.equal(report.evidence.cloudflareGets,PREFLIGHT_LIFECYCLE_CLONE_CLOUDFLARE_GETS);
+});
+
+test('lifecycle clone provenance fails closed when omitted',async()=>{
+  const report=await runApiFootballActivationLivePreflight({
+    env:{...env(),APPROVED_SHA:'b'.repeat(40),API_FOOTBALL_PREFLIGHT_STAGE:COLLECTOR_PREFLIGHT_LIFECYCLE_CLONE_CLOSEOUT_STAGE,
+      API_FOOTBALL_ATTENDED_VERSION_ID:HISTORICAL_ATTENDED_VERSION_ID,API_FOOTBALL_ATTENDED_VERSION_APPROVED_SHA:ATTENDED_VERSION_APPROVED_SHA,
+      API_FOOTBALL_LIFECYCLE_CLONE_VERSION_ID:'22222222-2222-4222-8222-222222222222'},
+    fetchImpl:fakeFetch({collectorPresent:true,attended:true,state:d1Rows({credentialState:'AVAILABLE'})}),now:()=>NOW
+  });
+  assert.equal(report.ok,false);assert.equal(report.reason,'activation_lifecycle_clone_approved_sha_invalid');
 });
 
 test('attended Preview identity comes from modern Worker metadata, not legacy Script Subdomain shape',async()=>{

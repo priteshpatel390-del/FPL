@@ -1,6 +1,12 @@
 # API-Football replacement inactive collector foundation
 
-Status: repository candidate only. Merge does not authorize Cloudflare execution. Live creation requires exact-main verification, protected-environment provisioning and separate owner approval.
+Status: repository remediation candidate after a consumed read-only admission false-negative. Merge does not authorize another Cloudflare execution. Any later live creation requires exact-main verification and separate owner approval.
+
+## Consumed first replacement admission
+
+Run `36763452857`, attempt 1, on exact main `b18bd1c7988a81a76af5ae22341702cc0cc116c5` passed repository gating and focused tests, then failed closed before protected execution as `lifecycle_clone_inventory_unexpected`. The protected replacement job was skipped. Evidence recorded 0 production mutations, 0 API-Football requests and 0 secret-value reads; no replacement shell or Version was created. The run is consumed and is not retry authority.
+
+The false-negative came from provenance coupling: historical Gate C clone `7405abc0-8358-4156-8226-b6cc7bcf244f` was created on exact main `cdb7d7ba140c38395893f223c42aee90d33b8b59`, but the replacement admission reconstructed its annotations with the later execution `APPROVED_SHA`. Remediation therefore treats three identities independently: current exact-main execution SHA, immutable attended-Version provenance SHA, and immutable Gate C clone provenance SHA. The clone creation SHA is pinned explicitly in both initial read-only admission and independent final re-proof; later repository heads must not change the expected historical clone annotations.
 
 ## Proven lifecycle cause
 
@@ -108,13 +114,13 @@ There is no delete, Deployment, workers.dev enable, route, domain, Cron, Access 
 
 ## Workflow and credentials
 
-`.github/workflows/api-football-replacement-inactive-foundation.yml` is manual, first-attempt-only, exact-current-main and exact-head-Verify gated. Admission and final reconciliation use `data-steward-readonly`. Protected execution uses future environment `api-football-replacement-foundation` with distinct credentials:
+`.github/workflows/api-football-replacement-inactive-foundation.yml` is manual, first-attempt-only, exact-current-main and exact-head-Verify gated. Admission and final reconciliation use `data-steward-readonly`. The owner provisioned environment `api-football-replacement-foundation` for consumed run `36763452857` with distinct credentials:
 
 - `CLOUDFLARE_REPLACEMENT_READ_TOKEN`: read-only Worker inventory/version metadata;
 - `CLOUDFLARE_REPLACEMENT_MUTATION_TOKEN`: short-lived, account-scoped credential restricted operationally to replacement Worker create/upload/subdomain-disable endpoints;
 - existing API-Football and attended-trigger secret values for Version `secret_text` bindings only.
 
-The repository adapter independently enforces exact method/path/body ceilings even if Cloudflare cannot express name-scoped token permissions. No credential/environment provisioning occurs in this checkpoint.
+Those protected values were not exercised because the consumed run stopped in fresh read-only admission. The repository adapter independently enforces exact method/path/body ceilings even if Cloudflare cannot express name-scoped token permissions. This remediation provisions no new credential or environment and authorizes no new live dispatch.
 
 ## Independent final reconciliation
 

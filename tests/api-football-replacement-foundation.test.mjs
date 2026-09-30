@@ -320,6 +320,8 @@ test('workflow remains manual exact-main first-attempt-only and cannot activate 
   assert.match(yml,/Tests and deterministic build/);assert.match(yml,/name: api-football-replacement-foundation/);assert.match(yml,/name: data-steward-readonly/);
   assert.doesNotMatch(yml,/wrangler deploy|versions deploy|\/routes|\/domains|\/schedules|\/access\/apps|API_FOOTBALL_ATTENDED_TRIGGER_HEADER/);
   assert.match(yml,/CLOUDFLARE_REPLACEMENT_READ_TOKEN/);assert.match(yml,/CLOUDFLARE_REPLACEMENT_MUTATION_TOKEN/);
+  assert.equal((yml.match(/API_FOOTBALL_LIFECYCLE_CLONE_APPROVED_SHA: cdb7d7ba140c38395893f223c42aee90d33b8b59/g)||[]).length,2);
+  assert.match(yml,/CLONE_APPROVED_SHA: cdb7d7ba140c38395893f223c42aee90d33b8b59/);assert.match(yml,/r\.cloneApprovedSha!==process\.env\.CLONE_APPROVED_SHA/);
   const execute=yml.slice(yml.indexOf('id: execute'),yml.indexOf('- id: handoff',yml.indexOf('id: execute')));
   assert.match(execute,/continue-on-error: true/);
   const handoff=yml.slice(yml.indexOf('- id: handoff',yml.indexOf('id: execute')),yml.indexOf('final-readonly-reconciliation:'));
