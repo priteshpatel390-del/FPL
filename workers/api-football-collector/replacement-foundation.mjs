@@ -117,14 +117,6 @@ export function validateReplacementVersion({stableVersion,betaVersion,versionId,
   return true;
 }
 
-export function validateReplacementFinal(snapshot,{workerId,versionId,stableVersion,betaVersion,identity}){
-  const worker=findWorker(snapshot.betaWorkers,REPLACEMENT_COLLECTOR);
-  if(!worker||worker.id!==workerId||worker.deployed_on!=null||!zeroTopology({...snapshot,name:REPLACEMENT_COLLECTOR,preview:false})||
-    !exactIds(extractVersionIds(snapshot.versions),[versionId]))fail('replacement_final_topology_invalid');
-  validateReplacementVersion({stableVersion,betaVersion,versionId,identity});
-  return true;
-}
-
 export function validateReplacementProbe(probe){
   return validateLifecycleProbeEvidence(probe)&&probe.outcome==='HTTP_RESPONSE'&&probe.workerSignatureProved===true;
 }
@@ -169,6 +161,43 @@ async function resolveVersionUrl(request,paths,{workerId,versionId,accountSubdom
 
 const knownFailure=error=>/^replacement_[A-Za-z0-9_]{1,96}$/.test(String(error?.message))?error.message:'replacement_failed_unknown';
 
+export const REPLACEMENT_CLASSIFICATIONS=Object.freeze({
+  success:'REPLACEMENT_INACTIVE_COLLECTOR_FOUNDATION_RECONCILIATION_REQUIRED',
+  safeStop:'REPLACEMENT_INACTIVE_COLLECTOR_CLEAN_SAFE_STOP',
+  ownerAttention:'REPLACEMENT_INACTIVE_COLLECTOR_OWNER_ATTENTION_REQUIRED'
+});
+export const REPLACEMENT_STATES=Object.freeze(['ABSENT','SHELL_ONLY','ONE_VERSION']);
+const DISABLED=state=>state?.enabled===false&&state?.previews_enabled===false;
+
+// Bounded cleanup obligation: once the replacement shell is known to exist, Preview must be
+// restored to disabled whether or not routing was proved. At most one disable submission; an
+// ambiguous or rejected submission is resolved only by a read-only subdomain reread.
+async function restorePreviewDisabled(request,paths){
+  let before=null;
+  try{before=(await request(paths.replacementSubdomain)).result;}catch{}
+  if(DISABLED(before))return Object.freeze({disposition:'ALREADY_DISABLED',disabled:true});
+  try{await request(paths.replacementSubdomain,{method:'POST',body:{enabled:false,previews_enabled:false}});return Object.freeze({disposition:'DEFINITE',disabled:true});}
+  catch{
+    let state=null;
+    try{state=(await request(paths.replacementSubdomain)).result;}catch{}
+    return DISABLED(state)?Object.freeze({disposition:'RECONCILED',disabled:true}):Object.freeze({disposition:'UNRESOLVED',disabled:false});
+  }
+}
+
+async function proveReplacementFinalState(request,paths,{workerId,versionId,expectedVersionIds,identity}){
+  const final=await readWorkerSnapshot(request,paths,REPLACEMENT_COLLECTOR,workerId);
+  const worker=findWorker(final.betaWorkers,REPLACEMENT_COLLECTOR);
+  if(final.absent||!worker||worker.id!==workerId||worker.deployed_on!=null||!zeroTopology({...final,name:REPLACEMENT_COLLECTOR,preview:false})||
+    !exactIds(extractVersionIds(final.versions),expectedVersionIds))fail('replacement_final_topology_invalid');
+  if(expectedVersionIds.length===1){
+    const stableVersion=(await request(paths.replacement+'/'+enc(versionId))).result;
+    const betaVersion=(await request(paths.createShell+'/'+enc(workerId)+'/versions/'+enc(versionId)+'?include=modules')).result;
+    validateReplacementVersion({stableVersion,betaVersion,versionId,identity});
+    return 'ONE_VERSION';
+  }
+  return 'SHELL_ONLY';
+}
+
 export async function runReplacementFoundation({env=process.env,fetchImpl=globalThis.fetch}={}){
   const account=env.CLOUDFLARE_ACCOUNT_ID,fingerprint=env.CLOUDFLARE_ACCOUNT_FINGERPRINT,approvedSha=env.APPROVED_SHA;
   if(typeof account!=='string'||!account||!HEX64.test(String(fingerprint||''))||digest(account)!==fingerprint||!HEX40.test(String(approvedSha||'')))fail('replacement_execution_identity_invalid');
@@ -180,25 +209,34 @@ export async function runReplacementFoundation({env=process.env,fetchImpl=global
   const absent=await readWorkerSnapshot(request,paths,REPLACEMENT_COLLECTOR);validateReplacementAbsent(absent);
   const accountSubdomain=(await request(paths.accountSubdomain)).result?.subdomain;
   if(typeof accountSubdomain!=='string'||!/^[a-z0-9-]+$/.test(accountSubdomain))fail('replacement_account_subdomain_invalid');
-  let shellDisposition=null,versionDisposition=null,workerId=null,versionId=null,rootProbe=null,attendedProbe=null,previewDisabled=false,failure=null;
+  let shellDisposition=null,versionDisposition=null,workerId=null,versionId=null,rootProbe=null,attendedProbe=null,routingProved=false,shellKnown=false,failure=null;
   try{
     try{
       const created=(await request(paths.createShell,{method:'POST',body:buildReplacementShellBody()})).result;
-      workerId=created?.id;if(created?.name!==REPLACEMENT_COLLECTOR||typeof workerId!=='string'||workerId===ORIGINAL_COLLECTOR_ID)fail('replacement_shell_identity_invalid');shellDisposition='DEFINITE';
+      workerId=created?.id;
+      if(created?.name!==REPLACEMENT_COLLECTOR||typeof workerId!=='string'||workerId===ORIGINAL_COLLECTOR_ID){workerId=null;shellDisposition='IDENTITY_INVALID';fail('replacement_shell_identity_invalid');}
+      shellDisposition='DEFINITE';shellKnown=true;
     }catch(error){
+      if(error instanceof MutationRejectedError){shellDisposition='REJECTED';throw error;}
       if(!(error instanceof MutationAmbiguousError))throw error;
-      const rows=(await request(paths.betaWorkers)).result;const worker=findWorker(rows,REPLACEMENT_COLLECTOR);workerId=worker?.id;
-      if(typeof workerId!=='string')throw error;
-      const reconciled=await readWorkerSnapshot(request,paths,REPLACEMENT_COLLECTOR,workerId);validateReplacementShell(reconciled,{workerId});shellDisposition='RECONCILED';
+      shellDisposition='UNRESOLVED';
+      const rows=(await request(paths.betaWorkers)).result;const worker=findWorker(rows,REPLACEMENT_COLLECTOR);
+      if(typeof worker?.id!=='string'||worker.id===ORIGINAL_COLLECTOR_ID)throw error;
+      workerId=worker.id;shellKnown=true;shellDisposition='RECONCILED';
+      const reconciled=await readWorkerSnapshot(request,paths,REPLACEMENT_COLLECTOR,workerId);validateReplacementShell(reconciled,{workerId});
     }
     const shell=await readWorkerSnapshot(request,paths,REPLACEMENT_COLLECTOR,workerId);validateReplacementShell(shell,{workerId});
     const beforeIds=extractVersionIds(shell.versions);
     try{
       const uploaded=(await request(paths.replacementUpload,{method:'POST',multipart:uploadForm})).result;versionId=uploaded?.id;
-      if(!UUID.test(String(versionId||'')))fail('replacement_version_identity_invalid');versionDisposition='DEFINITE';
+      if(!UUID.test(String(versionId||''))){versionId=null;versionDisposition='UNRESOLVED';fail('replacement_version_identity_invalid');}
+      versionDisposition='DEFINITE';
     }catch(error){
-      if(!(error instanceof MutationAmbiguousError))throw error;
+      if(error instanceof MutationRejectedError){versionDisposition='REJECTED';throw error;}
+      if(!(error instanceof MutationAmbiguousError)){versionDisposition='UNRESOLVED';throw error;}
+      versionDisposition='UNRESOLVED';
       const current=await readWorkerSnapshot(request,paths,REPLACEMENT_COLLECTOR,workerId);const afterIds=extractVersionIds(current.versions),added=afterIds.filter(id=>!beforeIds.includes(id));
+      if(afterIds.length===0){versionDisposition='RECONCILED_ABSENT';fail('replacement_version_upload_reconciled_absent');}
       if(added.length!==1||afterIds.length!==1)throw error;versionId=added[0];versionDisposition='RECONCILED';
     }
     const current=await readWorkerSnapshot(request,paths,REPLACEMENT_COLLECTOR,workerId);
@@ -210,39 +248,74 @@ export async function runReplacementFoundation({env=process.env,fetchImpl=global
     rootProbe=await probeVersionUrl(new URL('/',base),{fetchImpl});
     attendedProbe=await probeVersionUrl(new URL(ATTENDED_ACCEPTANCE_PATH,base),{fetchImpl});
     if(!validateReplacementProbe(rootProbe)||!validateReplacementProbe(attendedProbe))fail('replacement_routing_signature_not_proved');
-    try{await request(paths.replacementSubdomain,{method:'POST',body:{enabled:false,previews_enabled:false}});previewDisabled=true;}
-    catch(error){
-      if(!(error instanceof MutationAmbiguousError))throw error;
-      const state=(await request(paths.replacementSubdomain)).result;if(state?.enabled!==false||state?.previews_enabled!==false)throw error;previewDisabled=true;
-    }
-    const final=await readWorkerSnapshot(request,paths,REPLACEMENT_COLLECTOR,workerId);
-    validateReplacementFinal(final,{workerId,versionId,stableVersion,betaVersion,identity});
+    routingProved=true;
   }catch(error){failure=knownFailure(error);}
-  const originalAfter=validateOriginalCollectorSnapshot(await readWorkerSnapshot(request,paths,ORIGINAL_COLLECTOR));
-  const originalUnchanged=JSON.stringify(originalBefore)===JSON.stringify(originalAfter);
-  const complete=failure===null&&previewDisabled&&validateReplacementProbe(rootProbe)&&validateReplacementProbe(attendedProbe)&&originalUnchanged;
+
+  // Cleanup runs on every path once the exact replacement shell is known, success or not.
+  const previewCleanup=shellKnown?await restorePreviewDisabled(request,paths):Object.freeze({disposition:'NOT_REQUIRED',disabled:false});
+  let replacementState=null,finalStateReason=null;
+  try{
+    if(shellKnown){
+      if(!previewCleanup.disabled)fail('replacement_preview_cleanup_unresolved');
+      const expectedVersionIds=['DEFINITE','RECONCILED'].includes(versionDisposition)?[versionId]:[null,'REJECTED','RECONCILED_ABSENT'].includes(versionDisposition)?[]:null;
+      if(!expectedVersionIds)fail('replacement_version_state_unresolved');
+      replacementState=await proveReplacementFinalState(request,paths,{workerId,versionId,expectedVersionIds,identity});
+    }else if(shellDisposition==='REJECTED'){
+      validateReplacementAbsent(await readWorkerSnapshot(request,paths,REPLACEMENT_COLLECTOR));replacementState='ABSENT';
+    }else fail('replacement_shell_state_unresolved');
+  }catch(error){finalStateReason=knownFailure(error);replacementState=null;}
+  let originalUnchanged=false;
+  try{originalUnchanged=JSON.stringify(originalBefore)===JSON.stringify(validateOriginalCollectorSnapshot(await readWorkerSnapshot(request,paths,ORIGINAL_COLLECTOR)));}catch{}
+  const complete=failure===null&&routingProved&&previewCleanup.disabled&&replacementState==='ONE_VERSION'&&originalUnchanged&&
+    counts.createShell===1&&counts.uploadVersion===1&&validateReplacementProbe(rootProbe)&&validateReplacementProbe(attendedProbe);
+  const safeStop=!complete&&failure!==null&&replacementState!==null&&originalUnchanged&&counts.disablePreview<=1;
+  const classification=complete?REPLACEMENT_CLASSIFICATIONS.success:safeStop?REPLACEMENT_CLASSIFICATIONS.safeStop:REPLACEMENT_CLASSIFICATIONS.ownerAttention;
   return Object.freeze({
     version:REPLACEMENT_FOUNDATION_VERSION,approvedSha,replacementWorker:REPLACEMENT_COLLECTOR,workerId,versionId,
-    classification:complete?'REPLACEMENT_INACTIVE_COLLECTOR_FOUNDATION_RECONCILIATION_REQUIRED':'REPLACEMENT_INACTIVE_COLLECTOR_OWNER_ATTENTION_REQUIRED',
-    reason:complete?'replacement_created_routing_proved_and_preview_disabled':failure,complete,shellDisposition,versionDisposition,
-    rootProbe,attendedProbe,previewDisabled,originalUnchanged,mutationCounts:Object.freeze({...counts}),
+    classification,reason:complete?'replacement_created_routing_proved_and_preview_disabled':failure??finalStateReason??'replacement_final_state_unproved',
+    complete,safeStop,routingProved,replacementState,finalStateReason,shellDisposition,versionDisposition,
+    rootProbe,attendedProbe,previewCleanup:previewCleanup.disposition,previewDisabled:previewCleanup.disabled,originalUnchanged,mutationCounts:Object.freeze({...counts}),
     deploymentsCreated:0,workersDevEnabled:0,cronRouteDomainMutations:0,accessMutations:0,d1Mutations:0,providerRequests:0,triggerHeaderRequests:0,retryAuthorized:false
   });
 }
 
-export function validateReplacementReconciliation({execution,originalReport,replacement}={}){
-  if(!execution||execution.complete!==true||execution.classification!=='REPLACEMENT_INACTIVE_COLLECTOR_FOUNDATION_RECONCILIATION_REQUIRED'||execution.previewDisabled!==true||execution.originalUnchanged!==true||
-    execution.deploymentsCreated!==0||execution.workersDevEnabled!==0||execution.cronRouteDomainMutations!==0||execution.accessMutations!==0||execution.d1Mutations!==0||execution.providerRequests!==0||execution.triggerHeaderRequests!==0||execution.retryAuthorized!==false)fail('replacement_reconciliation_execution_invalid');
+const EXECUTION_ZERO_KEYS=['deploymentsCreated','workersDevEnabled','cronRouteDomainMutations','accessMutations','d1Mutations','providerRequests','triggerHeaderRequests'];
+function validateOriginalReport(originalReport){
   if(originalReport?.stage!=='VERSION_URL_CREATION_EXPERIMENT_CLOSEOUT'||originalReport?.ok!==true||originalReport?.inventory?.versionInventoryExact!==true||originalReport?.inventory?.cloneVersionIdentityExact!==true||
     originalReport?.inventory?.workersDev!==false||originalReport?.inventory?.previewUrls!==false||originalReport?.inventory?.deploymentCount!==0||originalReport?.inventory?.cronCount!==0||originalReport?.inventory?.routeCount!==0||originalReport?.inventory?.customDomainCount!==0||
     originalReport?.runtime?.collectionEnabled!==0||originalReport?.runtime?.credentialState!=='AVAILABLE'||originalReport?.runtime?.activeLease!==false||originalReport?.priorState?.requestAttempts!==0||originalReport?.priorState?.generations!==0||originalReport?.priorState?.fixtureRevisions!==0)fail('replacement_reconciliation_original_invalid');
-  if(replacement?.workerName!==REPLACEMENT_COLLECTOR||replacement?.versionId!==execution.versionId||replacement?.workersDev!==false||replacement?.previewUrls!==false||replacement?.versionCount!==1||replacement?.versionInventoryExact!==true||replacement?.deploymentCount!==0||replacement?.cronCount!==0||replacement?.routeCount!==0||replacement?.customDomainCount!==0||replacement?.versionIdentityExact!==true)fail('replacement_reconciliation_candidate_invalid');
-  return Object.freeze({classification:'REPLACEMENT_INACTIVE_COLLECTOR_FOUNDATION_RECONCILED',replacementWorker:REPLACEMENT_COLLECTOR,versionId:execution.versionId,retryAuthorized:false});
+}
+function inactiveReplacement(replacement,execution){
+  return replacement?.present===true&&replacement?.workerName===REPLACEMENT_COLLECTOR&&typeof execution.workerId==='string'&&replacement?.workerId===execution.workerId&&
+    replacement?.workersDev===false&&replacement?.previewUrls===false&&replacement?.deploymentCount===0&&replacement?.cronCount===0&&replacement?.routeCount===0&&replacement?.customDomainCount===0;
+}
+function oneVersionReplacement(replacement,execution){
+  return inactiveReplacement(replacement,execution)&&typeof execution.versionId==='string'&&replacement?.versionId===execution.versionId&&replacement?.versionCount===1&&replacement?.versionInventoryExact===true&&replacement?.versionIdentityExact===true;
+}
+
+export function validateReplacementReconciliation({execution,originalReport,replacement}={}){
+  const counts=execution?.mutationCounts;
+  if(!execution||EXECUTION_ZERO_KEYS.some(key=>execution[key]!==0)||execution.retryAuthorized!==false||execution.originalUnchanged!==true||
+    !counts||counts.createShell>1||counts.uploadVersion>1||counts.disablePreview>1)fail('replacement_reconciliation_execution_invalid');
+  const success=execution.classification===REPLACEMENT_CLASSIFICATIONS.success&&execution.complete===true&&execution.safeStop===false&&execution.routingProved===true&&execution.previewDisabled===true&&execution.replacementState==='ONE_VERSION';
+  const safeStop=execution.classification===REPLACEMENT_CLASSIFICATIONS.safeStop&&execution.complete===false&&execution.safeStop===true&&REPLACEMENT_STATES.includes(execution.replacementState)&&
+    (execution.replacementState==='ABSENT'||execution.previewDisabled===true);
+  if(!success&&!safeStop)fail('replacement_reconciliation_execution_invalid');
+  validateOriginalReport(originalReport);
+  const state=success?'ONE_VERSION':execution.replacementState;
+  const candidateExact=state==='ABSENT'?replacement?.present===false&&execution.workerId===null&&execution.versionId===null:
+    state==='SHELL_ONLY'?inactiveReplacement(replacement,execution)&&execution.versionId===null&&replacement?.versionId===null&&replacement?.versionCount===0&&replacement?.versionInventoryExact===true:
+    oneVersionReplacement(replacement,execution);
+  if(!candidateExact)fail('replacement_reconciliation_candidate_invalid');
+  return Object.freeze({
+    classification:success?'REPLACEMENT_INACTIVE_COLLECTOR_FOUNDATION_RECONCILED':'REPLACEMENT_INACTIVE_COLLECTOR_SAFE_STOP_RECONCILED',
+    replacementWorker:REPLACEMENT_COLLECTOR,replacementState:state,workerId:execution.workerId,versionId:execution.versionId,foundationSucceeded:success,retryAuthorized:false
+  });
 }
 
 export async function main(){
-  let report;try{report=await runReplacementFoundation();}catch(error){report={version:REPLACEMENT_FOUNDATION_VERSION,approvedSha:process.env.APPROVED_SHA??null,replacementWorker:REPLACEMENT_COLLECTOR,workerId:null,versionId:null,classification:'REPLACEMENT_INACTIVE_COLLECTOR_OWNER_ATTENTION_REQUIRED',reason:knownFailure(error),complete:false,shellDisposition:null,versionDisposition:null,rootProbe:null,attendedProbe:null,previewDisabled:false,originalUnchanged:false,mutationCounts:{createShell:0,uploadVersion:0,disablePreview:0},deploymentsCreated:0,workersDevEnabled:0,cronRouteDomainMutations:0,accessMutations:0,d1Mutations:0,providerRequests:0,triggerHeaderRequests:0,retryAuthorized:false};}
+  let report;try{report=await runReplacementFoundation();}catch(error){report={version:REPLACEMENT_FOUNDATION_VERSION,approvedSha:process.env.APPROVED_SHA??null,replacementWorker:REPLACEMENT_COLLECTOR,workerId:null,versionId:null,classification:REPLACEMENT_CLASSIFICATIONS.ownerAttention,reason:knownFailure(error),complete:false,safeStop:false,routingProved:false,replacementState:null,finalStateReason:null,shellDisposition:null,versionDisposition:null,rootProbe:null,attendedProbe:null,previewCleanup:'NOT_REQUIRED',previewDisabled:false,originalUnchanged:false,mutationCounts:{createShell:0,uploadVersion:0,disablePreview:0},deploymentsCreated:0,workersDevEnabled:0,cronRouteDomainMutations:0,accessMutations:0,d1Mutations:0,providerRequests:0,triggerHeaderRequests:0,retryAuthorized:false};}
   if(process.env.API_FOOTBALL_REPLACEMENT_REPORT_PATH)fs.writeFileSync(process.env.API_FOOTBALL_REPLACEMENT_REPORT_PATH,JSON.stringify(report,null,2)+'\n',{mode:0o600});
-  console.log(JSON.stringify({classification:report.classification,reason:report.reason,complete:report.complete,retryAuthorized:false}));return report.complete?0:1;
+  console.log(JSON.stringify({classification:report.classification,reason:report.reason,complete:report.complete,safeStop:report.safeStop,replacementState:report.replacementState,previewDisabled:report.previewDisabled,retryAuthorized:false}));return report.complete?0:1;
 }
 if(import.meta.url===pathToFileURL(process.argv[1]??'').href)process.exitCode=await main();

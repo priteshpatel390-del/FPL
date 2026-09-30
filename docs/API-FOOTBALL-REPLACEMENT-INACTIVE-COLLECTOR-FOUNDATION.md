@@ -72,7 +72,29 @@ Both have no custom headers, body, trigger secret or provider credential. Exact 
 - `cache-control` exactly `no-store`;
 - `content-type` beginning `text/plain`.
 
-Any mismatch stops. It cannot cause a Deployment, workers.dev enablement, route/domain/Cron creation, second Version or provider request. Preview is disabled only after both exact signatures are proved.
+Any mismatch stops the foundation objective. It cannot cause a Deployment, workers.dev enablement, route/domain/Cron creation, second Version, probe retry or provider request.
+
+## Preview cleanup invariant
+
+Preview is enabled at initial Worker-object creation only to provision Version URL routing. The replacement Version carries the API-Football key and attended trigger secret as Cloudflare `secret_text` bindings, so its Version URL must not remain publicly routable after the single bounded observation, whatever that observation found. Once the replacement shell is definitely created, or reconciled read-only to exist by exact name and non-original ID, restoring Preview disabled is a **cleanup obligation on every exit path**, not a success-only action:
+
+- routing signature mismatch on either probe;
+- probe transport failure or timeout;
+- Version upload definite rejection, ambiguity reconciled to one Version, ambiguity reconciled to zero Versions, or unresolved ambiguity;
+- post-upload validation, URL resolution or topology failure;
+- wrong initial shell state (already disabled, so no submission is needed).
+
+The cleanup first rereads the replacement Script Subdomain. If it already shows `{enabled:false, previews_enabled:false}` nothing is submitted. Otherwise exactly one `{enabled:false, previews_enabled:false}` POST is submitted; the adapter ceiling stays 1. A transport, response or rejection outcome is resolved only by one read-only reread: exact false/false is `RECONCILED`; anything else is `UNRESOLVED` and can never classify as success or safe stop. If shell creation was definitely rejected there is nothing to clean up; if shell existence cannot be determined no cleanup is guessed and the result is owner attention. Nothing is ever deleted, recreated, deployed, retried or enabled.
+
+## Execution outcomes
+
+| Classification | Meaning |
+|---|---|
+| `REPLACEMENT_INACTIVE_COLLECTOR_FOUNDATION_RECONCILIATION_REQUIRED` | Routing proved on both paths, Preview disabled, final replacement topology is exactly one reviewed inactive Version, original unchanged. Requires independent final reconciliation. |
+| `REPLACEMENT_INACTIVE_COLLECTOR_CLEAN_SAFE_STOP` | Foundation objective not achieved, but final state is exactly known: replacement `ABSENT` (definite shell rejection), `SHELL_ONLY` or `ONE_VERSION`; workers.dev and Preview disabled; zero Deployments/Cron/routes/domains; any Version byte-proved; original unchanged; zero provider/D1/trigger activity. Non-success and not retryable. |
+| `REPLACEMENT_INACTIVE_COLLECTOR_OWNER_ATTENTION_REQUIRED` | Cleanup, Version state, shell state or original state cannot be proved exactly. |
+
+A clean safe stop is still a failed foundation attempt: the protected job exits non-zero and GitHub reports the workflow red. Its artifacts state the clean inactive state explicitly.
 
 ## Mutation and ambiguity boundaries
 
@@ -80,7 +102,7 @@ The protected runner permits exactly:
 
 1. one modern Create Worker POST for the replacement name and exact initial body;
 2. one stable Scripts Version upload for that replacement;
-3. one replacement Script Subdomain POST containing only `{enabled:false, previews_enabled:false}` after successful routing proof.
+3. one replacement Script Subdomain POST containing only `{enabled:false, previews_enabled:false}`, submitted as the bounded cleanup obligation after routing success or any later stop once the shell is known.
 
 There is no delete, Deployment, workers.dev enable, route, domain, Cron, Access or D1 mutation primitive. Shell or Version mutation ambiguity is followed by one read-only exact-state reconciliation and never blind resubmission. A pre-existing replacement stops before mutation. Wrong initial Preview state stops and is never repaired by toggle or automatic recreation.
 
@@ -96,15 +118,17 @@ The repository adapter independently enforces exact method/path/body ceilings ev
 
 ## Independent final reconciliation
 
-Final read-only reconciliation must prove:
+Final read-only reconciliation runs whenever protected execution produced an execution artifact, including after a failed or safe-stopped execution, and uses only `data-steward-readonly` credentials. It classifies success as `REPLACEMENT_INACTIVE_COLLECTOR_FOUNDATION_RECONCILED`, a proved failed-but-clean attempt as `REPLACEMENT_INACTIVE_COLLECTOR_SAFE_STOP_RECONCILED` and anything else as `REPLACEMENT_INACTIVE_COLLECTOR_OWNER_ATTENTION_REQUIRED`. It never infers a Version from the execution alone: an absent replacement, an inactive shell with zero Versions and an inactive shell with exactly one byte-proved Version are each read directly. Success requirements are unchanged.
+
+It must prove:
 
 - original collector retains exact ID and three Versions;
 - original workers.dev/Preview remain disabled;
 - original Deployments/Cron/routes/domains remain zero;
 - collection is disabled, credential `AVAILABLE`, no lease and zero request/generation/fixture history;
-- replacement has exactly one byte-proved Version;
+- replacement Worker identity equals the executed Worker ID when created; for success or `ONE_VERSION` it has exactly one byte-proved Version, for `SHELL_ONLY` exactly zero Versions, for `ABSENT` no Worker, script or domain;
 - replacement workers.dev/Preview are disabled;
 - replacement Deployments/Cron/routes/domains are zero;
-- execution retained zero provider, D1, Access and production-topology mutations.
+- execution retained zero provider, trigger-header, D1, Deployment, workers.dev, route/domain/Cron and Access mutations, at most one of each approved mutation, and `retryAuthorized=false`.
 
 No live workflow dispatch is authorized by this repository candidate or its eventual merge.

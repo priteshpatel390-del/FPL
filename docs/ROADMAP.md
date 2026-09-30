@@ -1,6 +1,6 @@
 ## Current gate — replacement inactive collector foundation
 
-Gate C and disposable root-cause diagnostics are consumed evidence and are not rerunnable authority. Approved work is repository-only preparation of `teamsheet-api-football-shadow-collector-v2`: exact-main admission, original collector read-only proof, absent replacement proof, initial create with workers.dev false/Preview true, one reviewed Version upload, two secret-free exact Worker-signature GETs, Preview disable after success and independent inactive-state reconciliation. Merge and live dispatch remain separate owner gates. No replacement resource, credential provisioning, Deployment, provider request or D1 mutation is authorized now.
+Gate C and disposable root-cause diagnostics are consumed evidence and are not rerunnable authority. Approved work is repository-only preparation of `teamsheet-api-football-shadow-collector-v2`: exact-main admission, original collector read-only proof, absent replacement proof, initial create with workers.dev false/Preview true, one reviewed Version upload, two secret-free exact Worker-signature GETs, Preview disable as a cleanup obligation on success or any later stop, and independent reconciliation distinguishing success, clean safe stop and owner attention. Merge and live dispatch remain separate owner gates. No replacement resource, credential provisioning, Deployment, provider request or D1 mutation is authorized now.
 
 ## Current gate — creation-time Version URL A/B experiment
 
