@@ -1,3 +1,7 @@
+## Replacement routing prerequisite
+
+No activation is authorized. Before any future attended acceptance, separately named replacement collector must be created Preview-capable at initial Worker-object creation, prove exact reviewed Worker rejection through secret-free Version URL GETs, then return to Preview-disabled inactive state with zero Deployments/Cron/routes/domains. Existing collector cannot satisfy this prerequisite through later Preview toggle.
+
 > **Preparation extension — 22 September 2026:** the repository-only attended preparation candidate adds START, VERSION_READY and CLOSEOUT preflight states around the existing `ATTENDED_ACCEPTANCE` state. These are control-plane admission states only and do not change collector execution, retry, provider, persistence or model behaviour. See [attended preparation foundation](API-FOOTBALL-ATTENDED-PREPARATION-FOUNDATION.md).
 
 ## Attended acceptance remediation amendment

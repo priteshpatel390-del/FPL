@@ -1,6 +1,22 @@
 # Version URL disposable diagnostic
 
-Status: repository candidate. Merge does not authorize dispatch. Live execution requires a separate explicit owner approval after merge and exact-main verification.
+Status: completed root-cause evidence. All disposable resources were deleted. This diagnostic is consumed and must not be dispatched again.
+
+## Completed result
+
+Controlled same-account runs proved initial Worker shell state is decisive. A direct-API Worker created with `{enabled:false, previews_enabled:true}` routed its Version immediately at 0, 1, 3, 6 and 10 seconds with zero Deployments. Workers initially created false/false published syntactically valid Version URLs after later Preview enablement but returned platform 404 responses instead of Worker code, including when Preview was enabled and allowed to settle before first upload. Deployment alone and workers.dev alone did not repair them. Deployment plus workers.dev bootstrapped full production routing, but that is not an acceptable collector remediation.
+
+**FACT:** zero Deployment history, raw API creation, URL derivation and ordinary propagation are ruled out.
+
+**FACT:** original collector was created false/false and exhibits reproduced failure.
+
+**INFERENCE:** Cloudflare omitted or failed to attach some internal Version URL routing state at initial shell creation. Evidence does not identify undocumented internal storage.
+
+Gate C run `36629921145` is also complete: historical and clone Versions both failed reviewed Worker signature. Its visible enable-before-upload sequence did not vary initial Worker-object provisioning.
+
+Next repository gate is [Replacement inactive collector foundation](API-FOOTBALL-REPLACEMENT-INACTIVE-COLLECTOR-FOUNDATION.md).
+
+## Historical candidate design
 
 ## Why this exists
 

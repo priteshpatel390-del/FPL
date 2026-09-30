@@ -1,3 +1,7 @@
+## Replacement collector lifecycle limitation
+
+Controlled same-account evidence proves current collector Worker object cannot obtain working Version URL routing by later Preview enablement because it was initially created with both subdomain flags false. This is an externally reproduced lifecycle condition; the exact Cloudflare internal routing record or implementation is unknown. Existing object's three Versions remain retained and unroutable. Repository candidate avoids repair-by-toggle and production-topology bootstrap by preparing a separately named Worker created Preview-capable from its first request. No live replacement exists yet.
+
 ## Gate B narrows the lifecycle question but does not prove the cause
 
 Run `36569336154` established that later enabling Version URLs for historical attended Version `04d79556-3070-429f-9944-b5b53d799842` yields HTTP responses that do not match the reviewed Worker signature. This rules out a pure DNS/timeout explanation for that run but does not identify the serving component or prove that creation-time enablement is the cause. Gate C is designed to compare the old Version with one equivalent Version created while URLs are enabled. Even if only the new Version proves routable, the result supports the creation-time lifecycle hypothesis but still does not expose undocumented Cloudflare internals.

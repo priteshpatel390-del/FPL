@@ -1,3 +1,7 @@
+## Replacement inactive collector security boundary
+
+Replacement foundation uses separate deterministic Worker identity and exact mutation allowlist. Original collector endpoints are read-only. Protected execution permits one exact shell creation `{enabled:false, previews_enabled:true}`, one secret-bearing reviewed Version upload and one exact Preview disable after both header-free routing probes prove immutable Worker rejection. API-Football and attended-trigger values appear only as Cloudflare `secret_text` upload fields; probes send no custom headers or body. Deployment, workers.dev enablement, routes, domains, Cron, Access, D1 mutation, provider egress, delete/recreate and automatic retry are forbidden. Read and mutation credentials must be distinct; no live credentials are provisioned by repository work.
+
 ## Gate C security boundary — secret-bearing Version creation, zero provider request
 
 Gate C is the first lifecycle experiment that intentionally reuses the two existing secret values to construct one additional inactive Worker Version. Those values are submitted only inside the Cloudflare Version-upload multipart request under the existing protected preparation environment. They are never retained in artifacts/logs, never added to routing probes, never sent as `x-teamsheet-attended-trigger`, and never sent to API-Football. The four old/new Version probes are GET-only, header-free, redirect-disabled and bounded.

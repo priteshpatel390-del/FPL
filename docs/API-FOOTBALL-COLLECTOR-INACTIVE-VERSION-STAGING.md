@@ -1,3 +1,7 @@
+## Historical shell-provisioning correction
+
+The original inactive staging run created `teamsheet-api-football-shadow-collector` with workers.dev and Preview both disabled. Controlled disposable evidence now proves that this initial false/false state prevents later Version URL routing even when APIs publish URLs. Original staging remains valid evidence of inactivity but not a reusable shell-creation design. Replacement foundation uses a distinct Worker created initially with `{enabled:false, previews_enabled:true}` and never mutates or deletes the historical object. See [replacement foundation](API-FOOTBALL-REPLACEMENT-INACTIVE-COLLECTOR-FOUNDATION.md).
+
 > **Successor checkpoint — 22 September 2026:** inactive staging remains the accepted live baseline from run `35645387203`. PR #286's attended-acceptance foundation is now merged, and the current repository-only successor is the [attended preparation foundation](API-FOOTBALL-ATTENDED-PREPARATION-FOUNDATION.md). No live secret-bearing Version, D1 credential transition or provider request has occurred. The temporary staging upload credential cleanup/revocation remains an outstanding pre-live owner action.
 
 # API-Football Collector — Inactive Worker Version / Production D1 Binding Staging Proposal

@@ -1,3 +1,7 @@
+## Replacement inactive collector foundation
+
+Gate C run `36629921145` completed with identical non-routing results for historical attended Version and clone `7405abc0-8358-4156-8226-b6cc7bcf244f`. Controlled disposable diagnostics proved that initial Worker-object provisioning is decisive: `{enabled:false, previews_enabled:true}` at shell creation routes Versions with zero Deployments, while a shell initially created with both flags false remains unroutable after later Preview enablement. Deployment alone and workers.dev alone do not repair it. The repository candidate therefore prepares separate deterministic Worker `teamsheet-api-football-shadow-collector-v2`; original collector remains untouched with exact three-Version inventory. See [Replacement inactive collector foundation](API-FOOTBALL-REPLACEMENT-INACTIVE-COLLECTOR-FOUNDATION.md).
+
 ## Gate C — creation-time Version URL A/B experiment
 
 Gate B run `36569336154` on main `1f0ad34287b972ffd8422c94750cd4826bd11ed6` proved a clean, non-transport-ambiguous negative result for the existing attended Version: both secret-free paths returned HTTP 404 but did not match the reviewed Worker body/cache-control/content-type signature. Final reconciliation restored Preview/workers.dev disabled and preserved zero provider/D1/runtime history.

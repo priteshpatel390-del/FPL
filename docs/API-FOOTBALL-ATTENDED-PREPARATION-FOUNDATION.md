@@ -1,3 +1,7 @@
+## Historical attended Version retained
+
+Historical attended Version and Gate C clone remain immutable evidence on original collector. Replacement foundation reuses reviewed module bytes and runtime/binding contract but creates a new Version with replacement-specific annotations and UUID; it does not duplicate historical identity. Existing secret values may be supplied only as protected Cloudflare `secret_text` upload fields.
+
 # API-Football Attended Preparation Foundation
 
 Status: **repository implementation plus live-start false-negative remediation candidate — no live Version or credential mutation is authorized by this document.**

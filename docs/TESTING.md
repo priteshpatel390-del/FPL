@@ -1,3 +1,7 @@
+## Replacement inactive collector permanent coverage
+
+`tests/api-football-replacement-foundation.test.mjs` pins distinct replacement identity, creation-time `{enabled:false, previews_enabled:true}`, exact candidate-only mutation paths and ceilings, two secret-free GETs, immutable Worker signature, one shell/Version maximum, ambiguity reconciliation without resubmission, no repair of wrong initial state, no Deployment/workers.dev/topology/provider/D1/Access fallback, Preview disable only after success, old exact-three-Version read-only proof, one-Version inactive replacement reconciliation, sanitized evidence, manual exact-main first-attempt workflow and protected credential separation.
+
 ## Gate C creation-time lifecycle coverage
 
 Permanent tests pin: exact two-endpoint mutation allowlisting; one Version-upload submission; two Preview-toggle submissions; byte-equivalence of the clone to immutable attended module hashes; exact runtime binding/compatibility contract; secret material present only in synthetic multipart upload tests; four header-free old/new routing probes; no trigger-header/API-Football/D1/deployment/schedule/route/domain/delete surface; cleanup after ambiguous Preview enable; closed A/B routing classifications; exact three-Version closeout; and fail-closed reconciliation for provider activity, Preview drift or inconsistent evidence.

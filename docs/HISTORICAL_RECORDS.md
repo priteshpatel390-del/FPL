@@ -1,5 +1,6 @@
 # Historical Records Index
 
+- [API-Football Replacement Inactive Collector Foundation](API-FOOTBALL-REPLACEMENT-INACTIVE-COLLECTOR-FOUNDATION.md) — repository-only candidate for a distinct initially Preview-capable, production-inactive collector, one reviewed Version, secret-free routing proof and exact inactive reconciliation; no live replacement exists.
 - [Version URL Disposable Diagnostic](VERSION-URL-DISPOSABLE-DIAGNOSTIC.md) — owner-gated disposable-Worker diagnostic that isolates workers.dev route, zero Deployment history and raw-API creation as causes of non-dispatching collector Version URLs; never mutates the collector.
 
 - [API-Football Attended Preparation Foundation](API-FOOTBALL-ATTENDED-PREPARATION-FOUNDATION.md) — repository-only dormant preparation contract for exact original-Version admission, one no-retry secret-bearing inactive Version submission, independent two-Version proof, one bounded credential-state transition and independent closeout; live preparation remains separately owner-gated.
