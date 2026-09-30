@@ -29,12 +29,13 @@ export async function readReplacementState({account,token,versionId=null,approve
   if(workers.length>1)fail('replacement_reconciliation_worker_invalid');
   if(workers.length===0){
     if(script||customDomainCount!==0)fail('replacement_reconciliation_worker_invalid');
-    return Object.freeze({present:false,workerName:null,workerId:null,versionId:null,versionIdentityExact:null,workersDev:null,previewUrls:null,versionCount:0,versionInventoryExact:true,deploymentCount:0,cronCount:0,routeCount:0,customDomainCount:0});
+    return Object.freeze({present:false,workerName:null,workerId:null,versionId:null,versionIds:Object.freeze([]),versionIdentityExact:null,scriptPresent:false,workersDev:null,previewUrls:null,versionCount:0,versionInventoryExact:true,deploymentCount:0,cronCount:0,routeCount:0,customDomainCount:0});
   }
-  const worker=workers[0];if(!script)fail('replacement_reconciliation_script_absent');
+  const worker=workers[0];
   const subdomain=await request(paths.replacementSubdomain,{account,token,fetchImpl});
   const deployments=await request(paths.replacementDeployments,{account,token,fetchImpl}),schedules=await request(paths.replacementSchedules,{account,token,fetchImpl});
-  const versionRows=list(await request(paths.replacementVersions,{account,token,fetchImpl}),'items');
+  const versionRows=list(await request(paths.replacementVersions,{account,token,fetchImpl}),'items'),versionIds=versionRows.map(row=>row?.id).filter(id=>typeof id==='string');
+  if(!script&&versionRows.length>0)fail('replacement_reconciliation_script_absent');
   let versionIdentityExact=null;
   if(versionId!==null){
     const stableVersion=await request(paths.replacement+'/'+enc(versionId),{account,token,fetchImpl});
@@ -42,7 +43,7 @@ export async function readReplacementState({account,token,versionId=null,approve
     versionIdentityExact=false;try{validateReplacementVersion({stableVersion,betaVersion,versionId,identity:buildReplacementIdentity(approvedSha)});versionIdentityExact=true;}catch{}
   }
   return Object.freeze({
-    present:true,workerName:worker.name,workerId:worker.id,versionId,versionIdentityExact,
+    present:true,workerName:worker.name,workerId:worker.id,versionId,versionIds:Object.freeze([...versionIds]),versionIdentityExact,scriptPresent:Boolean(script),
     workersDev:subdomain?.enabled!==false,previewUrls:subdomain?.previews_enabled!==false,
     versionCount:versionRows.length,versionInventoryExact:versionId===null?versionRows.length===0:versionRows.length===1&&versionRows[0]?.id===versionId,
     deploymentCount:list(deployments,'deployments').length,cronCount:list(schedules,'schedules').length,

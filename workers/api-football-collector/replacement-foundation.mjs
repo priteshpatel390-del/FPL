@@ -13,6 +13,7 @@ export const REPLACEMENT_FOUNDATION_VERSION='api-football-replacement-inactive-c
 export const ORIGINAL_COLLECTOR='teamsheet-api-football-shadow-collector';
 export const ORIGINAL_COLLECTOR_ID='ae69aec0b6484b8f89b44e96b5eb86b8';
 export const REPLACEMENT_COLLECTOR='teamsheet-api-football-shadow-collector-v2';
+export const REPLACEMENT_RECOVERY_WORKER_ID='af6b59302acf49728e7deeb2f951397f';
 export const GATE_C_CLONE_VERSION_ID='7405abc0-8358-4156-8226-b6cc7bcf244f';
 export const ORIGINAL_VERSION_IDS=Object.freeze([ORIGINAL_BLOCKED_VERSION_ID,ATTENDED_VERSION_ID,GATE_C_CLONE_VERSION_ID]);
 export const REPLACEMENT_MUTATION_CEILINGS=Object.freeze({createShell:1,uploadVersion:1,disablePreview:1});
@@ -82,13 +83,14 @@ function findWorker(betaWorkers,name){
   if(matches.length>1)fail('replacement_worker_inventory_invalid');
   return matches[0]??null;
 }
-function routeCount(scripts,name){
+function routeCount(scripts,name,{allowAbsent=false}={}){
   const row=rows(scripts,'items').find(item=>item?.id===name);
-  return row?Array.isArray(row.routes)?row.routes.length:0:null;
+  if(!row)return allowAbsent?0:null;
+  return Array.isArray(row.routes)?row.routes.length:null;
 }
 function domainCount(domains,name){return rows(domains,'items').filter(row=>row?.service===name).length;}
-function zeroTopology({subdomain,deployments,schedules,scripts,domains,name,preview}){
-  return subdomain?.enabled===false&&subdomain?.previews_enabled===preview&&rows(deployments,'deployments').length===0&&rows(schedules,'schedules').length===0&&routeCount(scripts,name)===0&&domainCount(domains,name)===0;
+function zeroTopology({subdomain,deployments,schedules,scripts,domains,name,preview,allowMissingScript=false}){
+  return subdomain?.enabled===false&&subdomain?.previews_enabled===preview&&rows(deployments,'deployments').length===0&&rows(schedules,'schedules').length===0&&routeCount(scripts,name,{allowAbsent:allowMissingScript})===0&&domainCount(domains,name)===0;
 }
 
 export function validateOriginalCollectorSnapshot(snapshot){
@@ -104,10 +106,10 @@ export function validateReplacementAbsent(snapshot){
   return true;
 }
 
-export function validateReplacementShell(snapshot,{workerId}={}){
-  const worker=findWorker(snapshot.betaWorkers,REPLACEMENT_COLLECTOR);
-  if(!worker||worker.id!==workerId||worker.name!==REPLACEMENT_COLLECTOR||worker.deployed_on!=null||worker.subdomain?.enabled!==false||worker.subdomain?.previews_enabled!==true||
-    !zeroTopology({...snapshot,name:REPLACEMENT_COLLECTOR,preview:true})||extractVersionIds(snapshot.versions).length!==0)fail('replacement_shell_reconciliation_failed');
+export function validateReplacementShell(snapshot,{workerId,preview=true}={}){
+  const worker=findWorker(snapshot.betaWorkers,REPLACEMENT_COLLECTOR),versionIds=extractVersionIds(snapshot.versions);
+  if(!worker||worker.id!==workerId||worker.name!==REPLACEMENT_COLLECTOR||worker.deployed_on!=null||worker.subdomain?.enabled!==false||worker.subdomain?.previews_enabled!==preview||
+    !zeroTopology({...snapshot,name:REPLACEMENT_COLLECTOR,preview,allowMissingScript:versionIds.length===0})||versionIds.length!==0)fail('replacement_shell_reconciliation_failed');
   return true;
 }
 
@@ -187,7 +189,7 @@ async function restorePreviewDisabled(request,paths){
 async function proveReplacementFinalState(request,paths,{workerId,versionId,expectedVersionIds,identity}){
   const final=await readWorkerSnapshot(request,paths,REPLACEMENT_COLLECTOR,workerId);
   const worker=findWorker(final.betaWorkers,REPLACEMENT_COLLECTOR);
-  if(final.absent||!worker||worker.id!==workerId||worker.deployed_on!=null||!zeroTopology({...final,name:REPLACEMENT_COLLECTOR,preview:false})||
+  if(final.absent||!worker||worker.id!==workerId||worker.deployed_on!=null||!zeroTopology({...final,name:REPLACEMENT_COLLECTOR,preview:false,allowMissingScript:expectedVersionIds.length===0})||
     !exactIds(extractVersionIds(final.versions),expectedVersionIds))fail('replacement_final_topology_invalid');
   if(expectedVersionIds.length===1){
     const stableVersion=(await request(paths.replacement+'/'+enc(versionId))).result;
@@ -280,7 +282,7 @@ export async function runReplacementFoundation({env=process.env,fetchImpl=global
 }
 
 const EXECUTION_ZERO_KEYS=['deploymentsCreated','workersDevEnabled','cronRouteDomainMutations','accessMutations','d1Mutations','providerRequests','triggerHeaderRequests'];
-function validateOriginalReport(originalReport){
+export function validateOriginalReport(originalReport){
   if(originalReport?.stage!=='VERSION_URL_CREATION_EXPERIMENT_CLOSEOUT'||originalReport?.ok!==true||originalReport?.inventory?.versionInventoryExact!==true||originalReport?.inventory?.cloneVersionIdentityExact!==true||
     originalReport?.inventory?.workersDev!==false||originalReport?.inventory?.previewUrls!==false||originalReport?.inventory?.deploymentCount!==0||originalReport?.inventory?.cronCount!==0||originalReport?.inventory?.routeCount!==0||originalReport?.inventory?.customDomainCount!==0||
     originalReport?.runtime?.collectionEnabled!==0||originalReport?.runtime?.credentialState!=='AVAILABLE'||originalReport?.runtime?.activeLease!==false||originalReport?.priorState?.requestAttempts!==0||originalReport?.priorState?.generations!==0||originalReport?.priorState?.fixtureRevisions!==0)fail('replacement_reconciliation_original_invalid');
