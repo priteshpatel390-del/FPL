@@ -1,3 +1,7 @@
+## Replacement Worker inventory asymmetry
+
+Cloudflare's modern Worker inventory can expose a newly created Worker shell with zero Versions before that Worker appears in the legacy Scripts inventory. Run `36770767679` demonstrated this for `teamsheet-api-football-shadow-collector-v2`. Repository validation must therefore not infer shell absence or route ambiguity solely from a missing legacy Scripts row while the modern Worker identity is exact and Version count is zero. This exception is narrow: once a Version exists, the Scripts row is required again for route-count proof. See [replacement shell-only recovery](API-FOOTBALL-REPLACEMENT-SHELL-RECOVERY.md).
+
 ## Replacement collector lifecycle limitation
 
 Controlled same-account evidence proves current collector Worker object cannot obtain working Version URL routing by later Preview enablement because it was initially created with both subdomain flags false. This is an externally reproduced lifecycle condition; the exact Cloudflare internal routing record or implementation is unknown. Existing object's three Versions remain retained and unroutable. Repository candidate avoids repair-by-toggle and production-topology bootstrap by preparing a separately named Worker created Preview-capable from its first request. No live replacement exists yet.
