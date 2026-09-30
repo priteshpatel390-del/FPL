@@ -114,13 +114,13 @@ There is no delete, Deployment, workers.dev enable, route, domain, Cron, Access 
 
 ## Workflow and credentials
 
-`.github/workflows/api-football-replacement-inactive-foundation.yml` is manual, first-attempt-only, exact-current-main and exact-head-Verify gated. Admission and final reconciliation use `data-steward-readonly`. Protected execution uses future environment `api-football-replacement-foundation` with distinct credentials:
+`.github/workflows/api-football-replacement-inactive-foundation.yml` is manual, first-attempt-only, exact-current-main and exact-head-Verify gated. Admission and final reconciliation use `data-steward-readonly`. The owner provisioned environment `api-football-replacement-foundation` for consumed run `36763452857` with distinct credentials:
 
 - `CLOUDFLARE_REPLACEMENT_READ_TOKEN`: read-only Worker inventory/version metadata;
 - `CLOUDFLARE_REPLACEMENT_MUTATION_TOKEN`: short-lived, account-scoped credential restricted operationally to replacement Worker create/upload/subdomain-disable endpoints;
 - existing API-Football and attended-trigger secret values for Version `secret_text` bindings only.
 
-The repository adapter independently enforces exact method/path/body ceilings even if Cloudflare cannot express name-scoped token permissions. No credential/environment provisioning occurs in this checkpoint.
+Those protected values were not exercised because the consumed run stopped in fresh read-only admission. The repository adapter independently enforces exact method/path/body ceilings even if Cloudflare cannot express name-scoped token permissions. This remediation provisions no new credential or environment and authorizes no new live dispatch.
 
 ## Independent final reconciliation
 
