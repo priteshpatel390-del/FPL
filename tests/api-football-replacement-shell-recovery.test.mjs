@@ -178,6 +178,7 @@ test('recovery workflow is manual exact-main first-attempt-only with no create/d
   assert.match(yml,/^on:\n  workflow_dispatch:\n/m);assert.doesNotMatch(yml,/\n  (push|pull_request|schedule|workflow_run|repository_dispatch):/);
   assert.match(yml,/github\.run_attempt == 1/);assert.match(yml,/git ls-remote https:\/\/github\.com\/priteshpatel390-del\/FPL\.git refs\/heads\/main/);
   assert.match(yml,/Tests and deterministic build/);assert.match(yml,/name: api-football-replacement-foundation/);assert.match(yml,/name: data-steward-readonly/);
-  assert.match(yml,new RegExp(REPLACEMENT_RECOVERY_WORKER_ID));assert.doesNotMatch(yml,/createShell|wrangler deploy|versions deploy|\/routes|\/domains|\/schedules|\/access\/apps|API_FOOTBALL_ATTENDED_TRIGGER_HEADER/);
+  assert.match(yml,new RegExp(REPLACEMENT_RECOVERY_WORKER_ID));assert.doesNotMatch(yml,/wrangler deploy|versions deploy|\/routes|\/domains|\/schedules|\/access\/apps|API_FOOTBALL_ATTENDED_TRIGGER_HEADER/);
+  assert.match(yml,/r\.createShellMutations!==0/);
   assert.match(yml,/CLOUDFLARE_REPLACEMENT_READ_TOKEN/);assert.match(yml,/CLOUDFLARE_REPLACEMENT_MUTATION_TOKEN/);assert.match(yml,/Preserve protected recovery outcome/);
 });
