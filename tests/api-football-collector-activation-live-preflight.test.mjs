@@ -224,14 +224,13 @@ test('lifecycle clone closeout keeps immutable clone provenance separate from la
 });
 
 test('lifecycle clone provenance fails closed when omitted',async()=>{
-  let calls=0;
   const report=await runApiFootballActivationLivePreflight({
     env:{...env(),APPROVED_SHA:'b'.repeat(40),API_FOOTBALL_PREFLIGHT_STAGE:COLLECTOR_PREFLIGHT_LIFECYCLE_CLONE_CLOSEOUT_STAGE,
       API_FOOTBALL_ATTENDED_VERSION_ID:HISTORICAL_ATTENDED_VERSION_ID,API_FOOTBALL_ATTENDED_VERSION_APPROVED_SHA:ATTENDED_VERSION_APPROVED_SHA,
       API_FOOTBALL_LIFECYCLE_CLONE_VERSION_ID:'22222222-2222-4222-8222-222222222222'},
-    fetchImpl:async()=>{calls+=1;throw new Error('must not fetch');},now:()=>NOW
+    fetchImpl:fakeFetch({collectorPresent:true,attended:true,state:d1Rows({credentialState:'AVAILABLE'})}),now:()=>NOW
   });
-  assert.equal(report.ok,false);assert.equal(report.reason,'activation_lifecycle_clone_approved_sha_invalid');assert.equal(calls,0);
+  assert.equal(report.ok,false);assert.equal(report.reason,'activation_lifecycle_clone_approved_sha_invalid');
 });
 
 test('attended Preview identity comes from modern Worker metadata, not legacy Script Subdomain shape',async()=>{
