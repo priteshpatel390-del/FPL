@@ -1,5 +1,7 @@
 # Historical Records Index
 
+- [Version URL Disposable Diagnostic](VERSION-URL-DISPOSABLE-DIAGNOSTIC.md) — owner-gated disposable-Worker diagnostic that isolates workers.dev route, zero Deployment history and raw-API creation as causes of non-dispatching collector Version URLs; never mutates the collector.
+
 - [API-Football Attended Preparation Foundation](API-FOOTBALL-ATTENDED-PREPARATION-FOUNDATION.md) — repository-only dormant preparation contract for exact original-Version admission, one no-retry secret-bearing inactive Version submission, independent two-Version proof, one bounded credential-state transition and independent closeout; live preparation remains separately owner-gated.
 - [API-Football Attended One-Shot Discovery Acceptance Foundation](API-FOOTBALL-ATTENDED-ACCEPTANCE-FOUNDATION.md) — repository-only zero-Deployment temporary Versioned Preview design with exact secret-gated invocation, cleanup-always orchestration and no live execution authority.
 - [API-Football Collector Inactive Version Staging](API-FOOTBALL-COLLECTOR-INACTIVE-VERSION-STAGING.md) — accepted read-only staging admission and design-only proposal for an inert non-routable collector shell plus one inactive production-D1-bound Version; implementation and execution remain separately gated.
