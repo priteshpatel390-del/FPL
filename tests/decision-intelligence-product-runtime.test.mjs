@@ -3,6 +3,20 @@ import assert from 'node:assert/strict';
 import {loadApp,syntheticWorld} from './harness.mjs';
 
 const settle=async(turns=16)=>{for(let i=0;i<turns;i++)await new Promise(resolve=>setTimeout(resolve,0));};
+// DI-3 parity generation hashes with Web Crypto, which Node completes on the libuv threadpool rather than
+// within a fixed number of event-loop turns. Wait for the runtime's own completion condition instead:
+// every record starts a generation synchronously, and the newest generation is published only when
+// latestGeneration catches up with generation. Bounded so a stuck runtime fails with a clear assertion.
+const DECISION_SETTLE_TIMEOUT_MS=10000;
+const settleDecision=async(T,{timeoutMs=DECISION_SETTLE_TIMEOUT_MS}={})=>{
+  const runtime=T.DI3_PARITY_RUNTIME,deadline=Date.now()+timeoutMs;
+  await settle();
+  for(let state=runtime.diagnostic();state.generation!==state.latestGeneration;state=runtime.diagnostic()){
+    if(Date.now()>=deadline)assert.fail(`DI-3 parity runtime still generating after ${timeoutMs}ms (generation ${state.generation}, latest ${state.latestGeneration})`);
+    await new Promise(resolve=>setTimeout(resolve,1));
+  }
+  await settle();
+};
 const text=root=>{const rows=[];const visit=node=>{if(node?.nodeType===3)rows.push(node.textContent);(node?.children||[]).forEach(visit);};visit(root);return rows.join('');};
 function productionApp({manual=true,bank='1.5',ft='2'}={}){
   const app=loadApp({trHorizon:'1',trTop:'8',trFtCount:ft,trBankIn:bank,ftCount:ft,bankIn:bank,useManual:manual},{interactive:true});
@@ -23,27 +37,27 @@ function finishTransfer(app){
   worker.onmessage({data:{type:'result',requestId:request.requestId,result:{status:'ok',issues:[],plans:[baseline],evaluations:1,pruned:0,baseline,pricingMode:app.pricingMode}}});
   return baseline;
 }
-async function runTransfers(app){globalThis.location.hash='#/transfers';app.T.renderTransfers();await settle();const before=JSON.stringify(app.T.S.lastOptimiser);const baseline=finishTransfer(app);await settle();return {baseline,before};}
+async function runTransfers(app){globalThis.location.hash='#/transfers';app.T.renderTransfers();await settleDecision(app.T);const before=JSON.stringify(app.T.S.lastOptimiser);const baseline=finishTransfer(app);await settleDecision(app.T);return {baseline,before};}
 
 test('DI-4 production Team → Transfers → Team call sites transition unavailable to partial to complete',async()=>{
   const app=productionApp(),{T,doc}=app;
   T.renderWeeklyDecision(T.DI3_PARITY_RUNTIME.latest());assert.match(text(doc.weeklyDecision),/Weekly decision unavailable/);
-  globalThis.location.hash='#/team';T.renderSquad();await settle();assert.equal(T.DI3_PARITY_RUNTIME.latest().artifact.completeness.state,'partial');assert.match(text(doc.weeklyDecision),/Partial weekly decision/);
+  globalThis.location.hash='#/team';T.renderSquad();await settleDecision(T);assert.equal(T.DI3_PARITY_RUNTIME.latest().artifact.completeness.state,'partial');assert.match(text(doc.weeklyDecision),/Partial weekly decision/);
   const teamBefore=JSON.stringify(T.mySquad());await runTransfers(app);assert.equal(T.DI3_PARITY_RUNTIME.latest().artifact.completeness.state,'complete');
-  globalThis.location.hash='#/team';app.dispatch('teamsheet:route-change',{route:'#/team',primary:'team'});await settle();const latest=T.DI3_PARITY_RUNTIME.latest();assert.equal(latest.ok,true);assert.equal(latest.artifact.completeness.state,'complete');assert.match(text(doc.weeklyDecision),/Complete weekly decision/);assert.equal(JSON.stringify(T.mySquad()),teamBefore);
+  globalThis.location.hash='#/team';app.dispatch('teamsheet:route-change',{route:'#/team',primary:'team'});await settleDecision(T);const latest=T.DI3_PARITY_RUNTIME.latest();assert.equal(latest.ok,true);assert.equal(latest.artifact.completeness.state,'complete');assert.match(text(doc.weeklyDecision),/Complete weekly decision/);assert.equal(JSON.stringify(T.mySquad()),teamBefore);
 });
 
 test('DI-4 production Transfers → Team call sites also form a complete artifact',async()=>{
   const app=productionApp();await runTransfers(app);assert.equal(app.T.DI3_PARITY_RUNTIME.latest().artifact.completeness.state,'partial');
-  globalThis.location.hash='#/team';app.T.renderSquad();await settle();assert.equal(app.T.DI3_PARITY_RUNTIME.latest().artifact.completeness.state,'complete');assert.match(text(app.doc.weeklyDecision),/Complete weekly decision/);
+  globalThis.location.hash='#/team';app.T.renderSquad();await settleDecision(app.T);assert.equal(app.T.DI3_PARITY_RUNTIME.latest().artifact.completeness.state,'complete');assert.match(text(app.doc.weeklyDecision),/Complete weekly decision/);
 });
 
 test('DI-4 production bases preserve bank tenths, FT, squad identity and exact/estimated pricing semantics',async()=>{
-  for(const manual of [true,false]){const app=productionApp({manual,bank:'1.5',ft:'2'});globalThis.location.hash='#/team';app.T.renderSquad();await settle();await runTransfers(app);const artifact=app.T.DI3_PARITY_RUNTIME.latest().artifact;assert.equal(artifact.completeness.state,'complete');assert.equal(artifact.squadBasis.bank,15);assert.equal(artifact.squadBasis.freeTransfers,2);assert.equal(artifact.squadBasis.priceBasis,manual?'exact':'estimated');assert.equal(artifact.squadBasis.squadHash,`squad:${app.picks.map(player=>player.id).sort((a,b)=>a-b).join(',')}`);}
+  for(const manual of [true,false]){const app=productionApp({manual,bank:'1.5',ft:'2'});globalThis.location.hash='#/team';app.T.renderSquad();await settleDecision(app.T);await runTransfers(app);const artifact=app.T.DI3_PARITY_RUNTIME.latest().artifact;assert.equal(artifact.completeness.state,'complete');assert.equal(artifact.squadBasis.bank,15);assert.equal(artifact.squadBasis.freeTransfers,2);assert.equal(artifact.squadBasis.priceBasis,manual?'exact':'estimated');assert.equal(artifact.squadBasis.squadHash,`squad:${app.picks.map(player=>player.id).sort((a,b)=>a-b).join(',')}`);}
 });
 
 test('DI-4 production result and order remain byte-identical after representation',async()=>{
-  const app=productionApp();globalThis.location.hash='#/team';app.T.renderSquad();await settle();globalThis.location.hash='#/transfers';app.T.renderTransfers();await settle();const worker=app.workers.at(-1),request=worker.messages.find(message=>message.type==='calculate'),resultBefore=JSON.stringify(request.args);finishTransfer(app);await settle();assert.equal(JSON.stringify(request.args),resultBefore);assert.equal(app.T.DI3_PARITY_RUNTIME.latest().artifact.policy.allowedProductionSignals.length,0);
+  const app=productionApp();globalThis.location.hash='#/team';app.T.renderSquad();await settleDecision(app.T);globalThis.location.hash='#/transfers';app.T.renderTransfers();await settleDecision(app.T);const worker=app.workers.at(-1),request=worker.messages.find(message=>message.type==='calculate'),resultBefore=JSON.stringify(request.args);finishTransfer(app);await settleDecision(app.T);assert.equal(JSON.stringify(request.args),resultBefore);assert.equal(app.T.DI3_PARITY_RUNTIME.latest().artifact.policy.allowedProductionSignals.length,0);
 });
 
 test('DI-4 flattened production bundle exposes the lexical read boundary without a DI-4 global',()=>{
@@ -53,11 +67,11 @@ test('DI-4 flattened production bundle exposes the lexical read boundary without
 
 test('DI-4 public-squad fresh and cached Transfers lifecycle remains complete on route return',async()=>{
   const app=productionApp({manual:false,bank:'1.5',ft:'2'}),{T,doc}=app;
-  globalThis.location.hash='#/team';T.renderSquad();await settle();assert.equal(T.DI3_PARITY_RUNTIME.diagnostic().transferSnapshot,false);
+  globalThis.location.hash='#/team';T.renderSquad();await settleDecision(T);assert.equal(T.DI3_PARITY_RUNTIME.diagnostic().transferSnapshot,false);
   await runTransfers(app);const fresh=T.DI3_PARITY_RUNTIME.diagnostic();assert.equal(fresh.transferSnapshot,true);assert.deepEqual(fresh.latestSuccessfulDomains,['bench','captain','transfers','vice','xi']);
-  globalThis.location.hash='#/transfers';T.renderTransfers();await settle();assert.match(doc.transferStatus.textContent,/reused instantly/);assert.equal(T.DI3_PARITY_RUNTIME.latest().artifact.completeness.state,'complete');
-  globalThis.location.hash='#/team';app.dispatch('teamsheet:route-change',{route:'#/team',primary:'team'});await settle();assert.match(text(doc.weeklyDecision),/Complete weekly decision/);
-  app.dispatch('teamsheet:route-change',{route:'#/team',primary:'team'});await settle();assert.match(text(doc.weeklyDecision),/Complete weekly decision/);
+  globalThis.location.hash='#/transfers';T.renderTransfers();await settleDecision(T);assert.match(doc.transferStatus.textContent,/reused instantly/);assert.equal(T.DI3_PARITY_RUNTIME.latest().artifact.completeness.state,'complete');
+  globalThis.location.hash='#/team';app.dispatch('teamsheet:route-change',{route:'#/team',primary:'team'});await settleDecision(T);assert.match(text(doc.weeklyDecision),/Complete weekly decision/);
+  app.dispatch('teamsheet:route-change',{route:'#/team',primary:'team'});await settleDecision(T);assert.match(text(doc.weeklyDecision),/Complete weekly decision/);
 });
 
 test('DI-4 rejected transfer results never enter the runtime snapshot',()=>{
@@ -75,8 +89,15 @@ test('DI-4 rejected transfer results never enter the runtime snapshot',()=>{
 
 test('DI-4 stale cached transfer basis fails closed until a fresh matching calculation supersedes it',async()=>{
   const app=productionApp({manual:false,bank:'1.5',ft:'2'}),{T,doc}=app;
-  globalThis.location.hash='#/team';T.renderSquad();await settle();await runTransfers(app);assert.equal(T.DI3_PARITY_RUNTIME.latest().artifact.completeness.state,'complete');
-  doc.bankIn.value='2.0';globalThis.location.hash='#/team';T.renderSquad();await settle();let diagnostic=T.DI3_PARITY_RUNTIME.diagnostic();assert.equal(diagnostic.mismatchField,'bank');assert.equal(diagnostic.latestError,'di3_parity_basis_mismatch:bank');
-  doc.trBankIn.value='2.0';globalThis.location.hash='#/transfers';T.renderTransfers();await settle();finishTransfer({...app,bankTenths:20});await settle();diagnostic=T.DI3_PARITY_RUNTIME.diagnostic();assert.equal(diagnostic.latestError,null);assert.deepEqual(diagnostic.latestSuccessfulDomains,['bench','captain','transfers','vice','xi']);
+  globalThis.location.hash='#/team';T.renderSquad();await settleDecision(T);await runTransfers(app);assert.equal(T.DI3_PARITY_RUNTIME.latest().artifact.completeness.state,'complete');
+  doc.bankIn.value='2.0';globalThis.location.hash='#/team';T.renderSquad();await settleDecision(T);let diagnostic=T.DI3_PARITY_RUNTIME.diagnostic();assert.equal(diagnostic.mismatchField,'bank');assert.equal(diagnostic.latestError,'di3_parity_basis_mismatch:bank');
+  doc.trBankIn.value='2.0';globalThis.location.hash='#/transfers';T.renderTransfers();await settleDecision(T);finishTransfer({...app,bankTenths:20});await settleDecision(T);diagnostic=T.DI3_PARITY_RUNTIME.diagnostic();assert.equal(diagnostic.latestError,null);assert.deepEqual(diagnostic.latestSuccessfulDomains,['bench','captain','transfers','vice','xi']);
   globalThis.location.hash='#/team';app.dispatch('teamsheet:route-change',{route:'#/team',primary:'team'});assert.match(text(doc.weeklyDecision),/Complete weekly decision/);
+});
+
+test('DI-4 decision settle waits for the parity runtime completion condition and fails closed when it never arrives',async()=>{
+  let generation=1,latestGeneration=0;const runtime={diagnostic:()=>({generation,latestGeneration})};
+  setTimeout(()=>setTimeout(()=>{latestGeneration=generation;},150),0);
+  await settleDecision({DI3_PARITY_RUNTIME:runtime});assert.equal(latestGeneration,generation);
+  generation=2;await assert.rejects(settleDecision({DI3_PARITY_RUNTIME:runtime},{timeoutMs:20}),/DI-3 parity runtime still generating after 20ms \(generation 2, latest 1\)/);
 });

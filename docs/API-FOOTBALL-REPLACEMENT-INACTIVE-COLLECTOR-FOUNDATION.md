@@ -1,3 +1,9 @@
+## Consumed run 36770767679 — shell-only terminal evidence
+
+Run `36770767679`, attempt 1, on exact main `9ccb474f484c24c7b72c70bdc6cc911fc9bfb80b` passed repository gate and fresh read-only admission, then definitely created replacement Worker shell `teamsheet-api-football-shadow-collector-v2` with Worker ID `af6b59302acf49728e7deeb2f951397f`. Repository validation stopped before Version upload because the modern Worker existed while the legacy Scripts inventory still had no replacement row. The execution artifact recorded `createShell:1`, `uploadVersion:0`, `disablePreview:1`, `previewDisabled:true`, `originalUnchanged:true`, and zero Deployments/workers.dev enablements/Cron/routes/domains/Access/D1/provider/trigger activity. Independent reconciliation failed on the same legacy-script assumption.
+
+This run is consumed and must not be rerun. The exact shell is retained. Follow-up is the separately designed [replacement shell-only recovery](API-FOOTBALL-REPLACEMENT-SHELL-RECOVERY.md), which contains no Worker create/delete path.
+
 # API-Football replacement inactive collector foundation
 
 Status: repository remediation candidate after a consumed read-only admission false-negative. Merge does not authorize another Cloudflare execution. Any later live creation requires exact-main verification and separate owner approval.

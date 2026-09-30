@@ -39,7 +39,7 @@ function fakeCloudflare({route=true,wrongShell=false,ambiguousShell=false,reject
   const state={replacement:false,preview:false,version:false,calls:[],shellPosts:0,versionPosts:0,disablePosts:0};
   const original={id:ORIGINAL_COLLECTOR_ID,name:ORIGINAL_COLLECTOR,subdomain:{enabled:false,previews_enabled:false}};
   const replacement=()=>({id:REPLACEMENT_ID,name:REPLACEMENT_COLLECTOR,deployed_on:null,subdomain:{enabled:false,previews_enabled:wrongShell?false:state.preview}});
-  const scripts=()=>[{id:ORIGINAL_COLLECTOR,modified_on:'2026-09-29T20:57:49Z',routes:[]},...(state.replacement?[{id:REPLACEMENT_COLLECTOR,modified_on:'2026-09-30T00:00:00Z',routes:[]}]:[])];
+  const scripts=()=>[{id:ORIGINAL_COLLECTOR,modified_on:'2026-09-29T20:57:49Z',routes:[]},...(state.version?[{id:REPLACEMENT_COLLECTOR,modified_on:'2026-09-30T00:00:00Z',routes:[]}]:[])];
   const fetchImpl=async(url,init={})=>{
     const method=(init.method||'GET').toUpperCase();state.calls.push({url:String(url),method,headers:init.headers,body:init.body});
     const parsed=new URL(url);
@@ -307,7 +307,7 @@ test('reconciliation runner reads each final state from live-shaped inventory an
   const routed=fakeCloudflare({route:false});const stopped=await run(routed,await runReplacementFoundation({env,fetchImpl:routed.fetchImpl}));
   assert.equal(stopped.classification,'REPLACEMENT_INACTIVE_COLLECTOR_SAFE_STOP_RECONCILED');assert.equal(stopped.replacementState,'ONE_VERSION');assert.equal(stopped.foundationSucceeded,false);
   const shell=fakeCloudflare({upload:'rejected'});const shellOnly=await run(shell,await runReplacementFoundation({env,fetchImpl:shell.fetchImpl}));
-  assert.equal(shellOnly.classification,'REPLACEMENT_INACTIVE_COLLECTOR_SAFE_STOP_RECONCILED');assert.equal(shellOnly.replacementState,'SHELL_ONLY');
+  assert.equal(shellOnly.classification,'REPLACEMENT_INACTIVE_COLLECTOR_SAFE_STOP_RECONCILED');assert.equal(shellOnly.replacementState,'SHELL_ONLY');assert.equal(shellOnly.replacement.scriptPresent,false);
   const stuck=fakeCloudflare({disable:'ambiguous-unapplied',route:false});const unresolved=await run(stuck,await runReplacementFoundation({env,fetchImpl:stuck.fetchImpl}));
   assert.equal(unresolved.classification,'REPLACEMENT_INACTIVE_COLLECTOR_OWNER_ATTENTION_REQUIRED');assert.equal(unresolved.ok,false);assert.equal(unresolved.replacement.previewUrls,true);
   fs.rmSync(dir,{recursive:true,force:true});

@@ -1,3 +1,11 @@
+## 2026-09-30 — recover the exact replacement shell; do not recreate it
+
+**Decision:** treat run `36770767679` as consumed and retain the exact replacement Worker shell `af6b59302acf49728e7deeb2f951397f`. Do not delete, recreate or rerun the original replacement-foundation workflow. Repository recovery must first prove the exact shell-only inactive state, then may use only one Preview enable, one reviewed Version upload and one Preview disable under a separately owner-gated workflow.
+
+**Reason:** live evidence shows the modern Worker object was definitely created, no Version was uploaded, Preview was definitely disabled during cleanup, and the original collector remained unchanged. The failure came from a repository assumption that a zero-Version modern Worker must already appear in legacy Scripts inventory. Deleting/recreating a known shell would add unnecessary mutation and destroy the observed creation-time lifecycle state that the replacement experiment is meant to preserve.
+
+**Limitation:** whether re-enabling Preview on this originally-Preview-enabled shell before its first Version upload will route the new Version remains to be tested live; repository implementation must not claim success in advance.
+
 ## Decision — replace the incorrectly provisioned inactive collector object
 
 **Facts:** Gate C run `36629921145` proved old and newly uploaded Versions on the existing Worker both failed routing. Same-account disposable controls then proved initial shell state, not zero Deployment history or direct API upload, is decisive: initial `{enabled:false, previews_enabled:true}` routed immediately with zero Deployments; initial false/false remained unroutable after later enablement, including enable-before-upload. Deployment alone and workers.dev alone failed; full production topology bootstrapped routing but is unsafe for this collector.

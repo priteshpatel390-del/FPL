@@ -1,3 +1,7 @@
+## Current API-Football replacement checkpoint — shell-only recovery
+
+The next API-Football infrastructure gate is repository completion of the shell-only recovery for exact Worker `af6b59302acf49728e7deeb2f951397f`, followed by tests/build/determinism, draft PR review and explicit owner merge approval. After merge and exact-main verification, any live recovery dispatch remains a separate explicit approval gate. Do not rerun consumed workflow `36770767679`, create another replacement Worker, or pull later provider/model/product work forward.
+
 ## Current gate — replacement inactive collector foundation
 
 Gate C and disposable root-cause diagnostics are consumed evidence and are not rerunnable authority. Approved work is repository-only preparation of `teamsheet-api-football-shadow-collector-v2`: exact-main admission, original collector read-only proof, absent replacement proof, initial create with workers.dev false/Preview true, one reviewed Version upload, two secret-free exact Worker-signature GETs, Preview disable as a cleanup obligation on success or any later stop, and independent reconciliation distinguishing success, clean safe stop and owner attention. Merge and live dispatch remain separate owner gates. No replacement resource, credential provisioning, Deployment, provider request or D1 mutation is authorized now.

@@ -1,3 +1,7 @@
+## Replacement shell-only recovery — source remains dormant
+
+Consumed run `36770767679` made **0 API-Football requests** and uploaded no replacement Version. The live v2 Worker is an inactive zero-Version shell. The recovery candidate adds no data source and cannot call API-Football: a later separately approved run may only upload the reviewed inactive runtime and issue two secret-free routing GETs. Provider acquisition, fixture ingestion and all model/product consumption remain unchanged and separately gated.
+
 ## Replacement collector foundation — no source change
 
 Replacement inactive collector work changes only Cloudflare Worker identity/provisioning. It adds no data source, provider request, retention, model input or production decision path. API-Football remains shadow-only and dormant; existing provider credential is used only as an opaque `secret_text` field in a future owner-gated replacement Version upload. Secret-free routing probes cannot call provider.
