@@ -1,3 +1,9 @@
+## Replacement run 36820805445 consumed; one-Version safe state is not yet live-reconciled
+
+Run `36820805445` definitely uploaded replacement Version `995b0396-a61e-4bee-a405-aa6b3f765e5c` and submitted its one allowed Preview-disable cleanup, but retained evidence does not prove the final Preview state or routing because the common reader rejected a missing legacy Scripts row after Version creation. The original collector/D1/runtime side independently remained pristine and provider requests stayed zero.
+
+Repository remediation can prove the exact one-Version identity and can independently enumerate zone Workers Routes, but it does not itself prove current live Preview state. The future read-only closeout also requires owner provisioning of `CLOUDFLARE_REPLACEMENT_TOPOLOGY_READ_TOKEN` with only `Zone Zone Read` plus `Workers Routes Read`. Until that closeout runs successfully, do not claim the replacement is safely reconciled or routable and do not rerun the consumed recovery.
+
 ## Replacement Worker inventory asymmetry
 
 Cloudflare's modern Worker inventory can expose a newly created Worker shell with zero Versions before that Worker appears in the legacy Scripts inventory. Run `36770767679` demonstrated this for `teamsheet-api-football-shadow-collector-v2`. Repository validation must therefore not infer shell absence or route ambiguity solely from a missing legacy Scripts row while the modern Worker identity is exact and Version count is zero. This exception is narrow: once a Version exists, the Scripts row is required again for route-count proof. See [replacement shell-only recovery](API-FOOTBALL-REPLACEMENT-SHELL-RECOVERY.md).

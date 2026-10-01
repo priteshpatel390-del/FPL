@@ -28,11 +28,11 @@ function fixtureVersion(){
   };
 }
 
-function fakeCloudflare({route=true,enable='ok',upload='ok',disable='ok',drift={}}={}){
+function fakeCloudflare({route=true,enable='ok',upload='ok',disable='ok',scriptAfterVersion=true,drift={}}={}){
   const paths=replacementPaths(ACCOUNT),fx=fixtureVersion();
   const state={preview:false,version:false,calls:[],enablePosts:0,uploadPosts:0,disablePosts:0};
   const worker=()=>({id:drift.workerId??REPLACEMENT_RECOVERY_WORKER_ID,name:REPLACEMENT_COLLECTOR,deployed_on:drift.deployed?new Date().toISOString():null,subdomain:{enabled:drift.workersDev??false,previews_enabled:state.preview}});
-  const scripts=()=>[{id:ORIGINAL_COLLECTOR,routes:[]},...(state.version?[{id:REPLACEMENT_COLLECTOR,routes:drift.routes??[]}]:[])];
+  const scripts=()=>[{id:ORIGINAL_COLLECTOR,routes:[]},...(state.version&&scriptAfterVersion?[{id:REPLACEMENT_COLLECTOR,routes:drift.routes??[]}]:[])];
   const fetchImpl=async(url,init={})=>{
     const method=(init.method||'GET').toUpperCase();state.calls.push({url:String(url),method,headers:init.headers,body:init.body});
     const parsed=new URL(url);
@@ -149,6 +149,14 @@ test('ambiguous applied Preview enable reconciles and continues without second e
 test('unresolved Preview cleanup is owner attention and never resubmits cleanup',async()=>{
   const fake=fakeCloudflare({disable:'ambiguous-unapplied',route:false}),report=await runReplacementShellRecovery({env,fetchImpl:fake.fetchImpl});
   assert.equal(report.classification,'REPLACEMENT_SHELL_RECOVERY_OWNER_ATTENTION_REQUIRED');assert.equal(report.previewDisabled,false);assert.equal(report.replacementState,null);assert.equal(fake.state.disablePosts,1);
+});
+
+test('post-upload missing legacy Scripts row keeps cleanup provable and exposes the route-proof stop',async()=>{
+  const fake=fakeCloudflare({scriptAfterVersion:false}),report=await runReplacementShellRecovery({env,fetchImpl:fake.fetchImpl});
+  assert.equal(report.classification,'REPLACEMENT_SHELL_RECOVERY_OWNER_ATTENTION_REQUIRED');assert.equal(report.complete,false);assert.equal(report.safeStop,false);
+  assert.equal(report.reason,'replacement_recovery_state_route_proof_required');assert.equal(report.previewDisabled,true);assert.equal(report.previewCleanup,'DEFINITE');
+  assert.deepEqual(report.mutationCounts,{enablePreview:1,uploadVersion:1,disablePreview:1});assert.equal(report.versionId,VERSION_ID);
+  assert.equal(fake.state.calls.filter(row=>new URL(row.url).hostname.endsWith('.workers.dev')).length,0);
 });
 
 test('recovery credentials are distinct and retained reports exclude secret material',async()=>{

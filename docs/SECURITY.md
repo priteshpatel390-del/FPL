@@ -1,3 +1,11 @@
+## Replacement one-Version reconciliation security boundary
+
+Consumed run `36820805445` left one definite replacement Version but an unproved final Preview state. The remediation adds no mutation capability. The new one-Version reconciliation receives the existing Workers/D1 read credential only for the established Worker, Version, subdomain, deployment, schedule and custom-domain reads. Exact route proof is deliberately separated into a future `CLOUDFLARE_REPLACEMENT_TOPOLOGY_READ_TOKEN`, which must be distinct and read-only with only `Zone Zone Read` and `Workers Routes Read`. Reusing the existing Workers read token is rejected rather than silently broadening it.
+
+The topology reader may call only `GET /zones` filtered to the approved account and `GET /zones/{zone_id}/workers/routes` for returned zones. It retains no zone IDs, zone names, route IDs or route patterns—only zone count, replacement-route count and the closed proof label `ZONE_ROUTE_SCAN`. Any route targeting the replacement Worker, malformed/paginated inventory, permission/read failure or mismatch with a materialized legacy Scripts route count fails closed.
+
+The replacement Version remains pinned to ID `995b0396-a61e-4bee-a405-aa6b3f765e5c` and historical creation SHA `18f5748ff88403cdbd89019ca3306706364962ea`; later main identity cannot be substituted for Version provenance. The reconciliation workflow has no API-Football key, trigger secret, D1 writer, Preview mutation credential, Version upload, Deployment/Cron/route/domain mutation or provider request path. Repository work does not create the new topology token or dispatch the workflow.
+
 ## Replacement shell-only recovery security boundary
 
 Run `36770767679` left the exact replacement Worker shell present with zero Versions and Preview restored disabled. Recovery never creates or deletes a Worker and is pinned to Worker ID `af6b59302acf49728e7deeb2f951397f`. Fresh read-only admission must prove exact shell identity, zero Versions and zero production topology before the protected environment becomes eligible.
