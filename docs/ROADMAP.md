@@ -1,3 +1,9 @@
+## Current API-Football replacement checkpoint — reconcile the exact existing one-Version state
+
+Consumed live recovery run `36820805445` definitely created replacement Version `995b0396-a61e-4bee-a405-aa6b3f765e5c` but did not reach routing probes and could not prove final Preview state because the repository still coupled one-Version route proof to legacy Scripts materialization. Current approved work is repository-only remediation and a new read-only reconciliation path. Preserve the exact Version; no second upload, Worker recreation, Preview toggle, provider request or D1 mutation is in scope.
+
+After review/merge/exact-main verification, a future owner gate may provision the distinct read-only topology token and dispatch the new reconciliation once. Only an exact inactive one-Version result with Preview/workers.dev disabled, zero Deployments/Cron/custom domains and an independent zero-route zone scan can return the project to the routing-proof decision. If Preview remains enabled, stop for a separate cleanup decision; do not mutate automatically.
+
 ## Current API-Football replacement checkpoint — shell-only recovery
 
 The next API-Football infrastructure gate is repository completion of the shell-only recovery for exact Worker `af6b59302acf49728e7deeb2f951397f`, followed by tests/build/determinism, draft PR review and explicit owner merge approval. After merge and exact-main verification, any live recovery dispatch remains a separate explicit approval gate. Do not rerun consumed workflow `36770767679`, create another replacement Worker, or pull later provider/model/product work forward.

@@ -1,3 +1,11 @@
+## 2026-10-01 — preserve the first replacement Version and prove routes independently
+
+**Decision:** consume run `36820805445`; preserve replacement Version `995b0396-a61e-4bee-a405-aa6b3f765e5c`; do not upload a second Version or rerun the recovery. Separate the Version's immutable creation SHA from later execution SHA. For a one-Version replacement whose legacy Scripts row is absent, prove zero Worker routes by an independent account-zone scan using a distinct read-only credential with only `Zone Zone Read` and `Workers Routes Read`. Preview cleanup proof is narrowed to exact Worker identity plus Script Subdomain flags.
+
+**Reason:** the live run proved Version upload succeeded but the repository's route proof still depended on immediate legacy Scripts materialization. Simply treating an absent Scripts row as zero routes would weaken the safety boundary. Zone-scoped Workers Routes are Cloudflare's dedicated route inventory, while deployments, Cron, custom domains and workers.dev remain independently checked through their existing read surfaces.
+
+**Limitation:** the new topology credential is a future owner-provisioned secret and repository tests cannot prove its live scope or current Cloudflare state. Merge does not authorize provisioning or dispatch.
+
 ## 2026-09-30 — recover the exact replacement shell; do not recreate it
 
 **Decision:** treat run `36770767679` as consumed and retain the exact replacement Worker shell `af6b59302acf49728e7deeb2f951397f`. Do not delete, recreate or rerun the original replacement-foundation workflow. Repository recovery must first prove the exact shell-only inactive state, then may use only one Preview enable, one reviewed Version upload and one Preview disable under a separately owner-gated workflow.

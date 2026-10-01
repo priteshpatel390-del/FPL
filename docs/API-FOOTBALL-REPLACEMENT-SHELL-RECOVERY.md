@@ -1,3 +1,11 @@
+## Live recovery run 36820805445 — consumed one-Version state
+
+Owner-approved recovery run `36820805445`, attempt 1, on exact main `18f5748ff88403cdbd89019ca3306706364962ea` passed repository gating and fresh shell-only admission. Protected recovery definitely enabled Preview and definitely uploaded Version `995b0396-a61e-4bee-a405-aa6b3f765e5c`. It stopped before either routing probe because the post-upload replacement reader required the legacy Scripts row to materialize immediately. Cleanup submitted its single Preview-disable request, but full-state rereads hit the same assumption, so Preview-disabled state was not proved. Final original collector/D1/runtime preflight remained PASS with zero provider requests and zero D1 mutations. The run is consumed and must not be rerun.
+
+The remediation preserves this exact Version and introduces a later read-only closeout. Version identity is validated against its immutable creation SHA, not the later workflow SHA. A missing legacy Scripts row with one Version is accepted only when a separate read-only topology credential enumerates all account zones and proves no Workers Route targets the replacement. Deployments, Cron, custom domains, workers.dev and Preview are still independently checked. Preview cleanup proof itself now uses exact modern Worker identity plus Script Subdomain flags, so route-inventory lag cannot hide a successful cleanup.
+
+The future route credential is `CLOUDFLARE_REPLACEMENT_TOPOLOGY_READ_TOKEN`, scoped only to `Zone Zone Read` plus `Workers Routes Read`, distinct from the existing Workers/D1 read token. It is not provisioned by repository work. The new reconciliation is read-only and its merge does not authorize dispatch.
+
 # API-Football replacement shell-only recovery
 
 Status: repository-only recovery candidate after consumed live run `36770767679`. No new Cloudflare mutation or workflow dispatch is authorized by this document or its merge.

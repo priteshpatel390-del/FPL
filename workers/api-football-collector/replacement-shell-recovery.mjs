@@ -24,7 +24,12 @@ const UUID=/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]
 const fail=code=>{throw new Error(code);};
 const digest=value=>createHash('sha256').update(String(value)).digest('hex');
 const enc=value=>encodeURIComponent(String(value));
-const knownFailure=error=>/^replacement_recovery_[A-Za-z0-9_]{1,96}$/.test(String(error?.message))?error.message:'replacement_recovery_failed_unknown';
+const knownFailure=error=>{
+  const message=String(error?.message??'');
+  if(/^replacement_recovery_[A-Za-z0-9_]{1,96}$/.test(message))return message;
+  if(/^replacement_reconciliation_[A-Za-z0-9_]{1,96}$/.test(message))return 'replacement_recovery_state_'+message.slice('replacement_reconciliation_'.length);
+  return 'replacement_recovery_failed_unknown';
+};
 
 export function validateRecoveryShellState(state,{preview=false}={}){
   if(state?.present!==true||state.workerName!==REPLACEMENT_COLLECTOR||state.workerId!==REPLACEMENT_RECOVERY_WORKER_ID||
@@ -113,19 +118,25 @@ async function enablePreview({request,account,readToken,approvedSha,fetchImpl,pa
   return Object.freeze({disposition:'DEFINITE',enabled:true});
 }
 
-async function restorePreviewDisabled({request,account,readToken,approvedSha,versionId,fetchImpl,paths}){
-  let before=null;
-  try{before=await readState({account,readToken,approvedSha,versionId,fetchImpl});}catch{}
-  if(before?.present===true&&before.workerId===REPLACEMENT_RECOVERY_WORKER_ID&&before.workersDev===false&&before.previewUrls===false)return Object.freeze({disposition:'ALREADY_DISABLED',disabled:true});
+async function readPreviewState({request,paths}){
+  let workers,subdomain;
+  try{workers=await request(paths.betaWorkers);subdomain=await request(paths.replacementSubdomain);}catch{return null;}
+  const matches=Array.isArray(workers)?workers.filter(row=>row?.name===REPLACEMENT_COLLECTOR):[];
+  if(matches.length!==1||matches[0]?.id!==REPLACEMENT_RECOVERY_WORKER_ID)return null;
+  return Object.freeze({workersDev:subdomain?.enabled!==false,previewUrls:subdomain?.previews_enabled!==false});
+}
+async function restorePreviewDisabled({request,paths}){
+  const before=await readPreviewState({request,paths});
+  if(before?.workersDev===false&&before?.previewUrls===false)return Object.freeze({disposition:'ALREADY_DISABLED',disabled:true});
   try{await request(paths.replacementSubdomain,{method:'POST',body:{enabled:false,previews_enabled:false}});}
   catch(error){
     if(!(error instanceof MutationRejectedError)&&!(error instanceof MutationAmbiguousError))return Object.freeze({disposition:'UNRESOLVED',disabled:false});
-    let after=null;try{after=await readState({account,readToken,approvedSha,versionId,fetchImpl});}catch{}
-    return after?.present===true&&after.workerId===REPLACEMENT_RECOVERY_WORKER_ID&&after.workersDev===false&&after.previewUrls===false?
+    const after=await readPreviewState({request,paths});
+    return after?.workersDev===false&&after?.previewUrls===false?
       Object.freeze({disposition:'RECONCILED',disabled:true}):Object.freeze({disposition:'UNRESOLVED',disabled:false});
   }
-  let after=null;try{after=await readState({account,readToken,approvedSha,versionId,fetchImpl});}catch{}
-  return after?.present===true&&after.workerId===REPLACEMENT_RECOVERY_WORKER_ID&&after.workersDev===false&&after.previewUrls===false?
+  const after=await readPreviewState({request,paths});
+  return after?.workersDev===false&&after?.previewUrls===false?
     Object.freeze({disposition:'DEFINITE',disabled:true}):Object.freeze({disposition:'UNRESOLVED',disabled:false});
 }
 
@@ -168,7 +179,7 @@ export async function runReplacementShellRecovery({env=process.env,fetchImpl=glo
     routingProved=true;
   }catch(error){if(failure===null)failure=knownFailure(error);}
 
-  const previewCleanup=await restorePreviewDisabled({request,account,readToken,approvedSha,versionId,fetchImpl,paths});
+  const previewCleanup=await restorePreviewDisabled({request,paths});
   let replacementState=null,finalStateReason=null;
   try{
     if(!previewCleanup.disabled)fail('replacement_recovery_preview_cleanup_unresolved');

@@ -1,3 +1,11 @@
+## Replacement one-Version reconciliation architecture
+
+The live replacement now has exactly one known Version, `995b0396-a61e-4bee-a405-aa6b3f765e5c`, created by consumed run `36820805445` from main `18f5748ff88403cdbd89019ca3306706364962ea`. Version identity is therefore immutable historical provenance and must not be reconstructed from a later workflow SHA.
+
+The common replacement state reader now accepts a separate `versionApprovedSha`. When a distinct topology-read credential is supplied, it enumerates every zone returned for the production account, then reads each zone's Workers Routes and counts only routes targeting `teamsheet-api-football-shadow-collector-v2`. The retained state stores only the closed proof source plus zone/route counts; zone IDs, names and route patterns are not retained. This route scan is authoritative for the one-Version closeout and is cross-checked against the legacy Scripts route count when that row exists. Missing legacy Scripts materialization is therefore no longer silently equated with zero routes.
+
+Preview cleanup is narrower: after exact replacement identity is already established, cleanup reads only the modern Worker inventory plus Script Subdomain flags to prove workers.dev and Preview disabled. It does not require Version/route reconciliation merely to establish cleanup. The new one-Version workflow is read-only and uses no provider, D1 writer, mutation token or trigger secret.
+
 ## Replacement shell-only recovery architecture
 
 The consumed replacement run left one exact inactive modern Worker shell and no Version. Cloudflare's modern Worker inventory can expose that shell before a legacy Scripts row exists, so zero-Version topology validation now treats an absent legacy Scripts row as zero routes only when the modern Worker identity is exact and the Version inventory is empty. Once any Version exists, the Scripts row is again mandatory.

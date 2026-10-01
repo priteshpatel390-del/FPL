@@ -5,49 +5,123 @@ import {
 } from './replacement-foundation.mjs';
 
 const API='https://api.cloudflare.com/client/v4';
+const HEX40=/^[0-9a-f]{40}$/;
+const ZONE_ID=/^[A-Za-z0-9_-]{1,32}$/;
+const ZONE_PAGE_SIZE=50;
+const MAX_ZONE_PAGES=20;
 const fail=code=>{throw new Error(code);};
 const enc=value=>encodeURIComponent(String(value));
 
-async function request(path,{account,token,fetchImpl}){
+async function request(path,{token,fetchImpl}){
   let response,payload;
   try{response=await fetchImpl(API+path,{headers:{Authorization:'Bearer '+token,Accept:'application/json'},redirect:'error',signal:AbortSignal.timeout(20_000)});payload=await response.json();}
   catch{return fail('replacement_reconciliation_read_failed');}
   if(!response.ok||payload?.success!==true)fail('replacement_reconciliation_read_failed');
   return payload.result;
 }
+async function topologyRequest(path,{token,fetchImpl}){
+  let response,payload;
+  try{response=await fetchImpl(API+path,{headers:{Authorization:'Bearer '+token,Accept:'application/json'},redirect:'error',signal:AbortSignal.timeout(20_000)});payload=await response.json();}
+  catch{return fail('replacement_reconciliation_topology_read_failed');}
+  if(!response.ok||payload?.success!==true)fail('replacement_reconciliation_topology_read_failed');
+  return payload;
+}
 const list=(value,key)=>Array.isArray(value)?value:Array.isArray(value?.[key])?value[key]:fail('replacement_reconciliation_shape_invalid');
 
-// Reads replacement state without assuming a Version exists: an absent replacement, an inactive
-// shell with zero Versions and an inactive shell with exactly one reviewed Version are all provable.
-export async function readReplacementState({account,token,versionId=null,approvedSha,fetchImpl=globalThis.fetch}){
+export async function readReplacementRouteTopology({account,topologyToken,fetchImpl=globalThis.fetch}){
+  if(typeof account!=='string'||!account||typeof topologyToken!=='string'||!topologyToken)fail('replacement_reconciliation_topology_identity_invalid');
+  const zones=[];const seen=new Set();
+  let page=1,totalPages=null;
+  while(true){
+    if(page>MAX_ZONE_PAGES)fail('replacement_reconciliation_zone_inventory_too_large');
+    const payload=await topologyRequest('/zones?account.id='+enc(account)+'&page='+page+'&per_page='+ZONE_PAGE_SIZE+'&type=full%2Cpartial%2Csecondary%2Cinternal',{token:topologyToken,fetchImpl});
+    const rows=list(payload?.result),info=payload?.result_info;
+    const reportedPages=Number(info?.total_pages);
+    if(!Number.isInteger(reportedPages)||reportedPages<0||reportedPages>MAX_ZONE_PAGES)fail('replacement_reconciliation_zone_inventory_invalid');
+    if(totalPages===null)totalPages=reportedPages;else if(totalPages!==reportedPages)fail('replacement_reconciliation_zone_inventory_changed');
+    if(totalPages===0){
+      if(rows.length!==0||page!==1)fail('replacement_reconciliation_zone_inventory_invalid');
+      break;
+    }
+    for(const zone of rows){
+      const id=zone?.id;
+      if(!ZONE_ID.test(String(id||''))||zone?.account?.id!==account||seen.has(id))fail('replacement_reconciliation_zone_inventory_invalid');
+      seen.add(id);zones.push(id);
+    }
+    if(page>=totalPages)break;
+    page+=1;
+  }
+  let routeCount=0;
+  for(const zoneId of zones){
+    const payload=await topologyRequest('/zones/'+enc(zoneId)+'/workers/routes',{token:topologyToken,fetchImpl});
+    const rows=list(payload?.result);
+    for(const row of rows){
+      if(typeof row?.id!=='string'||typeof row?.pattern!=='string'||(row?.script!==undefined&&row?.script!==null&&typeof row.script!=='string'))fail('replacement_reconciliation_route_inventory_invalid');
+      if(row.script===REPLACEMENT_COLLECTOR)routeCount+=1;
+    }
+  }
+  return Object.freeze({proof:'ZONE_ROUTE_SCAN',zoneCount:zones.length,routeCount});
+}
+
+// Reads replacement state without assuming the legacy Scripts inventory has materialized.
+// When a topologyToken is supplied, zone-scoped Workers Routes are independently enumerated
+// and become authoritative for route-count proof.
+export async function readReplacementState({account,token,topologyToken=null,versionId=null,approvedSha,versionApprovedSha=approvedSha,fetchImpl=globalThis.fetch}){
   const paths=replacementPaths(account);
-  const betaWorkers=await request(paths.betaWorkers,{account,token,fetchImpl});
-  const scripts=await request(paths.scripts,{account,token,fetchImpl}),domains=await request(paths.domains,{account,token,fetchImpl});
+  const betaWorkers=await request(paths.betaWorkers,{token,fetchImpl});
+  const scripts=await request(paths.scripts,{token,fetchImpl}),domains=await request(paths.domains,{token,fetchImpl});
   const workers=list(betaWorkers,'items').filter(row=>row?.name===REPLACEMENT_COLLECTOR);
   const script=list(scripts,'items').find(row=>row?.id===REPLACEMENT_COLLECTOR);
   const customDomainCount=list(domains,'items').filter(row=>row?.service===REPLACEMENT_COLLECTOR).length;
   if(workers.length>1)fail('replacement_reconciliation_worker_invalid');
-  if(workers.length===0){
-    if(script||customDomainCount!==0)fail('replacement_reconciliation_worker_invalid');
-    return Object.freeze({present:false,workerName:null,workerId:null,versionId:null,versionIds:Object.freeze([]),versionIdentityExact:null,scriptPresent:false,workersDev:null,previewUrls:null,versionCount:0,versionInventoryExact:true,deploymentCount:0,cronCount:0,routeCount:0,customDomainCount:0});
+
+  let topology=null;
+  if(topologyToken!==null){
+    if(typeof topologyToken!=='string'||!topologyToken||topologyToken===token)fail('replacement_reconciliation_topology_credential_separation_required');
+    topology=await readReplacementRouteTopology({account,topologyToken,fetchImpl});
   }
+
+  if(workers.length===0){
+    if(script||customDomainCount!==0||(topology&&topology.routeCount!==0))fail('replacement_reconciliation_worker_invalid');
+    return Object.freeze({present:false,workerName:null,workerId:null,versionId:null,versionIds:Object.freeze([]),versionIdentityExact:null,scriptPresent:false,
+      workerDeployedOnNull:null,workersDev:null,previewUrls:null,versionCount:0,versionInventoryExact:true,deploymentCount:0,cronCount:0,
+      routeCount:topology?.routeCount??0,routeProof:topology?.proof??'WORKER_ABSENT',topologyZoneCount:topology?.zoneCount??null,legacyRouteCount:null,customDomainCount:0});
+  }
+
   const worker=workers[0];
-  const subdomain=await request(paths.replacementSubdomain,{account,token,fetchImpl});
-  const deployments=await request(paths.replacementDeployments,{account,token,fetchImpl}),schedules=await request(paths.replacementSchedules,{account,token,fetchImpl});
-  const versionRows=list(await request(paths.replacementVersions,{account,token,fetchImpl}),'items'),versionIds=versionRows.map(row=>row?.id).filter(id=>typeof id==='string');
-  if(!script&&versionRows.length>0)fail('replacement_reconciliation_script_absent');
+  const subdomain=await request(paths.replacementSubdomain,{token,fetchImpl});
+  const deployments=await request(paths.replacementDeployments,{token,fetchImpl}),schedules=await request(paths.replacementSchedules,{token,fetchImpl});
+  const versionRows=list(await request(paths.replacementVersions,{token,fetchImpl}),'items'),versionIds=versionRows.map(row=>row?.id).filter(id=>typeof id==='string');
+  let legacyRouteCount=null;
+  if(script){
+    if(!Array.isArray(script.routes))fail('replacement_reconciliation_route_inventory_invalid');
+    legacyRouteCount=script.routes.length;
+  }
+  let routeCount,routeProof,topologyZoneCount=null;
+  if(topology){
+    routeCount=topology.routeCount;routeProof=topology.proof;topologyZoneCount=topology.zoneCount;
+    if(legacyRouteCount!==null&&legacyRouteCount!==routeCount)fail('replacement_reconciliation_route_inventory_mismatch');
+  }else if(legacyRouteCount!==null){
+    routeCount=legacyRouteCount;routeProof='LEGACY_SCRIPT_INVENTORY';
+  }else if(versionRows.length===0){
+    routeCount=0;routeProof='NO_VERSION_NO_SCRIPT';
+  }else{
+    fail('replacement_reconciliation_route_proof_required');
+  }
+
   let versionIdentityExact=null;
   if(versionId!==null){
-    const stableVersion=await request(paths.replacement+'/'+enc(versionId),{account,token,fetchImpl});
-    const betaVersion=await request(paths.createShell+'/'+enc(worker.id)+'/versions/'+enc(versionId)+'?include=modules',{account,token,fetchImpl});
-    versionIdentityExact=false;try{validateReplacementVersion({stableVersion,betaVersion,versionId,identity:buildReplacementIdentity(approvedSha)});versionIdentityExact=true;}catch{}
+    if(!HEX40.test(String(versionApprovedSha||'')))fail('replacement_reconciliation_version_provenance_invalid');
+    const stableVersion=await request(paths.replacement+'/'+enc(versionId),{token,fetchImpl});
+    const betaVersion=await request(paths.createShell+'/'+enc(worker.id)+'/versions/'+enc(versionId)+'?include=modules',{token,fetchImpl});
+    versionIdentityExact=false;try{validateReplacementVersion({stableVersion,betaVersion,versionId,identity:buildReplacementIdentity(versionApprovedSha)});versionIdentityExact=true;}catch{}
   }
   return Object.freeze({
     present:true,workerName:worker.name,workerId:worker.id,versionId,versionIds:Object.freeze([...versionIds]),versionIdentityExact,scriptPresent:Boolean(script),
-    workersDev:subdomain?.enabled!==false,previewUrls:subdomain?.previews_enabled!==false,
+    workerDeployedOnNull:worker.deployed_on==null,workersDev:subdomain?.enabled!==false,previewUrls:subdomain?.previews_enabled!==false,
     versionCount:versionRows.length,versionInventoryExact:versionId===null?versionRows.length===0:versionRows.length===1&&versionRows[0]?.id===versionId,
     deploymentCount:list(deployments,'deployments').length,cronCount:list(schedules,'schedules').length,
-    routeCount:Array.isArray(script?.routes)?script.routes.length:0,customDomainCount
+    routeCount,routeProof,topologyZoneCount,legacyRouteCount,customDomainCount
   });
 }
 
@@ -59,7 +133,9 @@ export async function runReplacementReconciliation({env=process.env,fetchImpl=gl
   if(execution.approvedSha!==env.APPROVED_SHA||originalReport.approvedSha!==env.APPROVED_SHA)fail('replacement_reconciliation_sha_mismatch');
   let replacement=null;
   try{
-    replacement=await readReplacementState({account:env.CLOUDFLARE_ACCOUNT_ID,token:env.CLOUDFLARE_REPLACEMENT_READ_TOKEN,versionId:typeof execution.versionId==='string'?execution.versionId:null,approvedSha:execution.approvedSha,fetchImpl});
+    replacement=await readReplacementState({account:env.CLOUDFLARE_ACCOUNT_ID,token:env.CLOUDFLARE_REPLACEMENT_READ_TOKEN,
+      topologyToken:env.CLOUDFLARE_REPLACEMENT_TOPOLOGY_READ_TOKEN??null,versionId:typeof execution.versionId==='string'?execution.versionId:null,
+      approvedSha:execution.approvedSha,versionApprovedSha:execution.approvedSha,fetchImpl});
     const result=validateReplacementReconciliation({execution,originalReport,replacement});
     return Object.freeze({...result,ok:true,executionClassification:execution.classification,approvedSha:execution.approvedSha,replacement,retryAuthorized:false});
   }catch(error){
