@@ -103,8 +103,7 @@ test('Preview still enabled is reported explicitly without any mutation',async()
 test('topology credential is distinct and sanitized evidence excludes credential material',async()=>{
   const fake=fakeCloudflare(),report=await runReplacementOneVersionReconciliation({env,fetchImpl:fake.fetchImpl});
   const serialized=JSON.stringify(report);assert.equal(serialized.includes(READ_TOKEN),false);assert.equal(serialized.includes(TOPOLOGY_TOKEN),false);
-  const bad=await runReplacementOneVersionReconciliation({env:{...env,CLOUDFLARE_REPLACEMENT_TOPOLOGY_READ_TOKEN:READ_TOKEN},fetchImpl:fake.fetchImpl});
-  assert.equal(bad.ok,false);assert.equal(bad.reason,'replacement_one_version_identity_invalid');
+  await assert.rejects(runReplacementOneVersionReconciliation({env:{...env,CLOUDFLARE_REPLACEMENT_TOPOLOGY_READ_TOKEN:READ_TOKEN},fetchImpl:fake.fetchImpl}),/replacement_one_version_identity_invalid/);
 });
 
 test('read-only reconciliation workflow is manual, exact-main gated and has no mutation/provider secret path',()=>{

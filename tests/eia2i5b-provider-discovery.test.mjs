@@ -654,6 +654,7 @@ test('API-Football discovery stays isolated from production, live config and mig
     'api-football-version-url-lifecycle-observation.yml',
     'api-football-version-url-creation-experiment.yml',
     'api-football-replacement-inactive-foundation.yml',
+    'api-football-replacement-one-version-reconciliation.yml',
     'api-football-replacement-shell-recovery.yml',
     'api-football-attended-preparation-start-readonly.yml',
     'api-football-attended-preparation.yml',
