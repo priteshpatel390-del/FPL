@@ -1,3 +1,9 @@
+## Current API-Football replacement checkpoint — diagnose route inventory shape
+
+Read-only run `37365722097` proved the original collector/D1 side remains healthy but stopped on the replacement zone-route inventory validator. The immediate work is repository-only diagnostic refinement: preserve the existing one-Version state and all zero-topology requirements, expose only a closed field-level route-shape reason, run the full suite/deterministic build and review a draft PR.
+
+After merge and exact-main verification, one further separately approved read-only reconciliation may identify the exact route-shape boundary. No mutation or provider activity belongs to this checkpoint.
+
 ## Current API-Football replacement checkpoint — reconcile the exact existing one-Version state
 
 Consumed live recovery run `36820805445` definitely created replacement Version `995b0396-a61e-4bee-a405-aa6b3f765e5c` but did not reach routing probes and could not prove final Preview state because the repository still coupled one-Version route proof to legacy Scripts materialization. Current approved work is repository-only remediation and a new read-only reconciliation path. Preserve the exact Version; no second upload, Worker recreation, Preview toggle, provider request or D1 mutation is in scope.

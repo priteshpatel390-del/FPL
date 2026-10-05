@@ -1,3 +1,9 @@
+## Replacement route-inventory diagnostic remediation
+
+Read-only reconciliation run `37365722097` on exact main `59155b04b3820219f2eb9b831f3c83aa623d71d2` reached the new zone-route proof path after repository gating and original collector/D1 re-proof both succeeded. It failed closed at `replacement_reconciliation_route_inventory_invalid` before safe replacement state could be proved. Zero production mutations, zero API-Football requests and zero secret-value reads were recorded; the run is consumed.
+
+Repository remediation does not relax route validation. It replaces the single generic route-inventory failure with field-level closed enums and a bounded route-row count, while continuing to discard zone IDs, route IDs, patterns, script names and remote payload text. A future live read-only rerun remains separately owner-gated.
+
 ## Replacement one-Version recovery remediation after run 36820805445
 
 Run `36820805445` on exact main `18f5748ff88403cdbd89019ca3306706364962ea` passed fresh admission, definitely enabled Preview and definitely uploaded replacement Version `995b0396-a61e-4bee-a405-aa6b3f765e5c`, then stopped before routing probes because the common replacement reader still treated a missing legacy Scripts row as invalid once one Version existed. The single Preview-disable cleanup submission was made, but its final state was not proved because cleanup reused that same broad reader. Original collector/D1/runtime closeout independently remained pristine with zero provider requests and zero D1 mutations. The run is consumed and non-retryable.
