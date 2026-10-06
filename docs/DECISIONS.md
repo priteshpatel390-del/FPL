@@ -1,3 +1,11 @@
+## 2026-10-06 — implement the deployed one-shot shadow collection on the original collector
+
+**Decision:** after topology closeout run `37493107003` passed, implement (repository only) one controlled deployed shadow collection using `teamsheet-api-football-shadow-collector` and reviewed attended Version `04d79556-3070-429f-9944-b5b53d799842`.
+
+**Choices:** reuse the proven `VERSION_URL_CREATION_EXPERIMENT_CLOSEOUT` preflight rather than inventing new Version-identity proof; add the independent zone-route scan because legacy Scripts route metadata is secondary; deploy the existing Version rather than upload a new one; expose workers.dev only, with Preview explicitly false; reuse the existing `api-football-attended-acceptance` and `data-steward-readonly` environments and credentials; accept 0 or 1 changed rows on cleanup disable because the collector can disable itself on authentication failure; retain the resulting Deployment as inert because deletion adds a destructive mutation with no safety benefit when workers.dev, Preview, Cron, routes and domains are all off and collection is disabled.
+
+**Not decided:** live dispatch, Cron/scheduled collection, a second collection, any model or product use. Each needs a separate owner gate. See [API-FOOTBALL-DEPLOYED-ONE-SHOT-COLLECTION.md](API-FOOTBALL-DEPLOYED-ONE-SHOT-COLLECTION.md).
+
 ## 2026-10-06 — stop replacement recovery as a prerequisite and restart real shadow collection
 
 **Decision:** replacement Worker teamsheet-api-football-shadow-collector-v2 is no longer a prerequisite for API-Football progress. Preserve its history, perform at most one final read-only traffic-topology closeout, then return to the original collector for the first real shadow collection.

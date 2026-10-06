@@ -1,3 +1,16 @@
+## Current API-Football checkpoint — controlled deployed one-shot shadow collection
+
+Replacement recovery is closed: topology closeout run `37493107003` passed on main `9b8e5ccc635c192512f2d4f94bb369e87c2c1f9a`.
+
+Current approved work is repository implementation only of the [deployed one-shot shadow collection](API-FOOTBALL-DEPLOYED-ONE-SHOT-COLLECTION.md). Sequence of remaining gates:
+1. owner review of the draft PR and exact-head green CI;
+2. owner-approved merge and post-merge exact-main verification;
+3. separate explicit owner approval to dispatch the one-shot workflow once;
+4. owner review of the independent reconciliation;
+5. only after a reconciled success, a separate proposal for scheduled (Cron) shadow collection.
+
+Workload enrichment, new endpoints, model influence and UI/product use remain out of scope.
+
 ## Current API-Football checkpoint — Shadow Collection Restart
 
 Replacement-v2 recovery is no longer an active prerequisite. Run 37487927623 identified its remaining failure as the replacement stable-Version-detail read after the original collector/D1/runtime re-proof had already passed. No production mutation or API-Football request occurred.

@@ -1,3 +1,7 @@
+## API-Football controlled deployed one-shot shadow collection — repository candidate
+
+Topology closeout run `37493107003` on main `9b8e5ccc635c192512f2d4f94bb369e87c2c1f9a` passed (`REPLACEMENT_ABANDONED_TOPOLOGY_SAFE`), closing replacement-v2 recovery. The active checkpoint is now the repository implementation of one controlled deployed shadow collection on the original collector, recorded in [API-FOOTBALL-DEPLOYED-ONE-SHOT-COLLECTION.md](API-FOOTBALL-DEPLOYED-ONE-SHOT-COLLECTION.md). It reuses the reviewed attended Version through a real Cloudflare Deployment and temporary workers.dev exposure, never a Version Preview URL. It is not executed: no Deployment, D1 write, trigger or API-Football request has occurred, and no successful production collection is claimed. The live run is a separate owner gate after merge and exact-main verification.
+
 ## API-Football shadow collection restart — replacement recovery no longer blocks progress
 
 Owner decision on 6 October 2026 resets the active API-Football path. Run 37487927623 on main a88512b2f24977f32d378e7b4658864475f72843 passed repository admission and the original collector/D1/runtime re-proof, then failed only at replacement_reconciliation_stable_version_read_failed. No production mutation or API-Football request occurred.

@@ -36,7 +36,7 @@ function validateZoneRouteRow(row){
   return row;
 }
 
-export async function readReplacementRouteTopology({account,topologyToken,fetchImpl=globalThis.fetch}){
+export async function readReplacementRouteTopology({account,topologyToken,fetchImpl=globalThis.fetch,workerName=REPLACEMENT_COLLECTOR}){
   if(typeof account!=='string'||!account||typeof topologyToken!=='string'||!topologyToken)fail('replacement_reconciliation_topology_identity_invalid');
   const zones=[];const seen=new Set();
   let page=1,totalPages=null;
@@ -65,7 +65,7 @@ export async function readReplacementRouteTopology({account,topologyToken,fetchI
     const rows=routeRows(payload?.result);
     for(const raw of rows){
       const row=validateZoneRouteRow(raw);routeRowCount+=1;
-      if(row.script===REPLACEMENT_COLLECTOR)routeCount+=1;
+      if(row.script===workerName)routeCount+=1;
     }
   }
   return Object.freeze({proof:'ZONE_ROUTE_SCAN',zoneCount:zones.length,routeRowCount,routeCount});

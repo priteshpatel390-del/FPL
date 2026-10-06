@@ -1,3 +1,5 @@
+> **Update — 6 October 2026:** topology closeout run `37493107003` on main `9b8e5ccc635c192512f2d4f94bb369e87c2c1f9a` passed as `REPLACEMENT_ABANDONED_TOPOLOGY_SAFE`. Replacement recovery is closed. The "next real gate" below is now implemented in the repository (not executed) as [API-FOOTBALL-DEPLOYED-ONE-SHOT-COLLECTION.md](API-FOOTBALL-DEPLOYED-ONE-SHOT-COLLECTION.md). The admission uses the exact three-Version state including the Gate C clone, and the live run remains a separate owner gate.
+
 # API-Football Shadow Collection Restart
 
 Date: 6 October 2026
