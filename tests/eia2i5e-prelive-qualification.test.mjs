@@ -71,7 +71,7 @@ test('missing credential is zero-egress and exposes no credential',async()=>{let
 
 test('canonical attended requests are serial, fully completed, spaced, and raw-body free',async()=>{
   let calls=0,inFlight=0,maxInFlight=0;const sleeps=[];
-  const result=await runAttendedApiFootballQualification({apiKey:KEY,fetchImpl:async(url,init)=>{const item=EIA_2I5E_CANONICAL_REQUEST_MANIFEST.items[calls++];inFlight+=1;maxInFlight=Math.max(maxInFlight,inFlight);assert.equal(url.origin,API_FOOTBALL_ORIGIN);assert.equal(init.method,'GET');assert.equal(init.redirect,'error');const out=response(payloadFor(item));inFlight-=1;return out;},sleep:async ms=>sleeps.push(ms)});
+  const result=await runAttendedApiFootballQualification({apiKey:KEY,fetchImpl:async(url,init)=>{const item=EIA_2I5E_CANONICAL_REQUEST_MANIFEST.items[calls++];inFlight+=1;maxInFlight=Math.max(maxInFlight,inFlight);assert.equal(url.origin,API_FOOTBALL_ORIGIN);assert.equal(init.method,'GET');assert.equal(init.redirect,'manual');assert.deepEqual(Object.keys(init.headers),['x-apisports-key']);const out=response(payloadFor(item));inFlight-=1;return out;},sleep:async ms=>sleeps.push(ms)});
   assert.equal(calls,11);assert.equal(maxInFlight,1);assert.deepEqual(sleeps,Array(10).fill(1000));assert.equal(result.stoppedReason,null);assert.equal(result.responseLimit.decision,'GO');assert.ok(result.measurements.every(row=>row.responseIdentityMatched&&row.sampleSufficient&&!row.bodyRetained));assert.doesNotMatch(JSON.stringify(result),/deliberate-test-key-material/);
 });
 

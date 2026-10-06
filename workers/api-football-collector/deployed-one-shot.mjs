@@ -1,6 +1,7 @@
 // Controlled deployed one-shot shadow collection: pure contracts and orchestration.
 // Repository presence authorizes nothing live. Every live step is separately owner-gated.
 import {ATTENDED_ACCEPTANCE_PATH} from './collector.mjs';
+import {isApiFootballTransportDiagnostic} from '../../src/decision-intelligence/api-football-foundation.mjs';
 import {ATTENDED_VERSION_APPROVED_SHA,ATTENDED_VERSION_ID} from './attended-version.mjs';
 import {API_FOOTBALL_ATTENDED_DISCOVERY_ACTIVATION} from './runtime-contracts.mjs';
 import {COLLECTOR_LIFECYCLE_CLONE_CLOSEOUT_READY,COLLECTOR_PREFLIGHT_LIFECYCLE_CLONE_CLOSEOUT_STAGE} from './activation-preflight.mjs';
@@ -343,7 +344,7 @@ export async function runDeployedOneShotContinuation({admissionValid=false,ops}=
   return safe({
     ok,classification:ok?'DEPLOYED_ONE_SHOT_TRIGGER_ACCEPTED_RECONCILIATION_REQUIRED':'DEPLOYED_ONE_SHOT_EXECUTION_RECONCILIATION_REQUIRED',
     diagnostic:primary??(cleanupOk?'DEPLOYED_ONE_SHOT_WORKER_ACCEPTED':null),primaryFailure:primary,cleanupFailure,
-    stagesReached:Object.freeze([...stagesReached]),trigger:trigger?safe({requestCount:trigger.requestCount,outcome:trigger.outcome,diagnostic:trigger.diagnostic??null}):null,
+    stagesReached:Object.freeze([...stagesReached]),trigger:trigger?safe({requestCount:trigger.requestCount,outcome:trigger.outcome,diagnostic:trigger.diagnostic??null,providerTransportDiagnostic:isApiFootballTransportDiagnostic(trigger.providerTransportDiagnostic)?trigger.providerTransportDiagnostic:null}):null,
     cleanup:workersDevTouched?safe(cleanup):null,retryAuthorized:false
   });
 }

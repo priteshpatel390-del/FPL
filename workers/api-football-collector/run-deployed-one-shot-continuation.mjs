@@ -16,6 +16,8 @@ import {
   runDeployedOneShotContinuation,validateDeployedOneShotContinuationAdmissionHandoff,workerSignatureMatches
 } from './deployed-one-shot.mjs';
 import {boundedText,deployedOneShotCloudflarePaths,deployedOneShotFinalRouteScan,statusClass} from './run-deployed-one-shot.mjs';
+import {ATTENDED_TRANSPORT_DIAGNOSTIC_HEADER} from './collector.mjs';
+import {isApiFootballTransportDiagnostic} from '../../src/decision-intelligence/api-football-foundation.mjs';
 
 const API='https://api.cloudflare.com/client/v4';
 const HEX40=/^[0-9a-f]{40}$/;
@@ -131,7 +133,12 @@ export async function executeDeployedOneShotContinuation({env=process.env,fetchI
       const body=await boundedText(response);
       if(response.status===202&&body==='Accepted')return {requestCount:1,outcome:'ACCEPTED',diagnostic:'DEPLOYED_ONE_SHOT_WORKER_ACCEPTED'};
       if(response.status===404&&body==='Not found')return {requestCount:1,outcome:'REJECTED',diagnostic:'DEPLOYED_ONE_SHOT_TRIGGER_REJECTED'};
-      if(response.status===409&&body==='Not accepted')return {requestCount:1,outcome:'REJECTED',diagnostic:'DEPLOYED_ONE_SHOT_COLLECTION_NOT_ACCEPTED'};
+      if(response.status===409&&body==='Not accepted'){
+        // Closed allowlist only: any other header value (or none) records null, never remote text.
+        let headerValue=null;try{headerValue=response.headers?.get?.(ATTENDED_TRANSPORT_DIAGNOSTIC_HEADER)??null;}catch{headerValue=null;}
+        const providerTransportDiagnostic=isApiFootballTransportDiagnostic(headerValue)?headerValue:null;
+        return {requestCount:1,outcome:'REJECTED',diagnostic:'DEPLOYED_ONE_SHOT_COLLECTION_NOT_ACCEPTED',providerTransportDiagnostic};
+      }
       return {requestCount:1,outcome:'REJECTED',diagnostic:`DEPLOYED_ONE_SHOT_TRIGGER_HTTP_${statusClass(response.status)}`};
     },
     disableCollection:()=>runtime(DEPLOYED_ONE_SHOT_RUNTIME_SQL.disable,'DISABLE'),

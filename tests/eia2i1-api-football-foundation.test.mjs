@@ -80,7 +80,7 @@ test('credential-bearing requests are origin-pinned and endpoint-closed before b
   }
   let captured;const budget=createDailyRequestBudget({day:'2026-09-01',limit:1});
   const client=createApiFootballClient({apiKey:'deliberate-test-key-material',budget,fetchImpl:async(url,options)=>{captured={url,options};return {ok:true,json:async()=>envelope('fixtures',[])}}});
-  assert.equal((await client.request('fixtures',{id:9001})).ok,true);assert.equal(captured.url.origin,API_FOOTBALL_ORIGIN);assert.equal(captured.options.redirect,'error');assert.equal(captured.options.headers['x-apisports-key'],'deliberate-test-key-material');assert.doesNotMatch(String(captured.url),/deliberate-test-key-material|api[_-]?key/i);assert.deepEqual(API_FOOTBALL_ENDPOINTS,['fixtures','fixtures/lineups','fixtures/players','fixtures/events']);
+  assert.equal((await client.request('fixtures',{id:9001})).ok,true);assert.equal(captured.url.origin,API_FOOTBALL_ORIGIN);assert.equal(captured.options.redirect,'manual');assert.deepEqual(Object.keys(captured.options.headers),['x-apisports-key']);assert.equal(captured.options.headers['x-apisports-key'],'deliberate-test-key-material');assert.doesNotMatch(String(captured.url),/deliberate-test-key-material|api[_-]?key/i);assert.deepEqual(API_FOOTBALL_ENDPOINTS,['fixtures','fixtures/lineups','fixtures/players','fixtures/events']);
 });
 
 test('known-ID requests abort at the repository timeout and keep generic transport distinct',async()=>{

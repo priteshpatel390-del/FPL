@@ -1,3 +1,7 @@
+## Transport-unknown remediation — no source or provider-scope change
+
+Same provider, origin, endpoints, credential and ceilings. The request header set is narrowed to the documented `x-apisports-key`, and redirects are never followed. See [transport-unknown remediation](API-FOOTBALL-TRANSPORT-UNKNOWN-REMEDIATION.md).
+
 ## Deployed one-shot continuation — no source or provider-scope change
 
 The continuation reuses the unchanged five fixture-discovery queries, competitions, response/row ceilings, semantic validation, 20/20 mapping and shadow isolation of the one-shot design. It adds no endpoint, provider, retention or model/product path and makes no provider request itself. Consumed run `37505586273` made no provider request. See [continuation record](API-FOOTBALL-DEPLOYED-ONE-SHOT-CONTINUATION.md).

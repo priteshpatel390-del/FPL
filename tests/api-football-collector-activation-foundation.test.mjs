@@ -91,10 +91,10 @@ class DeterministicD1{
 }
 
 function clock(start=NOW){let tick=0;return()=>new Date(Date.parse(start)+tick++*1_000).toISOString();}
-function concreteComposition({db=new DeterministicD1(),rows=1,failureAt=0,at=NOW,status='NS'}={}){
+function concreteComposition({db=new DeterministicD1(),rows=1,failureAt=0,at=NOW,status='NS',providerFetch=null}={}){
   const planRequests=requests(at);let fetches=0;
   const repository=createD1CollectorRepository(db,{authority});
-  const transport=request=>executeProviderTransport({env:{API_FOOTBALL_API_KEY:'synthetic-only'},request,fetchImpl:async()=>{fetches+=1;const index=planRequests.indexOf(request)+1,count=Array.isArray(rows)?rows[index-1]:rows;return responseFor(index===failureAt?{bad:true}:payload(request,{count,status}));},now:clock(at),timeoutSignal:()=>new AbortController().signal});
+  const transport=request=>executeProviderTransport({env:{API_FOOTBALL_API_KEY:'synthetic-only'},request,fetchImpl:async(url,init)=>{fetches+=1;if(providerFetch)return providerFetch(url,init);const index=planRequests.indexOf(request)+1,count=Array.isArray(rows)?rows[index-1]:rows;return responseFor(index===failureAt?{bad:true}:payload(request,{count,status}));},now:clock(at),timeoutSignal:()=>new AbortController().signal});
   const validate=(body,request,fetchedAt)=>validateProviderPayload(body,request,{fetchedAt,teamMappings:mappings});
   return {db,repository,transport,validate,requests:planRequests,fetches:()=>fetches};
 }
@@ -268,4 +268,32 @@ test('concrete collector persistence SQL executes against migrations 0001-0006 i
     assert.equal(database.prepare("SELECT generation_id FROM api_football_discovery_heads WHERE fpl_season='2026-27'").get().generation_id,result.generationId);
     assert.equal(database.prepare('SELECT COUNT(*) count FROM pragma_foreign_key_check').get().count,0);
   }finally{database.close();}
+});
+
+test('thrown provider fetch keeps TRANSPORT_UNKNOWN safety, consumes attempt 1 once, fails the generation and only adds a closed diagnostic',async()=>{
+  for(const [thrown,diagnostic] of [
+    [new TypeError('Invalid redirect value, must be one of "follow" or "manual"'),'TRANSPORT_RUNTIME_REDIRECT_MODE_REJECTED'],
+    [new TypeError('Network connection lost'),'TRANSPORT_FETCH_TYPE_ERROR'],
+    [new Error('internal error'),'TRANSPORT_GENERIC_ERROR'],
+    ['raw string x-apisports-key=leak','TRANSPORT_NON_ERROR_THROWN']
+  ]){
+    const db=new DeterministicD1();
+    const run=await runConcrete({db,providerFetch:()=>{throw thrown;}});
+    assert.equal(run.fetches(),1,'no second fetch and no retry');
+    assert.equal(run.result.ok,false);assert.equal(run.result.reason,'transport_failure');assert.equal(run.result.transportDiagnostic,diagnostic);
+    assert.equal(run.result.completion.outcome,'TRANSPORT_UNKNOWN');assert.equal(run.result.completion.quotaState,'QUOTA_UNCERTAIN');
+    const attempts=[...db.attempts.values()];
+    assert.equal(attempts.length,1);assert.equal(attempts[0].attempt_number,1);assert.equal(attempts[0].outcome,'TRANSPORT_UNKNOWN');
+    const generations=[...db.generations.values()];
+    assert.equal(generations.length,1);assert.equal(generations[0].state,'FAILED');assert.equal(generations[0].failure_class,'transport_failure');
+    assert.equal(db.runtime.in_flight_attempt_id,null);assert.equal(db.revisions?.size??0,0);
+    assert.doesNotMatch(JSON.stringify(run.result),/leak|Invalid redirect|Network connection|internal error|synthetic-only|api-sports/);
+  }
+});
+
+test('a consumed TRANSPORT_UNKNOWN attempt can never be reused or reset by the transport remediation',()=>{
+  for(const transportDiagnostic of ['TRANSPORT_RUNTIME_REDIRECT_MODE_REJECTED','TRANSPORT_FETCH_TYPE_ERROR','TRANSPORT_EXCEPTION_UNKNOWN',undefined]){
+    const prior=classifyPriorAttempt({attempt_number:1,outcome:'TRANSPORT_UNKNOWN',transportDiagnostic},{now:NOW});
+    assert.equal(prior.ok,false);assert.equal(prior.reason,'prior_attempt_consumed');
+  }
 });

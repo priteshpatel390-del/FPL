@@ -141,11 +141,11 @@ test('invalid discovery requests consume zero quota and never include the creden
   assert.equal(rightsDenied.reason,'rights_invalid');assert.equal(calls,0);
 });
 
-test('credential is header-only, origin-pinned, GET, redirect-error and absent from output',async()=>{
+test('credential is header-only, origin-pinned, GET, redirect-manual and absent from output',async()=>{
   const options=scanOptions();const scan=await runApiFootballDiscoveryScan(options);
   assert.equal(scan.ok,true);assert.equal(options.transport.calls.length,5);
   for(const call of options.transport.calls){
-    assert.equal(call.url.origin,API_FOOTBALL_ORIGIN);assert.equal(call.options.method,'GET');assert.equal(call.options.redirect,'error');
+    assert.equal(call.url.origin,API_FOOTBALL_ORIGIN);assert.equal(call.options.method,'GET');assert.equal(call.options.redirect,'manual');assert.deepEqual(Object.keys(call.options.headers),['x-apisports-key']);
     assert.equal(call.options.headers['x-apisports-key'],KEY);assert.doesNotMatch(call.href,/deliberate-test-key-material|api[_-]?key/i);
     assert.equal(call.options.signal.aborted,false);assert.notEqual(call.options.signal,undefined);
     assert.equal(call.url.searchParams.get('league')!=null,true);assert.equal(call.url.searchParams.get('season'),'2026');

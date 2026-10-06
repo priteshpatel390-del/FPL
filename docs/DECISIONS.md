@@ -1,3 +1,7 @@
+## 2026-10-06 — fix the Worker provider request contract and add a closed transport diagnostic without changing safety semantics
+
+Decision: replace the Workers-rejected `redirect:'error'` with `manual` plus explicit 3xx rejection, and drop the undocumented `accept` header. Keep `TRANSPORT_UNKNOWN` consumption and no-retry exactly as before. Expose a closed diagnostic only through allowlisted channels, with no D1 migration. Do not reset the consumed run `37511401491` history. Do not make any provider call with Version `04d79556`. Rationale and future options: [transport-unknown remediation](API-FOOTBALL-TRANSPORT-UNKNOWN-REMEDIATION.md).
+
 ## 2026-10-06 — continue the one-shot from the existing inert Deployment instead of recreating it
 
 **Decision:** after consumed run `37505586273` applied its single Deployment POST while classifying the response ambiguous, accept Deployment `2417a3e0-15db-4e45-a3c8-00b148a300f4` as live state and implement (repository only) a continuation with a Deployment mutation ceiling of zero, rather than deleting/recreating it or weakening the historical zero-Deployment admission.
