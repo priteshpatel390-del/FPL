@@ -499,9 +499,9 @@ test('executor uses Cloudflare GET-only state/topology reads plus one Version PO
   assert.ok(fake.calls.some(c=>c.method==='GET'&&c.requestPath===paths.subdomain));
   assert.ok(fake.calls.some(c=>c.method==='GET'&&c.requestPath===paths.schedules));
   assert.ok(fake.calls.some(c=>c.method==='GET'&&c.requestPath===paths.domains));
-  const source=read('workers/api-football-collector/run-transport-remediated-version-upload.mjs').replace(/^s*//.*$/gm,'');
-  assert.doesNotMatch(source,/x-apisports-key|v3.football.api-sports.io|x-teamsheet-attended-trigger|workers.dev|createDeployment|buildDeploymentBody|collection_enableds*=|method:s*'(?:PUT|DELETE|PATCH)'/i);
-  assert.doesNotMatch(source,/d1/database|assertActivationReadOnlySql|runApiFootballActivationLivePreflight|EXPECTED_D1_DATABASE_ID/);
+  const source=read('workers/api-football-collector/run-transport-remediated-version-upload.mjs').replace(/^\s*\/\/.*$/gm,'');
+  assert.doesNotMatch(source,/x-apisports-key|v3\.football\.api-sports\.io|x-teamsheet-attended-trigger|workers\.dev|createDeployment|buildDeploymentBody|collection_enabled\s*=|method:\s*'(?:PUT|DELETE|PATCH)'/i);
+  assert.doesNotMatch(source,/d1\/database|assertActivationReadOnlySql|runApiFootballActivationLivePreflight|EXPECTED_D1_DATABASE_ID/);
   assert.match(source,/redirect:'manual'/);assert.doesNotMatch(source,/redirect:'error'/);
 });
 
