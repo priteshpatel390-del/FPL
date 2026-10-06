@@ -51,23 +51,18 @@ export const closedDiagnostic=error=>{
 };
 
 // ---- Active Deployment reader (scoped to this path; historical workflows keep their own exact-single assumptions) ----
-// Cloudflare retains Deployment history, so the ACTIVE Deployment is the latest by created_on. With one row it is that row.
-// With several rows it is proven only if every created_on parses and all are distinct; otherwise ordering is unproven.
+// Cloudflare's Deployments list contract returns the latest/active Deployment first. Do not reconstruct active state
+// from created_on timestamps: that would create a second, repository-invented ordering rule that can disagree with the API.
 export function activeDeploymentState(result){
   const rows=Array.isArray(result?.deployments)?result.deployments:Array.isArray(result)?result:null;
   if(!rows)return null;
   if(rows.some(row=>!row||typeof row!=='object'||typeof row.id!=='string'||!row.id)||new Set(rows.map(row=>row.id)).size!==rows.length)return null;
-  let active=null;
-  if(rows.length===1)active=rows[0];
-  else if(rows.length>1){
-    const stamps=rows.map(row=>Date.parse(row.created_on));
-    if(stamps.every(Number.isFinite)&&new Set(stamps).size===stamps.length)active=rows[stamps.indexOf(Math.max(...stamps))];
-  }
+  const active=rows[0]??null;
   const versions=active&&Array.isArray(active.versions)?active.versions:[];
   const selectsRetainedVersionAt100=Boolean(active&&active.strategy==='percentage'&&versions.length===1&&
     versions[0]?.version_id===TRANSPORT_REMEDIATED_RETAINED_VERSION_ID&&Number(versions[0]?.percentage)===100);
   return safe({
-    count:rows.length,orderingProven:rows.length<=1||active!==null,activeDeploymentId:active?.id??null,
+    count:rows.length,orderingProven:true,activeDeploymentId:active?.id??null,
     activeVersionIds:Object.freeze(versions.map(row=>row?.version_id).filter(id=>typeof id==='string')),selectsRetainedVersionAt100
   });
 }
@@ -165,14 +160,13 @@ export async function submitTransportRemediatedVersionUpload({post,readVersions,
   try{submitted=await post();}catch{submitted={kind:'AMBIGUOUS'};}
   if(submitted?.kind==='REJECTED')return safe({outcome:'REJECTED',versionId:null,readbackAttempts:0});
   const returnedId=submitted?.kind==='OK'&&typeof submitted.result?.id==='string'&&UUID.test(submitted.result.id)&&!beforeIds.includes(submitted.result.id)?submitted.result.id:null;
-  const accepted=returnedId!==null,definiteOk=submitted?.kind==='OK';
-  let readbackAttempts=0,lastReadable=false,added=null,malformed=false;
+  const accepted=returnedId!==null;
+  let readbackAttempts=0,added=null;
   for(const delay of TRANSPORT_REMEDIATED_READBACK_DELAYS_MS){
     if(delay>0)await wait(delay);
     readbackAttempts+=1;
     let ids=null;try{ids=await readVersions();}catch{ids=null;}
-    if(!Array.isArray(ids)||ids.some(id=>typeof id!=='string'||!UUID.test(id))||new Set(ids).size!==ids.length){malformed=true;continue;}
-    lastReadable=true;
+    if(!Array.isArray(ids)||ids.some(id=>typeof id!=='string'||!UUID.test(id))||new Set(ids).size!==ids.length)continue;
     const fresh=ids.filter(id=>!beforeIds.includes(id));
     const retained=beforeIds.every(id=>ids.includes(id));
     if(fresh.length===1&&retained&&ids.length===beforeIds.length+1){added=fresh[0];break;}
@@ -182,8 +176,8 @@ export async function submitTransportRemediatedVersionUpload({post,readVersions,
     if(accepted&&added!==returnedId)return safe({outcome:'AMBIGUOUS_OWNER_ATTENTION',versionId:null,readbackAttempts});
     return safe({outcome:accepted?'CREATED':'APPLIED_CONFIRMED_BY_READBACK',versionId:added,readbackAttempts});
   }
-  // No new Version was observed after bounded readback. A definite acceptance without a visible Version is never trusted as NOT_APPLIED.
-  if(!definiteOk&&lastReadable&&!malformed)return safe({outcome:'NOT_APPLIED',versionId:null,readbackAttempts});
+  // Bounded absence is not authoritative proof that an ambiguous Version mutation did not apply. Never convert
+  // an ambiguous/opaque POST into NOT_APPLIED merely because the Version has not appeared yet, and never resend.
   return safe({outcome:'AMBIGUOUS_OWNER_ATTENTION',versionId:null,readbackAttempts});
 }
 
@@ -243,8 +237,9 @@ export function classifyTransportRemediatedReconciliation({report,versionIds,can
   if(fresh.length===0){
     if(report.inventory.versionInventoryExact!==true||report.inventory.versionIdentityExact!==true||report.inventory.cloneVersionIdentityExact!==true)return stop('historical_version_inventory_not_exact');
     if(executionValid&&['CREATED','APPLIED_CONFIRMED_BY_READBACK'].includes(execution.outcome))return stop('execution_claims_version_but_none_exists');
+    if(executionValid&&execution.outcome==='AMBIGUOUS_OWNER_ATTENTION')return stop('upload_ambiguous_no_version_observed');
     return safe({...base,ok:false,classification:TRANSPORT_REMEDIATED_CLEAN_STOP,
-      reason:executionValid?(execution.outcome==='NOT_SUBMITTED'?'stopped_before_upload':execution.outcome==='REJECTED'?'upload_rejected':execution.outcome==='NOT_APPLIED'?'upload_not_applied':'upload_ambiguous_but_no_version_observed'):'execution_evidence_unavailable',
+      reason:executionValid?(execution.outcome==='NOT_SUBMITTED'?'stopped_before_upload':execution.outcome==='REJECTED'?'upload_rejected':execution.outcome==='NOT_APPLIED'?'upload_not_applied':'execution_evidence_unavailable'):'execution_evidence_unavailable',
       candidateVersionId:null});
   }
   if(fresh.length!==1||versionIds.length!==TRANSPORT_REMEDIATED_HISTORICAL_VERSION_IDS.length+1)return stop('unexpected_version_count');
