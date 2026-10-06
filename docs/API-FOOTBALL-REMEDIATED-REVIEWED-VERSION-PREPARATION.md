@@ -51,7 +51,7 @@ Pristine history, attempt 2, two attempts, success, extra generation, RESERVED/S
 
 ### Active Deployment reader
 
-`activeDeploymentState()` is scoped to this path. Cloudflare retains Deployment history, so a later promotion would break any "count === 1" assumption. The reader picks the active Deployment as the latest by `created_on` (a single row is that row), proves ordering only when every timestamp parses and is distinct, and otherwise fails closed. For this Gate A path the policy constant `TRANSPORT_REMEDIATED_EXPECTED_DEPLOYMENT_COUNT=1` additionally requires exactly the one retained Deployment before and after the upload; it must not be reused by Gate B. Historical workflows keep their historical exact-single assumptions and are unchanged.
+`activeDeploymentState()` is scoped to this path. Cloudflare retains Deployment history and documents the first row of the Deployments list as the latest Deployment actively serving traffic, so the reader uses that API ordering directly and never reconstructs activity from `created_on` timestamps. For this Gate A path the policy constant `TRANSPORT_REMEDIATED_EXPECTED_DEPLOYMENT_COUNT=1` additionally requires exactly the one retained Deployment before and after the upload; it must not be reused by Gate B. Historical workflows keep their historical exact-single assumptions and are unchanged.
 
 ## 5. Protected Version-upload-only executor
 
@@ -59,12 +59,12 @@ Pristine history, attempt 2, two attempts, success, extra generation, RESERVED/S
 
 - validates everything before any network request: exact approved SHA, GitHub re-run refusal (`GITHUB_RUN_ATTEMPT` must be `1`), account/fingerprint, **three distinct credentials** (`CLOUDFLARE_ATTENDED_READ_TOKEN`, `CLOUDFLARE_ATTENDED_VERSION_UPLOAD_TOKEN`, `CLOUDFLARE_TOPOLOGY_READ_TOKEN`), secret material, and the bound admission artifact (hash-bound in the workflow);
 - builds the current-tree identity and upload form **before** any network request, so reviewed-source drift sends nothing;
-- re-proves critical state, active Deployment, authoritative zone route scan and the exact three-Version inventory immediately before the POST;
-- submits the single POST through a **guarded fetch** that refuses every non-`api.cloudflare.com` host (so API-Football and any Worker/workers.dev invocation are impossible), every method other than GET, the one Version POST (upload credential only, ceiling 1) and the read-only critical-recheck D1 query (read credential, SELECT/PRAGMA foreign_key_check statements only). A Deployment POST, subdomain/Preview change, D1 write, schedules, routes, domains, Worker shell, DELETE, PUT and secret mutations are unrepresentable and refused before network.
+- trusts D1/history only through the hash-bound read-only admission artifact, then freshly re-proves Cloudflare-only inert state (workers.dev, Preview, Cron, custom domains), active Deployment, authoritative zone route scan and the exact three-Version inventory immediately before the POST;
+- submits the single POST through a **guarded fetch** that refuses every non-`api.cloudflare.com` host (so API-Football and any Worker/workers.dev invocation are impossible), every non-GET method except the one Version POST (upload credential only, ceiling 1), and every D1 endpoint. Deployment/subdomain/Preview/D1/schedule/route/domain/Worker-shell mutations, DELETE, PUT and secret mutations are unrepresentable and refused before network.
 
 ### One POST, never resent
 
-`submitTransportRemediatedVersionUpload`: definite rejection stops (`REJECTED`, no readback). Otherwise up to three bounded read-only Version inventory reads (0 s, 2 s, 5 s). A new single Version equal to a returned id is `CREATED`; a new Version after an ambiguous response is `APPLIED_CONFIRMED_BY_READBACK`; an ambiguous response with an unchanged readable inventory is `NOT_APPLIED` (a classification, never retry authority); every other shape, including a definite acceptance without a visible Version, malformed/duplicate/removed/extra ids or unreadable inventory, is `AMBIGUOUS_OWNER_ATTENTION`. A second POST is structurally impossible (ceiling 1 in the guarded fetch).
+`submitTransportRemediatedVersionUpload`: definite rejection stops (`REJECTED`, no readback). Otherwise up to three bounded read-only Version inventory reads (0 s, 2 s, 5 s). A new single Version equal to a returned id is `CREATED`; a new Version after an ambiguous response is `APPLIED_CONFIRMED_BY_READBACK`. If no new Version is visible after an ambiguous/opaque POST, the result remains `AMBIGUOUS_OWNER_ATTENTION`: bounded absence is not proof that the mutation did not apply. `NOT_APPLIED` is reserved for genuinely authoritative non-application evidence and is not inferred by this executor. Malformed/duplicate/removed/extra ids or unreadable inventory are also owner-attention. A second POST is structurally impossible (ceiling 1 in the guarded fetch).
 
 ### Evidence
 
@@ -91,6 +91,6 @@ Merge authorizes none of these. Gate A requires merge, exact-main verification, 
 ## 9. Limitations
 
 - Historical Versions other than the retained attended Version are validated by id and (pre-upload) by the existing exact preflight, not re-read byte-for-byte post-upload; Cloudflare Versions are immutable.
-- `NOT_APPLIED` is an observation after bounded readback, not a proof of absence; the final independent reconciliation is the verdict.
+- bounded readback absence after an ambiguous upload remains `AMBIGUOUS_OWNER_ATTENTION`; it is never promoted to `NOT_APPLIED` or retry authority. `NOT_APPLIED` remains reserved for authoritative future evidence.
 - Repository tests prove the contract against fakes. Live Cloudflare Version-upload response shapes remain unproven until Gate A.
 - The remediated provider request itself is not proven against the real Workers runtime or API-Football until Gate C.
