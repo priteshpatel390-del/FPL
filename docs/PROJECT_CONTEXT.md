@@ -1,3 +1,13 @@
+## API-Football shadow collection restart — replacement recovery no longer blocks progress
+
+Owner decision on 6 October 2026 resets the active API-Football path. Run 37487927623 on main a88512b2f24977f32d378e7b4658864475f72843 passed repository admission and the original collector/D1/runtime re-proof, then failed only at replacement_reconciliation_stable_version_read_failed. No production mutation or API-Football request occurred.
+
+The replacement-v2 Worker is now treated as abandoned recovery infrastructure. Teamsheet no longer requires replacement Version URL routability, replacement Version-content proof or additional stable-Version diagnostics before progressing.
+
+One final read-only topology-only closeout is permitted after merge/exact-main verification. It proves only that replacement-v2 is absent or traffic-inert: workers.dev and Preview disabled, zero Deployments, Cron, zone routes and custom domains. It deliberately skips replacement Version-detail reads.
+
+The actual next product-relevant API-Football gate is a separately approved controlled one-shot shadow collection using the original collector and reviewed attended Version. See API-FOOTBALL-SHADOW-COLLECTION-RESTART.md.
+
 ## Per-endpoint replacement read diagnostics after run 37485321534
 
 Read-only run `37485321534` on exact main `8378f41f3c44cbbc2b1b97155615794536dbecde` passed repository admission and the original collector/D1/runtime re-proof, then stopped at a standard Cloudflare read with the repository's generic `replacement_reconciliation_read_failed` reason. The run made zero production mutations, zero API-Football requests and read no secret values; safe replacement state was not proved and retry remained unauthorized.

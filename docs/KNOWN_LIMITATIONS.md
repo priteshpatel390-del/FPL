@@ -1,3 +1,11 @@
+## API-Football restart limitations
+
+Replacement-v2 Version content is intentionally no longer being reconciled. The last recovery run stopped at replacement_reconciliation_stable_version_read_failed. The restart does not resolve or reinterpret that historical failure.
+
+Until the topology-only closeout passes, the repository does not claim that replacement-v2 is currently traffic-inert. The closeout can prove traffic topology only and cannot prove replacement module/binding/provenance identity.
+
+The real one-shot shadow collection described by the restart design is not yet implemented or live accepted. No successful production API-Football collection is claimed. API-Football still has no model/product influence.
+
 ## Run 37485321534 did not identify the exact standard read failure
 
 The latest read-only reconciliation stopped as `replacement_reconciliation_read_failed`. That proves a standard replacement Cloudflare read failed, but the current artifact cannot distinguish Worker inventory, legacy Scripts, custom domains, subdomain, Deployments, schedules, Version inventory or Version-detail reads.

@@ -1,3 +1,11 @@
+## API-Football Shadow Collection Restart coverage
+
+tests/api-football-replacement-topology-closeout.test.mjs permanently proves that the abandoned replacement closeout uses only read-only Cloudflare requests, skips stable/beta Version-detail reads, accepts an absent replacement or the exact known traffic-inert Worker, and fails if Preview, workers.dev, Deployment, Cron, zone route or custom domain can receive traffic. Output tests prove read credentials and raw route detail are not retained.
+
+Workflow coverage requires manual exact-main first-attempt execution, exact-head Verify Teamsheet success, the data-steward-readonly environment, the distinct topology-read credential, and absence of API_FOOTBALL_API_KEY, trigger secret or mutation credentials.
+
+The restart design itself changes no collector runtime/model logic. Full ./run-tests.sh, deterministic production builds, root/dist equality and exact manifest identity remain required before merge.
+
 ## Replacement inactive collector permanent coverage
 
 `tests/api-football-replacement-foundation.test.mjs` pins distinct replacement identity, creation-time `{enabled:false, previews_enabled:true}`, exact candidate-only mutation paths and ceilings, two secret-free GETs, immutable Worker signature, one shell/Version maximum, ambiguity reconciliation without resubmission, no repair of wrong initial state, no Deployment/workers.dev/topology/provider/D1/Access fallback, Preview disable as a bounded cleanup on success and on routing mismatch, probe transport failure, definite/ambiguous upload failure and ambiguous disable (reconciled or owner attention), no cleanup mutation after definite shell rejection, success/clean-safe-stop/owner-attention classification, old exact-three-Version read-only proof, one-Version success, one-Version and shell-only safe-stop reconciliation, sanitized evidence, manual exact-main first-attempt workflow and protected credential separation.

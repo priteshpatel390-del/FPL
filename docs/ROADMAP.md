@@ -1,3 +1,17 @@
+## Current API-Football checkpoint — Shadow Collection Restart
+
+Replacement-v2 recovery is no longer an active prerequisite. Run 37487927623 identified its remaining failure as the replacement stable-Version-detail read after the original collector/D1/runtime re-proof had already passed. No production mutation or API-Football request occurred.
+
+Current approved repository work is limited to:
+1. one topology-only abandoned-replacement closeout that skips Version-detail reads and proves only no traffic surface; and
+2. canonical design for the real one-shot shadow collection using the original collector.
+
+After review, owner-approved merge and exact-main verification, dispatch the topology closeout once. PASS closes the replacement recovery thread.
+
+The next separately approved implementation checkpoint is the controlled deployed one-shot shadow collection in API-FOOTBALL-SHADOW-COLLECTION-RESTART.md: exact reviewed attended Version, one real Deployment, zero Cron/routes/custom domains, temporary workers.dev only, one trigger-secret authenticated POST, existing D1 enable/disable control, at most five discovery requests, cleanup and independent reconciliation.
+
+Scheduled Cron collection, workload enrichment, new endpoints, model influence and UI/product use remain out of scope.
+
 ## Current API-Football replacement checkpoint — standard read boundary diagnostics
 
 Run `37485321534` passed the original-side re-proof and then stopped at a generic standard replacement Cloudflare read. The immediate approved work is repository-only endpoint-class diagnostics for those reads, with no acceptance or live-state change.

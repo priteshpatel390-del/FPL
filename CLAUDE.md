@@ -1,3 +1,13 @@
+## Current checkpoint — API-Football shadow collection restart
+
+On 6 October 2026 the owner explicitly stopped treating replacement-Worker Version-URL recovery as a prerequisite for Teamsheet/API-Football progress. Read-only run 37487927623 on exact main a88512b2f24977f32d378e7b4658864475f72843 passed the repository gate and original collector/D1/runtime re-proof, then identified the remaining replacement-only failure as replacement_reconciliation_stable_version_read_failed. The run made zero production mutations and zero API-Football requests. It is consumed.
+
+Replacement Worker teamsheet-api-football-shadow-collector-v2 is now an abandoned recovery resource, not the active API-Football path. Historical evidence remains authoritative history, but no further replacement Version-content/provenance/Preview-routing remediation is required for product progress.
+
+Owner-approved repository scope is the API-Football Shadow Collection Restart: add one final read-only topology-only closeout for the abandoned replacement, update canonical docs, and define the smallest real one-shot shadow collection using the original collector. The topology closeout must call the existing replacement reader with versionId=null so it cannot touch stable/beta Version-detail surfaces. It may prove only absence/inert traffic topology: workers.dev off, Preview off, zero Deployments, zero Cron, zero zone routes and zero custom domains. It makes no mutation, D1 write, provider request or secret-value read and makes no Version-content claim.
+
+After owner-approved merge and exact-main verification, one topology-closeout dispatch is within this restart decision. A PASS closes replacement recovery as an active concern. The next implementation gate is then the controlled deployed one-shot shadow collection described in docs/API-FOOTBALL-SHADOW-COLLECTION-RESTART.md. That later implementation remains separately owner-gated and must keep API-Football fully isolated from model/product paths.
+
 ## Current checkpoint — per-endpoint replacement read diagnostics after run 37485321534
 
 Owner-approved read-only one-Version reconciliation run `37485321534`, attempt 1, on exact main `8378f41f3c44cbbc2b1b97155615794536dbecde` passed the repository gate and independently re-proved the original collector/D1/runtime state, then stopped fail-closed as `replacement_reconciliation_read_failed`. Artifact evidence recorded `productionMutations:0`, `apiFootballRequests:0`, `secretValuesRead:0`, `safeStateProved:false` and `retryAuthorized:false`. The run is consumed and must not be rerun.
