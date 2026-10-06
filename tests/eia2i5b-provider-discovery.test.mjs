@@ -651,6 +651,7 @@ test('API-Football discovery stays isolated from production, live config and mig
     'api-football-live-storage-preflight.yml',
     'api-football-collector-activation-preflight.yml',
     'api-football-collector-attended-acceptance.yml',
+    'api-football-deployed-one-shot-collection.yml',
     'api-football-version-url-lifecycle-observation.yml',
     'api-football-version-url-creation-experiment.yml',
     'api-football-replacement-inactive-foundation.yml',
@@ -733,6 +734,21 @@ test('API-Football discovery stays isolated from production, live config and mig
       assert.match(source,/github\.run_attempt == 1/);
       assert.match(source,/Tests and deterministic build/);
       assert.doesNotMatch(source,/secrets\.API_FOOTBALL_API_KEY|x-apisports-key|v3\.football\.api-sports\.io|wrangler\s+deploy|\/deployments|^\s{2}schedule:/im);
+      continue;
+    }
+    if(file==='api-football-deployed-one-shot-collection.yml'){
+      assert.match(source,/name: API-Football Deployed One-Shot Shadow Collection/);
+      assert.match(source,/name: api-football-attended-acceptance/);
+      assert.match(source,/name: data-steward-readonly/);
+      assert.match(source,/API_FOOTBALL_ATTENDED_TRIGGER_SECRET/);
+      assert.match(source,/CLOUDFLARE_ATTENDED_READ_TOKEN/);
+      assert.match(source,/CLOUDFLARE_ATTENDED_MUTATION_TOKEN/);
+      assert.match(source,/CLOUDFLARE_REPLACEMENT_TOPOLOGY_READ_TOKEN/);
+      assert.match(source,/run-deployed-one-shot\.mjs/);
+      assert.match(source,/deployed-one-shot-readonly\.mjs/);
+      assert.match(source,/github\.run_attempt == 1/);
+      assert.match(source,/Tests and deterministic build/);
+      assert.doesNotMatch(source,/secrets\.API_FOOTBALL_API_KEY|x-apisports-key|v3\.football\.api-sports\.io|wrangler|versions\s+upload|CLOUDFLARE_REPLACEMENT_MUTATION_TOKEN|teamsheet-api-football-shadow-collector-v2|^\s{2}schedule:/im);
       continue;
     }
     if(file==='api-football-version-url-lifecycle-observation.yml'){
