@@ -221,15 +221,15 @@ test('a created Version validates only when module bytes, metadata, bindings and
 });
 
 // ---------------- active Deployment reader ----------------
-test('active Deployment reader proves the latest Deployment safely and never assumes a single row',()=>{
+test('active Deployment reader follows Cloudflare list order: the first row is the active Deployment',()=>{
   assert.deepEqual({...DEPLOYMENTS,activeVersionIds:[...DEPLOYMENTS.activeVersionIds]},{count:1,orderingProven:true,activeDeploymentId:EXISTING,activeVersionIds:[ATTENDED_VERSION_ID],selectsRetainedVersionAt100:true});
   assert.equal(activeDeploymentState({deployments:[]}).activeDeploymentId,null);assert.equal(activeDeploymentState({deployments:[]}).count,0);
-  const older={id:'older',created_on:'2026-10-01T00:00:00Z',strategy:'percentage',versions:[{version_id:NEW_VERSION,percentage:100}]};
-  const newer={id:EXISTING,created_on:'2026-10-06T00:00:00Z',strategy:'percentage',versions:[{version_id:ATTENDED_VERSION_ID,percentage:100}]};
-  assert.equal(activeDeploymentState({deployments:[older,newer]}).activeDeploymentId,EXISTING);assert.equal(activeDeploymentState({deployments:[newer,older]}).activeDeploymentId,EXISTING);
-  assert.equal(activeDeploymentState({deployments:[{...older,created_on:'bad'},newer]}).orderingProven,false);
-  assert.equal(activeDeploymentState({deployments:[older,{...newer,created_on:older.created_on}]}).orderingProven,false);
-  assert.equal(activeDeploymentState({deployments:[older,{...older}]}),null);assert.equal(activeDeploymentState({deployments:[null]}),null);
+  const first={id:EXISTING,created_on:'bad-or-irrelevant',strategy:'percentage',versions:[{version_id:ATTENDED_VERSION_ID,percentage:100}]};
+  const second={id:'older-or-newer-does-not-matter',created_on:'2099-01-01T00:00:00Z',strategy:'percentage',versions:[{version_id:NEW_VERSION,percentage:100}]};
+  assert.equal(activeDeploymentState({deployments:[first,second]}).activeDeploymentId,EXISTING);
+  assert.equal(activeDeploymentState({deployments:[second,first]}).activeDeploymentId,second.id);
+  assert.equal(activeDeploymentState({deployments:[first,second]}).orderingProven,true);
+  assert.equal(activeDeploymentState({deployments:[first,{...first}]}),null);assert.equal(activeDeploymentState({deployments:[null]}),null);
   assert.equal(activeDeploymentState('x'),null);assert.equal(activeDeploymentState(null),null);
   assert.equal(activeDeploymentState({deployments:[{...exactDeploymentRow,versions:[{version_id:ATTENDED_VERSION_ID,percentage:50},{version_id:NEW_VERSION,percentage:50}]}]}).selectsRetainedVersionAt100,false);
   assert.equal(activeDeploymentState({deployments:[{...exactDeploymentRow,strategy:'other'}]}).selectsRetainedVersionAt100,false);
@@ -326,8 +326,8 @@ test('upload: ambiguous response resolved by readback never sends a second POST'
   const applied=await run(()=>({kind:'AMBIGUOUS'}),async()=>[...before,NEW_VERSION]);
   assert.deepEqual({o:applied.result.outcome,v:applied.result.versionId,p:applied.posts},{o:'APPLIED_CONFIRMED_BY_READBACK',v:NEW_VERSION,p:1});
   const thrown=await run(()=>{throw new Error('transport');},async()=>[...before,NEW_VERSION]);assert.equal(thrown.result.outcome,'APPLIED_CONFIRMED_BY_READBACK');assert.equal(thrown.posts,1);
-  const notApplied=await run(()=>({kind:'AMBIGUOUS'}),async()=>[...before]);
-  assert.equal(notApplied.result.outcome,'NOT_APPLIED');assert.equal(notApplied.posts,1);assert.equal(notApplied.result.readbackAttempts,3);assert.deepEqual(notApplied.waits,[2000,5000]);
+  const absentAmbiguous=await run(()=>({kind:'AMBIGUOUS'}),async()=>[...before]);
+  assert.equal(absentAmbiguous.result.outcome,'AMBIGUOUS_OWNER_ATTENTION');assert.equal(absentAmbiguous.posts,1);assert.equal(absentAmbiguous.result.readbackAttempts,3);assert.deepEqual(absentAmbiguous.waits,[2000,5000]);
   const lateAppears=await run(()=>({kind:'AMBIGUOUS'}),(()=>{let n=0;return async()=>++n<3?[...before]:[...before,NEW_VERSION];})());
   assert.equal(lateAppears.result.outcome,'APPLIED_CONFIRMED_BY_READBACK');assert.equal(lateAppears.posts,1);
   const unreadable=await run(()=>({kind:'AMBIGUOUS'}),async()=>{throw new Error('read');});assert.equal(unreadable.result.outcome,'AMBIGUOUS_OWNER_ATTENTION');assert.equal(unreadable.posts,1);
@@ -339,7 +339,7 @@ test('upload: ambiguous response resolved by readback never sends a second POST'
   const mismatch=await run(()=>({kind:'OK',result:{id:NEW_VERSION}}),async()=>[...before,'99999999-2222-4333-8444-555555555555']);assert.equal(mismatch.result.outcome,'AMBIGUOUS_OWNER_ATTENTION');
   const malformedAccept=await run(()=>({kind:'OK',result:{id:'bad'}}),async()=>[...before,NEW_VERSION]);assert.equal(malformedAccept.result.outcome,'APPLIED_CONFIRMED_BY_READBACK');assert.equal(malformedAccept.posts,1);
   const reusedId=await run(()=>({kind:'OK',result:{id:before[0]}}),async()=>[...before]);assert.equal(reusedId.result.outcome,'AMBIGUOUS_OWNER_ATTENTION');
-  for(const r of [applied,thrown,notApplied,lateAppears,unreadable,malformed,duplicate,two,removed,acceptedInvisible,mismatch,malformedAccept,reusedId])assert.ok(TRANSPORT_REMEDIATED_UPLOAD_OUTCOMES.includes(r.result.outcome));
+  for(const r of [applied,thrown,absentAmbiguous,lateAppears,unreadable,malformed,duplicate,two,removed,acceptedInvisible,mismatch,malformedAccept,reusedId])assert.ok(TRANSPORT_REMEDIATED_UPLOAD_OUTCOMES.includes(r.result.outcome));
 });
 test('upload: operations and starting inventory are validated before any POST',async()=>{
   let posts=0;const post=async()=>{posts+=1;return {kind:'OK',result:{id:NEW_VERSION}};};
@@ -361,9 +361,10 @@ test('executor mutation allowlist contains only the Version upload POST and reje
     assert.throws(()=>assertTransportRemediatedMutationAllowed(method,requestPath,{accountId:ACCOUNT}),/ENDPOINT_FORBIDDEN/,method+' '+requestPath);
 });
 
-test('guarded fetch refuses every non-Cloudflare host, Worker invocation, forbidden method and path before reaching the network',async()=>{
+test('guarded fetch allows Cloudflare GETs plus exactly one Version POST and forbids every D1/provider/Worker/mutation path',async()=>{
   const calls=[];const guard=createTransportRemediatedGuardedFetch({accountId:ACCOUNT,readToken:READ,uploadToken:UPLOAD,fetchImpl:async(url,init)=>{calls.push([init?.method||'GET',String(url)]);return new Response('{}');}});
   const script=API+'/accounts/'+ACCOUNT+'/workers/scripts/'+DEPLOYED_ONE_SHOT_WORKER;
+  const d1=API+'/accounts/'+ACCOUNT+'/d1/database/00000000-0000-0000-0000-000000000000/query';
   const forbidden=[
     ['https://v3.football.api-sports.io/fixtures?league=39','GET',{'x-apisports-key':API_KEY}],
     ['https://'+DEPLOYED_ONE_SHOT_WORKER+'.'+SUBDOMAIN+'.workers.dev/internal/attended-acceptance','POST',{}],
@@ -371,36 +372,32 @@ test('guarded fetch refuses every non-Cloudflare host, Worker invocation, forbid
     ['https://api.cloudflare.com.evil.example/client/v4/accounts','GET',{}],['http://api.cloudflare.com/client/v4/accounts','GET',{}],['https://api.cloudflare.com:8443/client/v4/x','GET',{}],
     ['https://user:pass@api.cloudflare.com/client/v4/x','GET',{}],['https://api.cloudflare.com/other','GET',{}],['not a url','GET',{}],
     [script+'/deployments','POST',{Authorization:'Bearer '+UPLOAD}],[script+'/subdomain','POST',{Authorization:'Bearer '+UPLOAD}],
-    [script+'/schedules','PUT',{Authorization:'Bearer '+UPLOAD}],[script,'DELETE',{Authorization:'Bearer '+UPLOAD}],[script+'/versions','PUT',{Authorization:'Bearer '+UPLOAD}],
-    [API+'/accounts/'+ACCOUNT+'/workers/workers','POST',{Authorization:'Bearer '+UPLOAD}],[API+'/accounts/'+ACCOUNT+'/workers/domains','PUT',{Authorization:'Bearer '+UPLOAD}],
-    [script+'/versions','POST',{Authorization:'Bearer '+READ}],[script+'/versions','POST',{}],
-    [API+paths.d1,'POST',{Authorization:'Bearer '+UPLOAD}]
+    [script+'/schedules','PUT',{Authorization:'Bearer '+UPLOAD}],['https://api.cloudflare.com/client/v4/zones/z/workers/routes','POST',{Authorization:'Bearer '+UPLOAD}],
+    [API+'/accounts/'+ACCOUNT+'/workers/domains','PUT',{Authorization:'Bearer '+UPLOAD}],[script,'DELETE',{Authorization:'Bearer '+UPLOAD}],[script+'/versions','PUT',{Authorization:'Bearer '+UPLOAD}],
+    [API+'/accounts/'+ACCOUNT+'/workers/workers','POST',{Authorization:'Bearer '+UPLOAD}],[script+'/versions','POST',{Authorization:'Bearer '+READ}],[script+'/versions','POST',{}],
+    [d1,'POST',{Authorization:'Bearer '+READ}],[d1,'POST',{Authorization:'Bearer '+UPLOAD}]
   ];
   for(const [url,method,headers] of forbidden)await assert.rejects(()=>guard.fetch(url,{method,headers,body:'{}'}),/TRANSPORT_REMEDIATED_/,method+' '+url);
-  // D1: read credential with write SQL is refused; non-batch bodies are refused; read-only SELECT batches are allowed.
-  const d1=API+paths.d1;
-  for(const body of ['{"batch":[{"sql":"UPDATE api_football_runtime_state SET collection_enabled=1","params":[]}]}','{"batch":[{"sql":"INSERT INTO t VALUES (1)","params":[]}]}','{"sql":"SELECT 1"}','{"batch":[]}','not json',
-    '{"batch":[{"sql":"SELECT 1; DELETE FROM t","params":[]}]}'])
-    await assert.rejects(()=>guard.fetch(d1,{method:'POST',headers:{Authorization:'Bearer '+READ},body}),/D1_QUERY_FORBIDDEN/);
   assert.deepEqual(calls,[]);assert.ok(guard.counters.blockedEgress>0);assert.equal(guard.counters.versionUploadAttempts,0);
-  // The upload credential can never be used for a read.
   await assert.rejects(()=>guard.fetch(script+'/versions?deployable=true',{method:'GET',headers:{Authorization:'Bearer '+UPLOAD}}),/UPLOAD_CREDENTIAL_READ_FORBIDDEN/);
-  // Allowed: read GET, read-only D1 batch, exactly one Version POST.
   await guard.fetch(script+'/deployments',{method:'GET',headers:{Authorization:'Bearer '+READ}});
-  await guard.fetch(d1,{method:'POST',headers:{Authorization:'Bearer '+READ},body:JSON.stringify({batch:[{sql:'SELECT 1 AS x',params:[]},{sql:'PRAGMA foreign_key_check',params:[]}]})});
   await guard.fetch(script+'/versions',{method:'POST',headers:{Authorization:'Bearer '+UPLOAD},body:new FormData()});
   await assert.rejects(()=>guard.fetch(script+'/versions',{method:'POST',headers:{Authorization:'Bearer '+UPLOAD},body:new FormData()}),/UPLOAD_CEILING_EXCEEDED/);
-  assert.equal(calls.length,3);assert.equal(guard.counters.versionUploadAttempts,1);assert.equal(guard.counters.d1ReadQueries,1);
+  assert.equal(calls.length,2);assert.equal(guard.counters.versionUploadAttempts,1);assert.equal('d1ReadQueries' in guard.counters,false);
 });
 
-function fakeCloudflare({post='created',versionsAfter=null,deployments=[exactDeploymentRow],versions=[...TRANSPORT_REMEDIATED_HISTORICAL_VERSION_IDS]}={}){
+function fakeCloudflare({post='created',versionsAfter=null,deployments=[exactDeploymentRow],versions=[...TRANSPORT_REMEDIATED_HISTORICAL_VERSION_IDS],
+  subdomain={enabled:false,previews_enabled:false},schedules=[],domains=[]}={}){
   const calls=[];let current=[...versions];
-  const json=(body,status=200)=>new Response(JSON.stringify(body),{status,headers:{'content-type':'application/json'}});
+  const json=(body,status=200)=>new Response(JSON.stringify({success:true,result:body}),{status,headers:{'content-type':'application/json'}});
   const fetchImpl=async(url,init={})=>{
     const method=String(init.method||'GET').toUpperCase(),requestPath=new URL(String(url)).pathname.slice('/client/v4'.length)+new URL(String(url)).search;
     calls.push({method,requestPath,authorization:init.headers?.Authorization,body:init.body});
-    if(method==='GET'&&requestPath===paths.deployments)return json({success:true,result:{deployments}});
-    if(method==='GET'&&requestPath===paths.versionList)return json({success:true,result:{items:current.map(id=>({id}))}});
+    if(method==='GET'&&requestPath===paths.deployments)return json({deployments});
+    if(method==='GET'&&requestPath===paths.versionList)return json({items:current.map(id=>({id}))});
+    if(method==='GET'&&requestPath===paths.subdomain)return json(subdomain);
+    if(method==='GET'&&requestPath===paths.schedules)return json({schedules});
+    if(method==='GET'&&requestPath===paths.domains)return json(domains);
     if(method==='POST'&&requestPath===paths.versions){
       if(post==='rejected')return json({success:false,errors:[{code:10000}]},403);
       if(post==='transport')throw new TypeError('socket hang up');
@@ -418,9 +415,9 @@ function executorEnv(admissionFile,overrides={}){
     CLOUDFLARE_TOPOLOGY_READ_TOKEN:TOPOLOGY_TOKEN,API_FOOTBALL_API_KEY:API_KEY,API_FOOTBALL_ATTENDED_TRIGGER_SECRET:TRIGGER,APPROVED_SHA:SHA,
     API_FOOTBALL_TRANSPORT_REMEDIATED_ADMISSION_PATH:admissionFile,...overrides};
 }
-const runExecutor=async({fake=fakeCloudflare(),env,recheck=async()=>report(),routeScan=async()=>ZONE,admissionValue=admission()}={})=>{
+const runExecutor=async({fake=fakeCloudflare(),env,routeScan=async()=>ZONE,admissionValue=admission()}={})=>{
   const file=tempFile(admissionValue);
-  const evidence=await executeTransportRemediatedVersionUpload({env:env??executorEnv(file),fetchImpl:fake.fetchImpl,criticalRecheck:recheck,routeScan,wait:async()=>{}});
+  const evidence=await executeTransportRemediatedVersionUpload({env:env??executorEnv(file),fetchImpl:fake.fetchImpl,routeScan,wait:async()=>{}});
   return {evidence,fake};
 };
 
@@ -442,21 +439,21 @@ test('executor submits exactly one Version POST, no other mutation, and returns 
   assert.ok(fake.calls.every(c=>!/deployments$/.test(c.requestPath)||c.method==='GET'));
 });
 
-test('executor ambiguity handling: applied confirmed by readback, not applied, rejected and transport failure never resend',async()=>{
+test('executor ambiguity handling never turns bounded absence into NOT_APPLIED and never resends',async()=>{
   const applied=await runExecutor({fake:fakeCloudflare({post:'ambiguous-applied'})});
   assert.equal(applied.evidence.outcome,'APPLIED_CONFIRMED_BY_READBACK');assert.equal(applied.evidence.versionId,NEW_VERSION);assert.equal(applied.fake.posts().length,1);
   const serverError=await runExecutor({fake:fakeCloudflare({post:'server-error',versionsAfter:'applied'})});
   assert.equal(serverError.evidence.outcome,'APPLIED_CONFIRMED_BY_READBACK');assert.equal(serverError.fake.posts().length,1);
-  const notApplied=await runExecutor({fake:fakeCloudflare({post:'server-error'})});
-  assert.equal(notApplied.evidence.outcome,'NOT_APPLIED');assert.equal(notApplied.evidence.ok,false);assert.equal(notApplied.fake.posts().length,1);assert.equal(notApplied.evidence.versionId,null);
+  const absent=await runExecutor({fake:fakeCloudflare({post:'server-error'})});
+  assert.equal(absent.evidence.outcome,'AMBIGUOUS_OWNER_ATTENTION');assert.equal(absent.evidence.ok,false);assert.equal(absent.fake.posts().length,1);assert.equal(absent.evidence.versionId,null);
   const transport=await runExecutor({fake:fakeCloudflare({post:'transport'})});
-  assert.equal(transport.evidence.outcome,'NOT_APPLIED');assert.equal(transport.fake.posts().length,1);
+  assert.equal(transport.evidence.outcome,'AMBIGUOUS_OWNER_ATTENTION');assert.equal(transport.fake.posts().length,1);
   const rejected=await runExecutor({fake:fakeCloudflare({post:'rejected'})});
   assert.equal(rejected.evidence.outcome,'REJECTED');assert.equal(rejected.fake.posts().length,1);assert.equal(rejected.evidence.versionUploadAttempts,1);
-  for(const r of [applied,serverError,notApplied,transport,rejected]){assert.equal(r.evidence.retryAuthorized,false);assert.equal(validateTransportRemediatedExecutionEvidence(r.evidence,{approvedSha:SHA}),true);}
+  for(const r of [applied,serverError,absent,transport,rejected]){assert.equal(r.evidence.retryAuthorized,false);assert.equal(validateTransportRemediatedExecutionEvidence(r.evidence,{approvedSha:SHA}),true);}
 });
 
-test('executor sends zero network on any pre-mutation failure and zero POST on drift',async()=>{
+test('executor sends zero network on credential/admission failure and zero POST on fresh Cloudflare drift',async()=>{
   const file=tempFile(admission());
   const base=executorEnv(file);
   const stops=async(label,options)=>{const {evidence,fake}=await runExecutor(options);assert.equal(evidence.outcome,'NOT_SUBMITTED',label);assert.equal(evidence.versionUploadAttempts,0,label);assert.equal(fake.posts().length,0,label);assert.equal(evidence.ok,false,label);return {evidence,fake};};
@@ -474,32 +471,37 @@ test('executor sends zero network on any pre-mutation failure and zero POST on d
   assert.equal((await stops('rerun attempt 2',{env:{...base,GITHUB_RUN_ATTEMPT:'2'}})).evidence.diagnostic,'TRANSPORT_REMEDIATED_RERUN_FORBIDDEN');
   assert.equal((await stops('admission wrong sha',{env:{...base,APPROVED_SHA:'d'.repeat(40)}})).fake.calls.length,0);
   const tampered=admission();assert.equal((await stops('tampered admission',{admissionValue:{...JSON.parse(JSON.stringify(tampered)),ok:false}})).fake.calls.length,0);
-  // After the zero-network checks above, drift detected on fresh reads stops before the POST.
-  await stops('critical drift: collection enabled',{recheck:async()=>report({runtime:{collectionEnabled:1}})});
-  await stops('critical drift: workers.dev on',{recheck:async()=>report({inventory:{workersDev:true}})});
-  await stops('critical drift: pristine history',{recheck:async()=>report({priorState:{requestAttempts:0,attempt1Count:0,transportUnknownCount:0,generations:0,failedGenerationCount:0}})});
-  await stops('critical drift: remediated Version already exists',{recheck:async()=>report({inventory:{versionInventoryExact:false,versionIdentityExact:false}})});
+  const historyTamper=JSON.parse(JSON.stringify(admission()));historyTamper.preflight.priorState.attempt2Count=1;
+  assert.equal((await stops('tampered consumed history',{admissionValue:historyTamper})).fake.calls.length,0);
+
+  await stops('workers.dev appeared',{fake:fakeCloudflare({subdomain:{enabled:true,previews_enabled:false}})});
+  await stops('Preview appeared',{fake:fakeCloudflare({subdomain:{enabled:false,previews_enabled:true}})});
+  await stops('Cron appeared',{fake:fakeCloudflare({schedules:[{cron:'0 * * * *'}]})});
+  await stops('custom domain appeared',{fake:fakeCloudflare({domains:[{service:DEPLOYED_ONE_SHOT_WORKER}]})});
   await stops('deployment drift',{fake:fakeCloudflare({deployments:[{...exactDeploymentRow,id:'other'}]})});
-  await stops('two deployments',{fake:fakeCloudflare({deployments:[exactDeploymentRow,{...exactDeploymentRow,id:'two',created_on:'2026-10-07T00:00:00.000Z'}]}),recheck:async()=>report({inventory:{deploymentCount:2}})});
+  await stops('two deployments',{fake:fakeCloudflare({deployments:[exactDeploymentRow,{...exactDeploymentRow,id:'two'}]})});
   await stops('route appeared',{routeScan:async()=>({...ZONE,routeCount:1})});
   await stops('route scan failed',{routeScan:async()=>{throw new Error('boom');}});
   await stops('route scan malformed',{routeScan:async()=>({proof:'x'})});
   await stops('start inventory has an extra Version',{fake:fakeCloudflare({versions:[...TRANSPORT_REMEDIATED_HISTORICAL_VERSION_IDS,NEW_VERSION]})});
   await stops('start inventory is missing a Version',{fake:fakeCloudflare({versions:[ORIGINAL_BLOCKED_VERSION_ID,ATTENDED_VERSION_ID]})});
-  const dep=await stops('deployment unreadable',{fake:{...fakeCloudflare(),fetchImpl:async(url,init)=>{if(String(url).endsWith('/deployments'))return new Response('x',{status:500});return fakeCloudflare().fetchImpl(url,init);}}});
+  const depBase=fakeCloudflare();const dep=await stops('deployment unreadable',{fake:{...depBase,fetchImpl:async(url,init)=>String(url).endsWith('/deployments')?new Response('x',{status:500}):depBase.fetchImpl(url,init)}});
   assert.ok(dep.evidence.diagnostic.startsWith('TRANSPORT_REMEDIATED_'));
 });
 
-test('executor never contacts API-Football, the Worker, D1 writes, Deployments, workers.dev, Preview, schedules, routes or domains',async()=>{
+test('executor uses Cloudflare GET-only state/topology reads plus one Version POST, with no D1/provider/Worker path',async()=>{
   const {fake}=await runExecutor();
   for(const call of fake.calls){
     assert.ok(['GET','POST'].includes(call.method));
     if(call.method==='POST')assert.equal(call.requestPath,paths.versions);
-    assert.doesNotMatch(call.requestPath,/subdomain|schedules|domains|workers\/routes|d1\/database/);
+    assert.doesNotMatch(call.requestPath,/d1/database/);
   }
-  const source=read('workers/api-football-collector/run-transport-remediated-version-upload.mjs').replace(/^\s*\/\/.*$/gm,'');
-  assert.doesNotMatch(source,/x-apisports-key|v3\.football\.api-sports\.io|x-teamsheet-attended-trigger|workers\.dev|createDeployment|buildDeploymentBody|enableWorkersDev|collection_enabled\s*=|method:\s*'(?:PUT|DELETE|PATCH)'/i);
-  assert.doesNotMatch(source,/previews_enabled|subdomain/i);
+  assert.ok(fake.calls.some(c=>c.method==='GET'&&c.requestPath===paths.subdomain));
+  assert.ok(fake.calls.some(c=>c.method==='GET'&&c.requestPath===paths.schedules));
+  assert.ok(fake.calls.some(c=>c.method==='GET'&&c.requestPath===paths.domains));
+  const source=read('workers/api-football-collector/run-transport-remediated-version-upload.mjs').replace(/^s*//.*$/gm,'');
+  assert.doesNotMatch(source,/x-apisports-key|v3.football.api-sports.io|x-teamsheet-attended-trigger|workers.dev|createDeployment|buildDeploymentBody|collection_enableds*=|method:s*'(?:PUT|DELETE|PATCH)'/i);
+  assert.doesNotMatch(source,/d1/database|assertActivationReadOnlySql|runApiFootballActivationLivePreflight|EXPECTED_D1_DATABASE_ID/);
   assert.match(source,/redirect:'manual'/);assert.doesNotMatch(source,/redirect:'error'/);
 });
 
@@ -585,21 +587,21 @@ test('reconciliation fails closed for every unsafe or partial post-upload state'
   assert.equal(classify(unreadableIdentity).ok,false,'identity derived for another SHA does not match the created Version annotations');
 });
 
-test('reconciliation clean stop: no new Version and unchanged state is a non-success clean stop, never retry authority',async()=>{
+test('reconciliation treats ambiguous upload with no visible Version as owner attention, never a clean stop',async()=>{
   const clean=report();
   const base=async execution=>({report:clean,versionIds:[...TRANSPORT_REMEDIATED_HISTORICAL_VERSION_IDS],deployments:DEPLOYMENTS,topology:ZONE,execution,approvedSha:SHA,accountFingerprint:FINGERPRINT});
-  for(const [outcome,pattern] of [['NOT_SUBMITTED',/stopped_before_upload/],['REJECTED',/upload_rejected/],['NOT_APPLIED',/upload_not_applied/],['AMBIGUOUS_OWNER_ATTENTION',/upload_ambiguous_but_no_version_observed/]]){
+  for(const [outcome,pattern] of [['NOT_SUBMITTED',/stopped_before_upload/],['REJECTED',/upload_rejected/],['NOT_APPLIED',/upload_not_applied/]]){
     const execution=buildTransportRemediatedExecutionEvidence({approvedSha:SHA,outcome,counters:{versionUploadAttempts:outcome==='NOT_SUBMITTED'?0:1}});
     const r=classify(await base(execution));assert.equal(r.classification,TRANSPORT_REMEDIATED_CLEAN_STOP,outcome);assert.match(r.reason,pattern);assert.equal(r.ok,false);
   }
+  const ambiguous=buildTransportRemediatedExecutionEvidence({approvedSha:SHA,outcome:'AMBIGUOUS_OWNER_ATTENTION',counters:{versionUploadAttempts:1}});
+  const ambiguousResult=classify(await base(ambiguous));
+  assert.equal(ambiguousResult.classification,TRANSPORT_REMEDIATED_OWNER_ATTENTION);assert.equal(ambiguousResult.reason,'upload_ambiguous_no_version_observed');assert.equal(ambiguousResult.retryAuthorized,false);
   assert.match(classify(await base(null)).reason,/execution_evidence_unavailable/);
-  // Execution claims a created Version but the inventory shows none.
   const claims=buildTransportRemediatedExecutionEvidence({approvedSha:SHA,outcome:'CREATED',versionId:NEW_VERSION,counters:{versionUploadAttempts:1}});
   assert.equal(classify(await base(claims)).classification,TRANSPORT_REMEDIATED_OWNER_ATTENTION);
-  // Historical inventory not exact in the no-candidate branch.
   const drifted=report({inventory:{versionInventoryExact:false}});
   assert.equal(classify({...await base(null),report:drifted}).classification,TRANSPORT_REMEDIATED_OWNER_ATTENTION);
-  // Deployment drift outranks the clean stop.
   assert.equal(classify({...await base(null),deployments:activeDeploymentState({deployments:[]}),report:report({inventory:{deploymentCount:0}})}).classification,TRANSPORT_REMEDIATED_OWNER_ATTENTION);
 });
 
