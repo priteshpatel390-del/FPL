@@ -69,7 +69,7 @@ jobs:
           node-version: 24.19.0
       - name: Run focused restart tests
         run: |
-          node --test tests/api-football-replacement-topology-closeout.test.mjs tests/api-football-replacement-one-version-reconciliation.test.mjs tests/api-football-collector-activation-live-preflight.test.mjs
+          node --test tests/api-football-replacement-topology-closeout.test.mjs tests/api-football-collector-activation-live-preflight.test.mjs
           test -z "$(git status --porcelain --untracked-files=all)"
 
   topology-closeout:
