@@ -1,3 +1,9 @@
+## Nullable legacy route inventory after run 37481520674
+
+Read-only reconciliation run `37481520674` on exact main `ff52b2e5f517ac81ad83e260e5639739456752ed` passed repository admission and original collector/D1/runtime re-proof, then stopped only because the replacement Worker was present in the legacy Scripts inventory with `routes` not represented as an array. The retained result was `replacement_reconciliation_legacy_route_inventory_invalid`; production mutations, API-Football requests and secret-value reads were all zero.
+
+The approved repository fix treats legacy `routes: null` or an omitted `routes` field as unavailable metadata. It does not infer zero routes from that absence. The independent account-zone `ZONE_ROUTE_SCAN` remains the authoritative route proof; a legacy array is still cross-checked, and any other non-null non-array value still fails closed.
+
 ## Replacement route-inventory diagnostic remediation
 
 Read-only reconciliation run `37365722097` on exact main `59155b04b3820219f2eb9b831f3c83aa623d71d2` reached the new zone-route proof path after repository gating and original collector/D1 re-proof both succeeded. It failed closed at `replacement_reconciliation_route_inventory_invalid` before safe replacement state could be proved. Zero production mutations, zero API-Football requests and zero secret-value reads were recorded; the run is consumed.

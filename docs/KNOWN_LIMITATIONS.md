@@ -1,3 +1,9 @@
+## Run 37481520674 still did not prove replacement safe state
+
+The latest read-only reconciliation reached the legacy Scripts cross-check and stopped because `routes` was not an array. The repository had not yet allowed the optional/null representation. The artifact did not return a validated replacement state, so zero routes, Preview-disabled replacement state and overall safe reconciliation are still not claimed.
+
+The remediation only changes handling of missing/null legacy metadata. A future successful read-only reconciliation is still required to prove the live state.
+
 ## Run 37365722097 did not prove replacement safe state
 
 The read-only reconciliation reached Cloudflare zone-route validation but stopped as `replacement_reconciliation_route_inventory_invalid`. Retained evidence intentionally contains no offending route payload, so the exact failed field is not yet known. Original collector/D1/runtime state remained independently healthy and no production mutation/provider request occurred.

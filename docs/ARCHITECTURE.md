@@ -1,3 +1,9 @@
+## Nullable legacy Scripts route metadata
+
+The replacement state reader has two route surfaces with different authority. The dedicated zone-scoped Workers Routes scan is authoritative. The legacy List Worker Scripts row is only a secondary cross-check. Its optional `routes` field may be absent or null; either state now means "legacy route count unavailable" and leaves `legacyRouteCount:null`. It never implies zero routes.
+
+When legacy `routes` is an array, its length must match the authoritative zone scan. Any other non-null non-array value fails closed as `replacement_reconciliation_legacy_route_inventory_invalid`. The zero-route acceptance requirement is unchanged.
+
 ## Replacement route-inventory diagnostic boundary
 
 The zone-route scanner keeps the same fail-closed acceptance contract but now distinguishes route-response array shape, route-row object shape, route id type, route pattern type, route script type and legacy Scripts route-array shape. Successful evidence may retain only `ZONE_ROUTE_SCAN`, zone count, total route-row count and replacement-route count. It never persists zone identifiers, route identifiers, route patterns, script names or arbitrary Cloudflare response content.

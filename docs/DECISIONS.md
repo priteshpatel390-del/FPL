@@ -1,3 +1,9 @@
+## 2026-10-06 — nullable legacy routes do not override authoritative route proof
+
+**Decision:** consume run `37481520674` and remediate the exact false-negative by treating the legacy Scripts row's missing/null `routes` value as unavailable metadata rather than invalid inventory. Continue to require the independent zone-scoped Workers Routes scan for route truth.
+
+**Safety rule:** null/missing legacy routes never certify zero routes. If the legacy field is an array it remains a cross-check against the zone scan; if it is any other non-null value the read fails closed. No live state is inferred by this repository change.
+
 ## 2026-10-05 — split route-inventory diagnostics without weakening validation
 
 **Decision:** consume read-only run `37365722097` and keep its generic `replacement_reconciliation_route_inventory_invalid` outcome as historical evidence. Replace that generic repository-owned error with closed field-level diagnostic enums and retain only bounded route-row counts. Do not retain raw zone/route values and do not loosen the zero-route requirement.

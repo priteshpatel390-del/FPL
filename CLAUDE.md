@@ -1,3 +1,9 @@
+## Current checkpoint — nullable legacy route inventory remediation after run 37481520674
+
+Owner-approved read-only one-Version reconciliation run `37481520674`, attempt 1, on exact main `ff52b2e5f517ac81ad83e260e5639739456752ed` passed the repository gate and original collector/D1/runtime re-proof, then stopped fail-closed as `replacement_reconciliation_legacy_route_inventory_invalid`. Artifact evidence recorded `productionMutations:0`, `apiFootballRequests:0`, `secretValuesRead:0`, `safeStateProved:false` and `retryAuthorized:false`. The run is consumed and must not be rerun.
+
+The live diagnostic proves the generic route mismatch was specifically the legacy Scripts row's `routes` field. Owner approval covers repository remediation only: treat a missing or null legacy `routes` value as unavailable metadata, never as proof of zero routes; continue to require the independent `ZONE_ROUTE_SCAN` as authoritative; cross-check legacy route count when `routes` is an array; and fail closed for any other non-null non-array value. Add regression coverage for null, missing, malformed and mismatched-array cases. **No live reconciliation dispatch, Preview change, Version upload, D1 mutation, provider request or merge is authorized without later explicit gates.**
+
 ## Current checkpoint — route-inventory diagnostic remediation after run 37365722097
 
 Owner-approved read-only one-Version reconciliation run `37365722097`, attempt 1, on exact main `59155b04b3820219f2eb9b831f3c83aa623d71d2` passed the repository gate and independently re-proved the original collector/D1/runtime state. The replacement closeout then stopped fail-closed as `replacement_reconciliation_route_inventory_invalid`; evidence recorded `productionMutations:0`, `apiFootballRequests:0`, `secretValuesRead:0`, `safeStateProved:false` and `retryAuthorized:false`. The run is consumed and must not be rerun.

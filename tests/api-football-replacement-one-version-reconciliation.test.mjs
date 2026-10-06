@@ -30,7 +30,7 @@ function fixtureVersion(){
   };
 }
 
-function fakeCloudflare({preview=false,replacementRoute=false,zoneARoutes=undefined,legacyScript=false,legacyRoutes=[],workerDeployed=false,domain=false}={}){
+function fakeCloudflare({preview=false,replacementRoute=false,zoneARoutes=undefined,legacyScript=false,legacyRoutes=[],legacyRoutesMissing=false,workerDeployed=false,domain=false}={}){
   const paths=replacementPaths(ACCOUNT),fx=fixtureVersion(),calls=[];
   const worker={id:REPLACEMENT_RECOVERY_WORKER_ID,name:REPLACEMENT_COLLECTOR,deployed_on:workerDeployed?'2026-10-01T00:00:00Z':null};
   const fetchImpl=async(url,init={})=>{
@@ -49,7 +49,7 @@ function fakeCloudflare({preview=false,replacementRoute=false,zoneARoutes=undefi
     assert.equal(auth,'Bearer '+READ_TOKEN);
     const full=String(url).slice(API.length),p=full.split('?')[0];
     if(full===paths.betaWorkers)return ok([worker]);
-    if(p===paths.scripts)return ok([{id:ORIGINAL_COLLECTOR,routes:[]},...(legacyScript?[{id:REPLACEMENT_COLLECTOR,routes:legacyRoutes}]:[])]);
+    if(p===paths.scripts)return ok([{id:ORIGINAL_COLLECTOR,routes:[]},...(legacyScript?[{id:REPLACEMENT_COLLECTOR,...(legacyRoutesMissing?{}:{routes:legacyRoutes})}]:[])]);
     if(p===paths.domains)return ok(domain?[{service:REPLACEMENT_COLLECTOR}]:[]);
     if(p===paths.replacementSubdomain)return ok({enabled:false,previews_enabled:preview});
     if(p===paths.replacementDeployments)return ok({deployments:[]});
@@ -91,9 +91,28 @@ test('route inventory failures retain only closed field-level diagnostics',async
   }
 });
 
-test('legacy Scripts route-array failure has a distinct closed diagnostic',async()=>{
+test('legacy Scripts null routes are unavailable metadata and independent zone scan remains authoritative',async()=>{
   const fake=fakeCloudflare({legacyScript:true,legacyRoutes:null}),report=await runReplacementOneVersionReconciliation({env,fetchImpl:fake.fetchImpl});
+  assert.equal(report.ok,true);assert.equal(report.classification,'REPLACEMENT_ONE_VERSION_INACTIVE_RECONCILED');
+  assert.equal(report.replacement.scriptPresent,true);assert.equal(report.replacement.legacyRouteCount,null);
+  assert.equal(report.replacement.routeProof,'ZONE_ROUTE_SCAN');assert.equal(report.replacement.routeCount,0);
+});
+
+test('legacy Scripts missing routes are unavailable metadata and independent zone scan remains authoritative',async()=>{
+  const fake=fakeCloudflare({legacyScript:true,legacyRoutesMissing:true}),report=await runReplacementOneVersionReconciliation({env,fetchImpl:fake.fetchImpl});
+  assert.equal(report.ok,true);assert.equal(report.classification,'REPLACEMENT_ONE_VERSION_INACTIVE_RECONCILED');
+  assert.equal(report.replacement.scriptPresent,true);assert.equal(report.replacement.legacyRouteCount,null);
+  assert.equal(report.replacement.routeProof,'ZONE_ROUTE_SCAN');assert.equal(report.replacement.routeCount,0);
+});
+
+test('legacy Scripts non-null non-array routes still fail closed',async()=>{
+  const fake=fakeCloudflare({legacyScript:true,legacyRoutes:{unexpected:true}}),report=await runReplacementOneVersionReconciliation({env,fetchImpl:fake.fetchImpl});
   assert.equal(report.ok,false);assert.equal(report.reason,'replacement_reconciliation_legacy_route_inventory_invalid');assert.equal(report.replacement,null);
+});
+
+test('legacy Scripts array still cross-checks the authoritative zone route scan',async()=>{
+  const fake=fakeCloudflare({legacyScript:true,legacyRoutes:[{id:'legacy-route'}]}),report=await runReplacementOneVersionReconciliation({env,fetchImpl:fake.fetchImpl});
+  assert.equal(report.ok,false);assert.equal(report.reason,'replacement_reconciliation_route_inventory_mismatch');assert.equal(report.replacement,null);
 });
 
 test('one-Version state without independent route credential fails closed instead of assuming zero routes',async()=>{
