@@ -53,3 +53,7 @@ Provider qualification, endpoint set, competition set, team mapping, fixture ide
 1. Owner review and merge of the draft PR.
 2. Post-merge exact-main Verify Teamsheet.
 3. A new explicit owner approval to dispatch `API-Football Deployed One-Shot Continuation` once on that exact main (first-attempt-only; never rerun). Run `37505586273` and its workflow remain consumed.
+
+## Consumed live run 37511401491
+
+This continuation was dispatched once as run `37511401491` on exact main `c632ea3…`. Admission passed, Deployment and routing readiness were re-proved, collection was enabled and one trigger was sent. The Worker returned 409 `Not accepted`. Cleanup succeeded. Reconciliation found attempt 1 `TRANSPORT_UNKNOWN`, one failed generation, zero fixture revisions, no attempt 2 and `retryAuthorized:false`. The run is consumed and must never be rerun. Admission now refuses because history is no longer pristine. The 409 response now carries an allowlisted transport diagnostic header only from Worker code newer than Version `04d79556`. See [transport-unknown remediation](API-FOOTBALL-TRANSPORT-UNKNOWN-REMEDIATION.md).

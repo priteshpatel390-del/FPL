@@ -74,62 +74,16 @@ export function buildPinnedApiFootballUrl(endpoint,searchParams){
   return {ok:true,url};
 }
 
-// Request contract. API-Football documents GET only and `x-apisports-key` as the only accepted
-// request header, so no other header is set here. Redirect handling uses `manual` because the
-// Cloudflare Workers runtime throws a TypeError for `redirect: "error"` before any network I/O;
-// callers must treat every 3xx response as a rejected redirect and never follow it.
-export const API_FOOTBALL_REQUEST_REDIRECT_MODE='manual';
-export const API_FOOTBALL_REQUEST_HEADER_NAMES=Object.freeze(['x-apisports-key']);
 export function apiFootballRequestInit(apiKey){
   if(typeof apiKey!=='string'||!apiKey.length)return safeFailure('provider_disabled_secret_missing');
-  return {ok:true,init:{method:'GET',redirect:API_FOOTBALL_REQUEST_REDIRECT_MODE,headers:Object.freeze({'x-apisports-key':apiKey})}};
-}
-export function isApiFootballRedirectStatus(status){return Number.isInteger(status)&&status>=300&&status<400;}
-
-// Closed, repository-owned transport diagnostic. It is descriptive only: it never changes the
-// coarse safety reason (`provider_timeout` / `transport_failure`) and never makes an attempt
-// retryable or proves that a request was not sent. Classification reads only an exact `name`
-// string and, for TypeError, compares the message against one fixed repository prefix. No error
-// text, stack, cause, URL, header or request object is ever copied into the result.
-export const API_FOOTBALL_TRANSPORT_DIAGNOSTICS=Object.freeze({
-  TIMEOUT:'TRANSPORT_TIMEOUT',
-  RUNTIME_REDIRECT_MODE_REJECTED:'TRANSPORT_RUNTIME_REDIRECT_MODE_REJECTED',
-  FETCH_TYPE_ERROR:'TRANSPORT_FETCH_TYPE_ERROR',
-  ABORTED:'TRANSPORT_ABORTED',
-  GENERIC_ERROR:'TRANSPORT_GENERIC_ERROR',
-  NON_ERROR_THROWN:'TRANSPORT_NON_ERROR_THROWN',
-  UNKNOWN:'TRANSPORT_EXCEPTION_UNKNOWN'
-});
-const TRANSPORT_DIAGNOSTIC_VALUES=new Set(Object.values(API_FOOTBALL_TRANSPORT_DIAGNOSTICS));
-const WORKERS_INVALID_REDIRECT_PREFIX='Invalid redirect value';
-export function isApiFootballTransportDiagnostic(value){return typeof value==='string'&&TRANSPORT_DIAGNOSTIC_VALUES.has(value);}
-function boundedStringProperty(value,key,maxLength){
-  try{
-    if(value===null||(typeof value!=='object'&&typeof value!=='function'))return null;
-    const read=value[key];
-    return typeof read==='string'&&read.length<=maxLength?read:null;
-  }catch{return null;}
-}
-function isProviderTimeout(error,signal){
-  if(signal?.aborted&&boundedStringProperty(signal.reason,'name',32)==='TimeoutError')return true;
-  return boundedStringProperty(error,'name',32)==='TimeoutError';
-}
-export function classifyApiFootballTransportException(error,{timedOut=false}={}){
-  const D=API_FOOTBALL_TRANSPORT_DIAGNOSTICS;
-  if(timedOut===true)return D.TIMEOUT;
-  if(error===null||(typeof error!=='object'&&typeof error!=='function'))return D.NON_ERROR_THROWN;
-  const name=boundedStringProperty(error,'name',32);
-  if(name==='TimeoutError')return D.TIMEOUT;
-  if(name==='TypeError'){
-    const message=boundedStringProperty(error,'message',512);
-    return message!==null&&message.startsWith(WORKERS_INVALID_REDIRECT_PREFIX)?D.RUNTIME_REDIRECT_MODE_REJECTED:D.FETCH_TYPE_ERROR;
-  }
-  if(name==='AbortError')return D.ABORTED;
-  if(name==='Error')return D.GENERIC_ERROR;
-  return D.UNKNOWN;
+  return {ok:true,init:{method:'GET',redirect:'error',headers:Object.freeze({'x-apisports-key':apiKey,accept:'application/json'})}};
 }
 
 function timeoutFailureReason(){return Object.assign(new Error('timeout'),{name:'TimeoutError'});}
+function isProviderTimeout(error,signal){
+  if(signal?.aborted&&signal.reason?.name==='TimeoutError')return true;
+  return error?.name==='TimeoutError';
+}
 function settleApiFootballFetch(fetchImpl,url,init,signal){
   return new Promise((resolve,reject)=>{
     let settled=false;
@@ -158,8 +112,7 @@ export async function sendApiFootballRequest({fetchImpl,url,init,timeoutSignal=A
     const response=await settleApiFootballFetch(fetchImpl,url,{...init,signal},signal);
     return Object.freeze({ok:true,response});
   }catch(error){
-    const timedOut=isProviderTimeout(error,signal);
-    return Object.freeze({ok:false,reason:timedOut?'provider_timeout':'transport_failure',transportDiagnostic:classifyApiFootballTransportException(error,{timedOut})});
+    return safeFailure(isProviderTimeout(error,signal)?'provider_timeout':'transport_failure');
   }
 }
 
@@ -224,7 +177,7 @@ export function createApiFootballClient({apiKey,fetchImpl,budget,timeoutSignal=A
     const sent=await sendApiFootballRequest({fetchImpl,url:pinned.url,init:requestInit.init,timeoutSignal});
     if(!sent.ok)return safeFailure(sent.reason==='provider_timeout'?'provider_timeout':sent.reason==='provider_disabled_configuration_invalid'?sent.reason:'provider_unavailable');
     const response=sent.response;
-    if(!response?.ok)return safeFailure(response?.status===429?'quota_exhausted':isApiFootballRedirectStatus(response?.status)?'redirect_rejected':'provider_unavailable');
+    if(!response?.ok)return safeFailure(response?.status===429?'quota_exhausted':'provider_unavailable');
     let payload;try{payload=await response.json();}catch{return safeFailure('provider_schema_invalid');}
     return decodeApiFootballResponse(payload,{endpoint:endpoint.replace(/^\//,'')});
   };

@@ -1,3 +1,16 @@
+## Transport-unknown remediation coverage
+
+`tests/api-football-transport-diagnostics.test.mjs` covers:
+- the exact request contract;
+- no `redirect:'error'`/Accept in Worker-reachable provider code;
+- snapshot-reproduced immutable Version bytes;
+- taxonomy and leakage cases (secret-like, oversized, NUL, Proxy, throwing getter, non-Error, cause);
+- unchanged HTTP outcomes plus 3xx rejection;
+- authenticated-only 409 header;
+- the continuation evidence allowlist.
+
+Generation regressions prove a thrown fetch still consumes attempt 1 once, fails the generation, clears the lease and never retries, and that a consumed `TRANSPORT_UNKNOWN` attempt cannot be reused. Full suite 2,527/2,527 on Node 24.19.0.
+
 ## Deployed one-shot continuation coverage
 
 `tests/api-football-deployed-one-shot-continuation.test.mjs` permanently proves: continuation admission accepts only the exact single inert Deployment and rejects zero/two Deployments, wrong ID/Version/percentage, workers.dev/Preview/Cron/route/domain presence, enabled collection, lease, non-pristine history, mapping/authority/migration drift, unreadable Deployment state and every other preflight stop reason; fresh Deployment GET and zone route scan precede the first mutation and any drift or missing/reused credential sends zero mutation or network request; the executor has no Deployment POST (allowlist, source and ceiling 0), workers.dev enable/disable and trigger at most once; cleanup is attempted for every post-enable failure with primary and cleanup failures distinct; reconciliation accepts a five-request committed generation, treats pristine history as a clean stop and fails closed on every unexpected state; `createDeploymentWithReadback` never submits a second POST and reads back exactly once on every ambiguity; and the workflow is manual, first-attempt-only, exact-main and least-privilege. `tests/api-football-deployed-one-shot.test.mjs` is updated for the corrected ambiguity semantics. See [continuation record](API-FOOTBALL-DEPLOYED-ONE-SHOT-CONTINUATION.md).

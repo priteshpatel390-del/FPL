@@ -91,7 +91,22 @@ function resolveSpecifier(repoPath,specifier){
   if(resolved.startsWith('../')||path.posix.isAbsolute(resolved)||!resolved.endsWith('.mjs'))fail('collector_staging_unresolved_import');
   return resolved;
 }
-export function resolveModuleGraph({readFile=repoPath=>fs.readFileSync(path.join(root,repoPath),'utf8')}={}){
+// The existing inactive Versions (original e49ac8f2 and attended 04d79556) are immutable. Two of their
+// reviewed modules have since been changed in the working tree (provider transport remediation), so the
+// reviewed graph reads those two paths from verbatim, SHA-256-pinned byte snapshots. Any snapshot drift
+// fails closed. A future new Version that should carry current-tree code needs its own reviewed path.
+export const REVIEWED_ATTENDED_MODULE_SNAPSHOTS=Object.freeze({
+  'src/decision-intelligence/api-football-foundation.mjs':Object.freeze({file:'workers/api-football-collector/reviewed-attended-module-snapshots/api-football-foundation.mjs.snapshot',sha256:'fecb1e70137c6a6cfda0a63f91f595497a973806a95e6ff500ac3124c29a2b9d'}),
+  'workers/api-football-collector/collector.mjs':Object.freeze({file:'workers/api-football-collector/reviewed-attended-module-snapshots/collector.mjs.snapshot',sha256:'15fef416230115fd87226a76ac02513f5d24de5bec88577c61e8ea85ee8e6f77'})
+});
+export function readReviewedAttendedModuleSource(repoPath){
+  const snapshot=REVIEWED_ATTENDED_MODULE_SNAPSHOTS[repoPath];
+  if(!snapshot)return fs.readFileSync(path.join(root,repoPath),'utf8');
+  const source=fs.readFileSync(path.join(root,snapshot.file),'utf8');
+  if(createHash('sha256').update(source).digest('hex')!==snapshot.sha256)fail('collector_staging_reviewed_snapshot_drift');
+  return source;
+}
+export function resolveModuleGraph({readFile=readReviewedAttendedModuleSource}={}){
   const reviewed=new Set(REVIEWED_MODULE_PATHS),seen=new Set(),sources=new Map(),queue=[ENTRY_PATH];
   while(queue.length){
     const repoPath=queue.shift();if(seen.has(repoPath))continue;

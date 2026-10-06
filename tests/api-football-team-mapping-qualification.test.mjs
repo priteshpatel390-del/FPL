@@ -126,7 +126,7 @@ test('attended harness uses one request normally, retains normalized evidence on
   const run=await providerUniverseEvidence(async(url,init)=>{
     calls+=1;
     assert.equal(String(url),'https://v3.football.api-sports.io/teams?league=39&season=2026');
-    assert.equal(init.method,'GET');assert.equal(init.redirect,'error');assert.equal(init.headers['x-apisports-key'],KEY);
+    assert.equal(init.method,'GET');assert.equal(init.redirect,'manual');assert.deepEqual(Object.keys(init.headers),['x-apisports-key']);assert.equal(init.headers['x-apisports-key'],KEY);
     return response(payload());
   });
   assert.equal(run.ok,true);assert.equal(run.decision,'EVIDENCE_CAPTURED');assert.equal(calls,1);assert.equal(run.attemptsUsed,1);assert.equal(run.retries,0);

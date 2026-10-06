@@ -81,3 +81,7 @@ The mutation token already performed Script Subdomain and D1 control mutations i
 - **Prerequisite:** `CLOUDFLARE_REPLACEMENT_TOPOLOGY_READ_TOKEN` was provisioned in `data-steward-readonly`. Before dispatch, the owner must also make the same read-only secret available to `api-football-attended-acceptance`. If it is absent, the executor stops before any network request as `DEPLOYED_ONE_SHOT_ENVIRONMENT_INCOMPLETE`.
 - Readiness proves Worker routing on workers.dev only; it cannot prove provider availability.
 - Success proves one shadow generation was persisted; it proves nothing about model value. Any model influence still requires prospective evidence, predeclared ablation and separate owner approval.
+
+## Later outcome
+
+The continuation run `37511401491` reached the single trigger and ended with attempt 1 `TRANSPORT_UNKNOWN`. Investigation and repository remediation: [transport-unknown remediation](API-FOOTBALL-TRANSPORT-UNKNOWN-REMEDIATION.md).

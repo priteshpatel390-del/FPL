@@ -1,3 +1,7 @@
+## Current API-Football checkpoint — transport-unknown repository remediation
+
+Repository-only draft PR: request contract correction plus closed transport diagnostic. Next gates are separate. (1) Owner merge approval. (2) A separately approved new reviewed Worker Version carrying the remediation. (3) An owner-gated admission policy and live plan for non-pristine history. No provider call is planned with Version `04d79556`. See [transport-unknown remediation](API-FOOTBALL-TRANSPORT-UNKNOWN-REMEDIATION.md).
+
 ## Current API-Football checkpoint — deployed one-shot continuation
 
 Owner-approved live one-shot run `37505586273` (starting main `a8d4e78f022259868208e097fc779f9de768b2f6`, PR #311, attempt 1) is **consumed and must never be rerun**. It submitted exactly one Deployment creation POST, its immediate response handling classified the result ambiguous and stopped fail-closed (`DEPLOYED_ONE_SHOT_DEPLOYMENT_AMBIGUOUS`; no trigger, no provider request, cleanup succeeded), and the independent final reconciliation then proved the POST had applied: exact Deployment `2417a3e0-15db-4e45-a3c8-00b148a300f4` selects reviewed attended Version `04d79556-3070-429f-9944-b5b53d799842` at 100%, workers.dev/Preview/Cron/routes/domains are off or zero, collection is disabled, credential `AVAILABLE`, provider history is pristine and production is inert (`DEPLOYED_ONE_SHOT_CLEAN_STOP_NO_PROVIDER_REQUEST`). That inert Deployment is now accepted live state: do not delete, recreate or modify it, and submit no further Deployment POST on the continuation path.
