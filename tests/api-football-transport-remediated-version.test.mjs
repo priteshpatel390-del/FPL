@@ -494,7 +494,7 @@ test('executor uses Cloudflare GET-only state/topology reads plus one Version PO
   for(const call of fake.calls){
     assert.ok(['GET','POST'].includes(call.method));
     if(call.method==='POST')assert.equal(call.requestPath,paths.versions);
-    assert.doesNotMatch(call.requestPath,/d1/database/);
+    assert.doesNotMatch(call.requestPath,/d1\/database/);
   }
   assert.ok(fake.calls.some(c=>c.method==='GET'&&c.requestPath===paths.subdomain));
   assert.ok(fake.calls.some(c=>c.method==='GET'&&c.requestPath===paths.schedules));
