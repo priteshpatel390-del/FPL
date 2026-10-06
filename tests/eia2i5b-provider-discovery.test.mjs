@@ -655,6 +655,7 @@ test('API-Football discovery stays isolated from production, live config and mig
     'api-football-version-url-creation-experiment.yml',
     'api-football-replacement-inactive-foundation.yml',
     'api-football-replacement-one-version-reconciliation.yml',
+    'api-football-replacement-topology-closeout.yml',
     'api-football-replacement-shell-recovery.yml',
     'api-football-attended-preparation-start-readonly.yml',
     'api-football-attended-preparation.yml',
@@ -785,6 +786,16 @@ test('API-Football discovery stays isolated from production, live config and mig
       assert.match(source,/Tests and deterministic build/);
       assert.match(source,/995b0396-a61e-4bee-a405-aa6b3f765e5c/);
       assert.doesNotMatch(source,/CLOUDFLARE_REPLACEMENT_MUTATION_TOKEN|secrets\.API_FOOTBALL_API_KEY|API_FOOTBALL_ATTENDED_TRIGGER_SECRET|x-apisports-key|v3\.football\.api-sports\.io|\/d1\/database\/|wrangler\s+deploy|versions\s+upload|method:\s*(?:POST|PUT|PATCH|DELETE)|^\s{2}schedule:/im);
+      continue;
+    }
+    if(file==='api-football-replacement-topology-closeout.yml'){
+      assert.match(source,/name: API-Football Replacement Topology Closeout/);
+      assert.match(source,/name: data-steward-readonly/);
+      assert.match(source,/CLOUDFLARE_REPLACEMENT_TOPOLOGY_READ_TOKEN/);
+      assert.match(source,/replacement-topology-closeout\.mjs/);
+      assert.match(source,/github\.run_attempt == 1/);
+      assert.match(source,/Tests and deterministic build/);
+      assert.doesNotMatch(source,/CLOUDFLARE_REPLACEMENT_MUTATION_TOKEN|secrets\.API_FOOTBALL_API_KEY|API_FOOTBALL_ATTENDED_TRIGGER_SECRET|x-apisports-key|v3\.football\.api-sports\.io|\/d1\/database\/|wrangler\s+deploy|versions\s+upload|replacement-one-version-reconciliation|method:\s*(?:POST|PUT|PATCH|DELETE)|^\s{2}schedule:/im);
       continue;
     }
     if(file==='api-football-replacement-shell-recovery.yml'){
