@@ -389,15 +389,15 @@ test('guarded fetch allows Cloudflare GETs plus exactly one Version POST and for
 function fakeCloudflare({post='created',versionsAfter=null,deployments=[exactDeploymentRow],versions=[...TRANSPORT_REMEDIATED_HISTORICAL_VERSION_IDS],
   subdomain={enabled:false,previews_enabled:false},schedules=[],domains=[]}={}){
   const calls=[];let current=[...versions];
-  const json=(body,status=200)=>new Response(JSON.stringify({success:true,result:body}),{status,headers:{'content-type':'application/json'}});
+  const json=(body,status=200)=>new Response(JSON.stringify(body),{status,headers:{'content-type':'application/json'}});
   const fetchImpl=async(url,init={})=>{
     const method=String(init.method||'GET').toUpperCase(),requestPath=new URL(String(url)).pathname.slice('/client/v4'.length)+new URL(String(url)).search;
     calls.push({method,requestPath,authorization:init.headers?.Authorization,body:init.body});
-    if(method==='GET'&&requestPath===paths.deployments)return json({deployments});
-    if(method==='GET'&&requestPath===paths.versionList)return json({items:current.map(id=>({id}))});
-    if(method==='GET'&&requestPath===paths.subdomain)return json(subdomain);
-    if(method==='GET'&&requestPath===paths.schedules)return json({schedules});
-    if(method==='GET'&&requestPath===paths.domains)return json(domains);
+    if(method==='GET'&&requestPath===paths.deployments)return json({success:true,result:{deployments}});
+    if(method==='GET'&&requestPath===paths.versionList)return json({success:true,result:{items:current.map(id=>({id}))}});
+    if(method==='GET'&&requestPath===paths.subdomain)return json({success:true,result:subdomain});
+    if(method==='GET'&&requestPath===paths.schedules)return json({success:true,result:{schedules}});
+    if(method==='GET'&&requestPath===paths.domains)return json({success:true,result:domains});
     if(method==='POST'&&requestPath===paths.versions){
       if(post==='rejected')return json({success:false,errors:[{code:10000}]},403);
       if(post==='transport')throw new TypeError('socket hang up');
