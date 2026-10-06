@@ -1,6 +1,5 @@
 # Historical Records Index
 
-- [API-Football Shadow Collection Restart](API-FOOTBALL-SHADOW-COLLECTION-RESTART.md) — current restart record: replacement-v2 recovery is no longer a product prerequisite; one topology-only abandoned-resource closeout precedes the separately gated real one-shot shadow collection on the original collector.
 - [API-Football Shadow Collection Restart](API-FOOTBALL-SHADOW-COLLECTION-RESTART.md) — current restart record that retires replacement-v2 recovery as a product prerequisite, adds one final read-only topology closeout, and defines the next controlled deployed shadow-collection gate; no live provider or model activation is authorized.
 - [API-Football Replacement Inactive Collector Foundation](API-FOOTBALL-REPLACEMENT-INACTIVE-COLLECTOR-FOUNDATION.md) — repository-only candidate for a distinct initially Preview-capable, production-inactive collector, one reviewed Version, secret-free routing proof and exact inactive reconciliation; no live replacement exists.
 - [API-Football Replacement Shell-Only Recovery](API-FOOTBALL-REPLACEMENT-SHELL-RECOVERY.md) — repository-only continuation for exact inactive replacement Worker shell `af6b59302acf49728e7deeb2f951397f` after consumed run `36770767679`; no Worker recreation, provider egress, D1 mutation or live dispatch is authorized.
