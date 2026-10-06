@@ -1,6 +1,8 @@
 # API-Football Controlled Deployed One-Shot Shadow Collection
 
 Date: 6 October 2026
+
+> **Consumed.** Workflow run `37505586273` ran this path once on main `a8d4e78f022259868208e097fc779f9de768b2f6`: its single Deployment POST applied (exact Deployment `2417a3e0-15db-4e45-a3c8-00b148a300f4`) although the response was classified ambiguous, and production finished inert with no provider request. It must never be rerun. Its zero-Deployment start assumption is superseded by [API-FOOTBALL-DEPLOYED-ONE-SHOT-CONTINUATION.md](API-FOOTBALL-DEPLOYED-ONE-SHOT-CONTINUATION.md); the text below is the historical design record.
 Status: owner-approved **repository implementation only**. Nothing in this record has been executed live. Dispatch of the workflow, any Cloudflare Deployment, workers.dev change, D1 collection enablement, trigger request or API-Football request requires a separate explicit owner approval after draft-PR review, exact-head green CI, owner-approved merge and post-merge exact-main verification.
 
 ## Starting state
