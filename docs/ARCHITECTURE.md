@@ -1,6 +1,6 @@
 ## Remediated Version preparation architecture
 
-Two separate module-graph contracts: the historical snapshot-backed builder reproduces immutable Version `04d79556`; `transport-remediated-version.mjs` reads the current tree for the same 17 reviewed paths and pins their hashes. The Version-upload executor reaches Cloudflare only through a guarded fetch (API host only; GET; one Version POST; read-only critical-recheck D1 query). Reconciliation reads state only and proves a new Version created but not deployed. See [remediated reviewed Version preparation](API-FOOTBALL-REMEDIATED-REVIEWED-VERSION-PREPARATION.md).
+Two separate module-graph contracts: the historical snapshot-backed builder reproduces immutable Version `04d79556`; `transport-remediated-version.mjs` reads the current tree for the same 17 reviewed paths and pins their hashes. The Version-upload executor reaches Cloudflare only through a guarded fetch (API host only; Cloudflare GETs plus one Version POST; no D1 endpoint). D1/history truth comes only from the hash-bound read-only admission, while the protected executor freshly rechecks Cloudflare inert topology, Deployment and Version inventory. Reconciliation reads state only and proves a new Version created but not deployed. See [remediated reviewed Version preparation](API-FOOTBALL-REMEDIATED-REVIEWED-VERSION-PREPARATION.md).
 
 ## Provider transport contract and closed transport diagnostic
 
