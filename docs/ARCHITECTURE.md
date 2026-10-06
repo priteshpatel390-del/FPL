@@ -1,3 +1,9 @@
+## Deployed one-shot shadow collection architecture
+
+The first real API-Football collection path is a Deployment, not a Preview URL. Three new modules sit beside the existing collector without changing it: `deployed-one-shot.mjs` (pure contracts, classifiers and the cleanup-always orchestrator), `deployed-one-shot-readonly.mjs` (admission and reconciliation, reusing the `VERSION_URL_CREATION_EXPERIMENT_CLOSEOUT` live preflight, one Deployments read and the existing zone-scoped Workers Routes scan, now parameterised by Worker name) and `run-deployed-one-shot.mjs` (protected executor with a closed endpoint allowlist). The workflow chain is repository gate → read-only admission (`data-steward-readonly`) → protected execution (`api-football-attended-acceptance`) → always-run read-only reconciliation.
+
+Execution order: critical recheck, create Deployment of the exact attended Version at 100%, read it back, enable workers.dev only, prove the collector's 404 signature at `https://teamsheet-api-football-shadow-collector.<account-subdomain>.workers.dev/__teamsheet/api-football/attended-one-shot`, enable collection, one trigger POST, then disable collection and workers.dev on every exit. The collector's existing `fetch()` guard, `runScheduledCollector` composition, five-request discovery plan, reservation/lease/quota controls, semantic validation and atomic generation persistence do the provider work unchanged. After the run the Deployment remains with no traffic surface. See [API-FOOTBALL-DEPLOYED-ONE-SHOT-COLLECTION.md](API-FOOTBALL-DEPLOYED-ONE-SHOT-COLLECTION.md). No model or UI import is introduced.
+
 ## API-Football restart architecture — topology closeout, then real collection
 
 The active architecture no longer depends on the replacement-v2 Version Preview path. Replacement recovery remains historical evidence only.

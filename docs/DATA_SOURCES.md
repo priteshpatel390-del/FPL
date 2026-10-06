@@ -1,3 +1,7 @@
+## Deployed one-shot shadow collection — no source or provider-scope change
+
+The one-shot path reuses the existing five fixture-discovery queries for the approved competitions, the existing response-byte and row ceilings, semantic validation, 20/20 mapping and normalized shadow persistence. No new endpoint, competition, lineup/player/event detail, raw-payload retention or model input is added. The executor makes no provider request itself and never holds the API key. Nothing has been collected yet.
+
 ## API-Football Shadow Collection Restart — no source or provider-scope change
 
 The 6 October 2026 restart changes sequencing, not the provider contract. API-Football remains approved only for private shadow evidence under the existing owner-risk boundary, with Official FPL authoritative for Premier League identity.

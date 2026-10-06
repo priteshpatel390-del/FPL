@@ -1,3 +1,7 @@
+## Deployed one-shot shadow collection limitations
+
+The one-shot workflow is implemented in the repository but has never run. No successful production API-Football collection exists. The repository cannot read Cloudflare token scopes, so the existing `CLOUDFLARE_ATTENDED_MUTATION_TOKEN` is assumed (not proven) to carry Workers Scripts Edit for the Deployments endpoint; a missing scope fails closed before any traffic surface. The protected critical recheck does not repeat the zone-route scan because the topology credential is deliberately kept out of the mutation environment; admission and reconciliation both scan. Readiness proves workers.dev routing only, not provider availability. A successful run proves one persisted shadow generation and nothing about model value. See [API-FOOTBALL-DEPLOYED-ONE-SHOT-COLLECTION.md](API-FOOTBALL-DEPLOYED-ONE-SHOT-COLLECTION.md).
+
 ## API-Football restart limitations
 
 Replacement-v2 Version content is intentionally no longer being reconciled. The last recovery run stopped at replacement_reconciliation_stable_version_read_failed. The restart does not resolve or reinterpret that historical failure.
