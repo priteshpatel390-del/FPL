@@ -1,6 +1,6 @@
 ## Remediated Version preparation limitations
 
-Nothing is uploaded: the corrected request is not live and Version `04d79556` still fails every provider request the old way. The Version-upload response shape and ambiguity behaviour are proven only against fakes until Gate A. `NOT_APPLIED` is a bounded-readback observation, not proof of absence. Historical Versions other than the retained attended Version are checked by id after upload. The Gate A policy of exactly one Deployment must not be reused for later promotions. See [remediated reviewed Version preparation](API-FOOTBALL-REMEDIATED-REVIEWED-VERSION-PREPARATION.md).
+Nothing is uploaded: the corrected request is not live and Version `04d79556` still fails every provider request the old way. The Version-upload response shape and ambiguity behaviour are proven only against fakes until Gate A. Bounded absence after an ambiguous upload is deliberately not treated as `NOT_APPLIED`; it remains owner-attention with no retry. Historical Versions other than the retained attended Version are checked by id after upload. The Gate A policy of exactly one Deployment must not be reused for later promotions. See [remediated reviewed Version preparation](API-FOOTBALL-REMEDIATED-REVIEWED-VERSION-PREPARATION.md).
 
 ## Run 37511401491 transport-unknown limitations
 
