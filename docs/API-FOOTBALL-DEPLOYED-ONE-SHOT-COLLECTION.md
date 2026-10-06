@@ -1,5 +1,7 @@
 # API-Football Controlled Deployed One-Shot Shadow Collection
 
+> **Superseding next step:** see the [remediated reviewed Version preparation](API-FOOTBALL-REMEDIATED-REVIEWED-VERSION-PREPARATION.md); this one-shot workflow is consumed and its historical zero-Deployment admission is unchanged.
+
 Date: 6 October 2026
 
 > **Consumed.** Workflow run `37505586273` ran this path once on main `a8d4e78f022259868208e097fc779f9de768b2f6`: its single Deployment POST applied (exact Deployment `2417a3e0-15db-4e45-a3c8-00b148a300f4`) although the response was classified ambiguous, and production finished inert with no provider request. It must never be rerun. Its zero-Deployment start assumption is superseded by [API-FOOTBALL-DEPLOYED-ONE-SHOT-CONTINUATION.md](API-FOOTBALL-DEPLOYED-ONE-SHOT-CONTINUATION.md); the text below is the historical design record.

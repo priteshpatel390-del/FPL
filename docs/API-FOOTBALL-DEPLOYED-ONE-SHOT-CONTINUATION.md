@@ -1,5 +1,7 @@
 # API-Football Deployed One-Shot Continuation from the Existing Inert Deployment
 
+> **Superseding next step:** this continuation is consumed. Any new live use needs the [remediated reviewed Version preparation](API-FOOTBALL-REMEDIATED-REVIEWED-VERSION-PREPARATION.md) (Gate A), a separate promotion (Gate B) and an owner-gated admission for the consumed history (Gate C).
+
 Date: 6 October 2026
 Status: owner-approved **repository implementation only**. Nothing here has been executed live. Dispatching the continuation workflow, enabling workers.dev, mutating D1, sending the trigger and every API-Football request each require a **new explicit owner approval** after draft-PR review, exact-head green CI, owner-approved merge and post-merge exact-main verification.
 

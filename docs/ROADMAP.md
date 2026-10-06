@@ -1,3 +1,7 @@
+## Current API-Football checkpoint — remediated reviewed Version preparation (Gate A)
+
+Repository-only draft PR. Next gates are separate: (1) owner merge approval; (2) exact-main verification and owner provisioning of the `api-football-remediated-version-upload` environment; (3) Gate A one-time live Version upload plus reconciliation; (4) Gate B Deployment promotion; (5) Gate C new-day collection with owner-gated admission for the consumed history. See [remediated reviewed Version preparation](API-FOOTBALL-REMEDIATED-REVIEWED-VERSION-PREPARATION.md).
+
 ## Current API-Football checkpoint — transport-unknown repository remediation
 
 Repository-only draft PR: request contract correction plus closed transport diagnostic. Next gates are separate. (1) Owner merge approval. (2) A separately approved new reviewed Worker Version carrying the remediation. (3) An owner-gated admission policy and live plan for non-pristine history. No provider call is planned with Version `04d79556`. See [transport-unknown remediation](API-FOOTBALL-TRANSPORT-UNKNOWN-REMEDIATION.md).

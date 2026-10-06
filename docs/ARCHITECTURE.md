@@ -1,3 +1,7 @@
+## Remediated Version preparation architecture
+
+Two separate module-graph contracts: the historical snapshot-backed builder reproduces immutable Version `04d79556`; `transport-remediated-version.mjs` reads the current tree for the same 17 reviewed paths and pins their hashes. The Version-upload executor reaches Cloudflare only through a guarded fetch (API host only; GET; one Version POST; read-only critical-recheck D1 query). Reconciliation reads state only and proves a new Version created but not deployed. See [remediated reviewed Version preparation](API-FOOTBALL-REMEDIATED-REVIEWED-VERSION-PREPARATION.md).
+
 ## Provider transport contract and closed transport diagnostic
 
 Worker provider fetch: GET, `redirect:'manual'`, every 3xx rejected as `redirect_rejected`, header set exactly `x-apisports-key`. A thrown fetch keeps the coarse safety reason (`provider_timeout`/`transport_failure`, persisted `TIMEOUT`/`TRANSPORT_UNKNOWN`). It adds a separate closed `transportDiagnostic` enum, reported only via the sanitized event allowlist and an allowlisted authenticated-409 header. The historical module graph reads changed reviewed modules from pinned byte snapshots, so immutable Version identity stays provable. See [transport-unknown remediation](API-FOOTBALL-TRANSPORT-UNKNOWN-REMEDIATION.md).

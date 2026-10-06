@@ -1,3 +1,7 @@
+## Remediated Version preparation — no source or provider-scope change
+
+Same provider, origin, endpoints, credential and ceilings. The new path makes zero API-Football requests; the corrected request contract (GET, `redirect:'manual'`, header `x-apisports-key` only) is carried only in the bytes of a future Version. See [remediated reviewed Version preparation](API-FOOTBALL-REMEDIATED-REVIEWED-VERSION-PREPARATION.md).
+
 ## Transport-unknown remediation — no source or provider-scope change
 
 Same provider, origin, endpoints, credential and ceilings. The request header set is narrowed to the documented `x-apisports-key`, and redirects are never followed. See [transport-unknown remediation](API-FOOTBALL-TRANSPORT-UNKNOWN-REMEDIATION.md).

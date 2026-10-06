@@ -1,3 +1,7 @@
+## Remediated Version upload — network and credential boundary
+
+The protected executor uses three distinct credentials (read, Version upload, topology read) and the two secret binding values only to build the one upload form; none is serialized. A guarded fetch refuses every host except `api.cloudflare.com`, every method except GET, one Version POST (upload credential only) and a read-only critical-recheck D1 query, so Deployment, workers.dev/Preview, D1 writes, schedules, routes, domains, DELETE/PUT, any Worker invocation and API-Football egress are impossible. Re-runs are refused. See [remediated reviewed Version preparation](API-FOOTBALL-REMEDIATED-REVIEWED-VERSION-PREPARATION.md).
+
 ## Transport diagnostic exposes closed enums only
 
 The transport classifier reads only an exact error `name` and one fixed message prefix inside try/catch. It never copies message, stack, cause, URL, headers or key. The 409 diagnostic header is emitted only to an authenticated attended caller and only for allowlisted values. `redirect:'manual'` with 3xx rejection prevents the credential header being forwarded to any redirect target (Workers `follow` forwards all headers cross-host). See [transport-unknown remediation](API-FOOTBALL-TRANSPORT-UNKNOWN-REMEDIATION.md).

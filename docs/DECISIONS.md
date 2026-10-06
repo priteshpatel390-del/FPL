@@ -1,3 +1,7 @@
+## 2026-10-06 — prepare the corrected collector as a new, separately identified Version; never reuse the historical builder
+
+Decision: keep historical Version reproduction (snapshot-backed) and the new remediated Version (current tree, pinned hashes) as separate contracts; admit the future upload only against the exact consumed history and exact retained Deployment; allow exactly one Version upload POST with bounded read-only ambiguity resolution; leave Deployment promotion and any new collection as separate later gates; reset nothing. Rationale: using the historical builder would re-upload the broken request, and a promotion or provider call cannot be bundled with creation without losing the inert-state proof. See [remediated reviewed Version preparation](API-FOOTBALL-REMEDIATED-REVIEWED-VERSION-PREPARATION.md).
+
 ## 2026-10-06 — fix the Worker provider request contract and add a closed transport diagnostic without changing safety semantics
 
 Decision: replace the Workers-rejected `redirect:'error'` with `manual` plus explicit 3xx rejection, and drop the undocumented `accept` header. Keep `TRANSPORT_UNKNOWN` consumption and no-retry exactly as before. Expose a closed diagnostic only through allowlisted channels, with no D1 migration. Do not reset the consumed run `37511401491` history. Do not make any provider call with Version `04d79556`. Rationale and future options: [transport-unknown remediation](API-FOOTBALL-TRANSPORT-UNKNOWN-REMEDIATION.md).

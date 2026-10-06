@@ -1,3 +1,7 @@
+## Remediated Version preparation limitations
+
+Nothing is uploaded: the corrected request is not live and Version `04d79556` still fails every provider request the old way. The Version-upload response shape and ambiguity behaviour are proven only against fakes until Gate A. `NOT_APPLIED` is a bounded-readback observation, not proof of absence. Historical Versions other than the retained attended Version are checked by id after upload. The Gate A policy of exactly one Deployment must not be reused for later promotions. See [remediated reviewed Version preparation](API-FOOTBALL-REMEDIATED-REVIEWED-VERSION-PREPARATION.md).
+
 ## Run 37511401491 transport-unknown limitations
 
 The deployed Version recorded no exception class, so the `redirect:'error'` cause is a strong inference, not an observation. The remediated code is not live: Version `04d79556` still carries the old contract and would fail every provider request the same way. The new diagnostic is not durable in D1; it reaches only sanitized logs and authenticated 409 evidence. Network-layer failures that throw a generic TypeError/Error cannot be subdivided further without reading free text. Cloudflare's Request reference still lists `error` as a redirect mode, contrary to the runtime. See [transport-unknown remediation](API-FOOTBALL-TRANSPORT-UNKNOWN-REMEDIATION.md).
