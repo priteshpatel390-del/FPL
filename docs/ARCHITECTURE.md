@@ -1,3 +1,9 @@
+## Closed endpoint-class diagnostics for replacement reads
+
+Standard replacement Cloudflare reads fail closed with fixed repository-owned endpoint classes: Worker inventory, legacy Scripts inventory, custom domains, subdomain state, Deployments, schedules, Version inventory, stable Version detail and beta Version/modules detail. Transport failures, non-JSON/invalid JSON and non-success API envelopes for a given read collapse to that read's same fixed class.
+
+The error code identifies only which repository read boundary failed. It never includes the requested URL, account/Worker/Version identifiers, HTTP status/body, Cloudflare error messages, transport exception text or credentials. Topology route reads retain their separate closed topology diagnostics.
+
 ## Nullable legacy Scripts route metadata
 
 The replacement state reader has two route surfaces with different authority. The dedicated zone-scoped Workers Routes scan is authoritative. The legacy List Worker Scripts row is only a secondary cross-check. Its optional `routes` field may be absent or null; either state now means "legacy route count unavailable" and leaves `legacyRouteCount:null`. It never implies zero routes.

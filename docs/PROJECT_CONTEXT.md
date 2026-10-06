@@ -1,3 +1,9 @@
+## Per-endpoint replacement read diagnostics after run 37485321534
+
+Read-only run `37485321534` on exact main `8378f41f3c44cbbc2b1b97155615794536dbecde` passed repository admission and the original collector/D1/runtime re-proof, then stopped at a standard Cloudflare read with the repository's generic `replacement_reconciliation_read_failed` reason. The run made zero production mutations, zero API-Football requests and read no secret values; safe replacement state was not proved and retry remained unauthorized.
+
+The approved repository remediation changes diagnostics only. Each standard replacement read now has a fixed repository-owned endpoint-class failure code. No HTTP/transport/payload detail is retained and no acceptance rule changes.
+
 ## Nullable legacy route inventory after run 37481520674
 
 Read-only reconciliation run `37481520674` on exact main `ff52b2e5f517ac81ad83e260e5639739456752ed` passed repository admission and original collector/D1/runtime re-proof, then stopped only because the replacement Worker was present in the legacy Scripts inventory with `routes` not represented as an array. The retained result was `replacement_reconciliation_legacy_route_inventory_invalid`; production mutations, API-Football requests and secret-value reads were all zero.

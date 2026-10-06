@@ -1,3 +1,9 @@
+## Current checkpoint — per-endpoint replacement read diagnostics after run 37485321534
+
+Owner-approved read-only one-Version reconciliation run `37485321534`, attempt 1, on exact main `8378f41f3c44cbbc2b1b97155615794536dbecde` passed the repository gate and independently re-proved the original collector/D1/runtime state, then stopped fail-closed as `replacement_reconciliation_read_failed`. Artifact evidence recorded `productionMutations:0`, `apiFootballRequests:0`, `secretValuesRead:0`, `safeStateProved:false` and `retryAuthorized:false`. The run is consumed and must not be rerun.
+
+Owner approval covers repository diagnostics only: replace the generic standard Cloudflare read failure with closed endpoint-class errors for Worker inventory, legacy Scripts, custom domains, subdomain/Preview state, Deployments, schedules, Version inventory, stable Version detail and beta Version/modules detail. The diagnostic must never retain URL/account identifiers, HTTP status/body, transport text, credentials or arbitrary remote payload values. Read semantics, accepted live state and every no-mutation/no-provider boundary remain unchanged. **No live reconciliation dispatch, Preview change, Version upload, D1 mutation, provider request or merge is authorized without later explicit gates.**
+
 ## Current checkpoint — nullable legacy route inventory remediation after run 37481520674
 
 Owner-approved read-only one-Version reconciliation run `37481520674`, attempt 1, on exact main `ff52b2e5f517ac81ad83e260e5639739456752ed` passed the repository gate and original collector/D1/runtime re-proof, then stopped fail-closed as `replacement_reconciliation_legacy_route_inventory_invalid`. Artifact evidence recorded `productionMutations:0`, `apiFootballRequests:0`, `secretValuesRead:0`, `safeStateProved:false` and `retryAuthorized:false`. The run is consumed and must not be rerun.

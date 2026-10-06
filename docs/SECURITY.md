@@ -1,3 +1,9 @@
+## Replacement read diagnostics expose endpoint class only
+
+Per-endpoint standard-read failures are fixed repository-owned enums. They do not retain request URLs, account IDs, Worker IDs, Version IDs, HTTP status/body, Cloudflare error content, transport exception text, authorization headers or credentials. Raw remote payloads remain excluded from artifacts.
+
+No permission or mutation capability changes. The same read-only credentials and exact endpoint set are used, and topology diagnostics remain separate.
+
 ## Nullable legacy route handling preserves the route safety boundary
 
 Missing or null `routes` in the legacy Scripts row is treated only as unavailable secondary metadata. It is never converted to a zero-route claim. The dedicated zone-scoped Workers Routes scan remains mandatory for the one-Version closeout. A legacy array is cross-checked; malformed non-null values fail closed.
