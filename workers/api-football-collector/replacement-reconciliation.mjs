@@ -102,8 +102,9 @@ export async function readReplacementState({account,token,topologyToken=null,ver
   const versionRows=list(await request(paths.replacementVersions,{token,fetchImpl}),'items'),versionIds=versionRows.map(row=>row?.id).filter(id=>typeof id==='string');
   let legacyRouteCount=null;
   if(script){
-    if(!Array.isArray(script.routes))fail('replacement_reconciliation_legacy_route_inventory_invalid');
-    legacyRouteCount=script.routes.length;
+    if(script.routes==null)legacyRouteCount=null;
+    else if(!Array.isArray(script.routes))fail('replacement_reconciliation_legacy_route_inventory_invalid');
+    else legacyRouteCount=script.routes.length;
   }
   let routeCount,routeProof,topologyZoneCount=null,topologyRouteRowCount=null;
   if(topology){

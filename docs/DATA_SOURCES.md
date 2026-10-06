@@ -1,3 +1,7 @@
+## Nullable legacy route remediation — no source change
+
+Run `37481520674` made zero API-Football requests and no production data mutation. Handling optional legacy Cloudflare route metadata changes no provider, acquisition, retention, normalization, fallback, model input or product path. API-Football remains dormant/shadow-only and Official FPL authority is unchanged.
+
 ## Replacement route-inventory diagnostics — no source change
 
 Run `37365722097` made zero API-Football requests and changed no production data. The repository diagnostic remediation observes only Cloudflare topology metadata and changes no provider, field, acquisition, retention, fallback, model input or product path. API-Football remains dormant/shadow-only and Official FPL authority is unchanged.

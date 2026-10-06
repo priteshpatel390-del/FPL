@@ -1,3 +1,9 @@
+## Current API-Football replacement checkpoint — nullable legacy route remediation
+
+Run `37481520674` reduced the remaining blocker to one repository false-negative: nullable/omitted legacy Scripts `routes` metadata. Current approved work is repository-only handling of that optional field while preserving the independent zone-route proof as authoritative.
+
+After tests, deterministic build, review, merge and exact-main verification, a separately approved read-only reconciliation may re-prove the exact one-Version replacement state. No live mutation or provider activity belongs to this checkpoint.
+
 ## Current API-Football replacement checkpoint — diagnose route inventory shape
 
 Read-only run `37365722097` proved the original collector/D1 side remains healthy but stopped on the replacement zone-route inventory validator. The immediate work is repository-only diagnostic refinement: preserve the existing one-Version state and all zero-topology requirements, expose only a closed field-level route-shape reason, run the full suite/deterministic build and review a draft PR.

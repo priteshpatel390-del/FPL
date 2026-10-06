@@ -1,3 +1,9 @@
+## Nullable legacy route handling preserves the route safety boundary
+
+Missing or null `routes` in the legacy Scripts row is treated only as unavailable secondary metadata. It is never converted to a zero-route claim. The dedicated zone-scoped Workers Routes scan remains mandatory for the one-Version closeout. A legacy array is cross-checked; malformed non-null values fail closed.
+
+No credential, permission, retained remote value or mutation capability changes. Zone IDs, route IDs, patterns, script names and raw Cloudflare response content remain excluded from retained evidence.
+
 ## Route-inventory diagnostic evidence remains closed
 
 The remediation for run `37365722097` does not retain raw Cloudflare route responses. Diagnostics are restricted to repository-owned enums for result/row/id/pattern/script/legacy-array shape plus bounded numeric counts. Zone IDs, zone names, route IDs, route patterns, Worker script names from remote rows, authorization material and arbitrary remote text are excluded from retained evidence.
