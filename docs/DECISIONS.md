@@ -1,3 +1,13 @@
+## 2026-10-06 — stop replacement recovery as a prerequisite and restart real shadow collection
+
+**Decision:** replacement Worker teamsheet-api-football-shadow-collector-v2 is no longer a prerequisite for API-Football progress. Preserve its history, perform at most one final read-only traffic-topology closeout, then return to the original collector for the first real shadow collection.
+
+**Evidence:** run 37487927623 on exact main a88512b2f24977f32d378e7b4658864475f72843 passed repository admission and original collector/D1/runtime re-proof, then stopped at replacement_reconciliation_stable_version_read_failed with zero production mutations and zero API-Football requests. This is replacement-recovery evidence, not evidence that the production shadow collector cannot operate.
+
+**Closeout boundary:** the abandoned-resource check may prove only workers.dev/Preview off and zero Deployments/Cron/zone routes/custom domains, using readReplacementState with versionId=null. It must not repair or validate replacement Version content and may not mutate Cloudflare or D1.
+
+**Next real gate:** after closeout PASS, separately review and approve implementation of one deployed attended shadow run on the original collector, using the existing reviewed Version, existing trigger-secret guard, existing D1 safety controls and existing five-discovery-request ceiling. Cron and model/product influence remain later independent gates.
+
 ## 2026-10-06 — identify standard replacement read boundaries without remote detail
 
 **Decision:** consume run `37485321534` and replace the generic `replacement_reconciliation_read_failed` outcome with one closed repository-owned failure code per standard replacement read boundary.

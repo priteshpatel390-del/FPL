@@ -1,3 +1,13 @@
+## API-Football restart architecture — topology closeout, then real collection
+
+The active architecture no longer depends on the replacement-v2 Version Preview path. Replacement recovery remains historical evidence only.
+
+The final abandoned-resource closeout reuses readReplacementState with versionId=null. That preserves the existing modern Worker inventory, Script Subdomain, Deployments, schedules, Version-list, custom-domain and independent zone-route reads while structurally skipping stable and beta Version-detail reads. Successful closeout requires only traffic-surface safety; it does not validate module bytes, annotations, bindings or Version provenance.
+
+After that closeout, the intended one-shot shadow path returns to teamsheet-api-football-shadow-collector. The design uses the existing reviewed attended Version, a real Cloudflare Deployment, no Cron/routes/custom domains, temporary workers.dev exposure for the already-guarded attended HTTP endpoint, existing D1 collection enable/disable controls, exactly one authenticated trigger POST, and the existing maximum five discovery requests. Cleanup disables collection and workers.dev on every exit. The Deployment itself may remain inert after acceptance when all traffic surfaces are off.
+
+No model or UI import is introduced by this restart.
+
 ## Closed endpoint-class diagnostics for replacement reads
 
 Standard replacement Cloudflare reads fail closed with fixed repository-owned endpoint classes: Worker inventory, legacy Scripts inventory, custom domains, subdomain state, Deployments, schedules, Version inventory, stable Version detail and beta Version/modules detail. Transport failures, non-JSON/invalid JSON and non-success API envelopes for a given read collapse to that read's same fixed class.

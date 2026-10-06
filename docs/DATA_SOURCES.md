@@ -1,3 +1,11 @@
+## API-Football Shadow Collection Restart — no source or provider-scope change
+
+The 6 October 2026 restart changes sequencing, not the provider contract. API-Football remains approved only for private shadow evidence under the existing owner-risk boundary, with Official FPL authoritative for Premier League identity.
+
+The abandoned replacement topology closeout makes zero API-Football requests and stores no provider data. It does not change acquisition endpoints, retention, normalization, mappings, fallback or provenance.
+
+The next real collection design reuses the already-approved five fixture-discovery queries and existing normalized shadow persistence. No new endpoint, competition, workload-detail source, raw-payload retention or model input is approved by the restart.
+
 ## Per-endpoint replacement read diagnostics — no source change
 
 Run `37485321534` made zero API-Football requests and no production data mutation. Splitting Cloudflare infrastructure read failures into closed endpoint classes changes no provider, acquisition, retention, normalization, fallback, model input or product path. API-Football remains dormant/shadow-only and Official FPL authority is unchanged.

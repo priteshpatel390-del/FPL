@@ -1,3 +1,9 @@
+## API-Football Shadow Collection Restart security boundary
+
+The abandoned replacement closeout is strictly read-only. It uses the existing Workers/D1 read credential plus the distinct zone-route read credential, calls no provider, reads no provider secret value and has no Cloudflare or D1 mutation path. Retained evidence is limited to bounded topology booleans/counts; route IDs/patterns, account identifiers, credentials and raw remote payloads remain excluded.
+
+The future deployed one-shot design is not implemented by this checkpoint. Its proposed security boundary reuses the existing secret-bearing attended Version and constant-time trigger-secret guard, exposes only workers.dev temporarily, permits no custom route/domain/Cron, and requires D1 collection plus workers.dev cleanup on every exit. Any implementation must preserve exact credential separation, provider ceilings, redirect rejection and no-secret logging.
+
 ## Replacement read diagnostics expose endpoint class only
 
 Per-endpoint standard-read failures are fixed repository-owned enums. They do not retain request URLs, account IDs, Worker IDs, Version IDs, HTTP status/body, Cloudflare error content, transport exception text, authorization headers or credentials. Raw remote payloads remain excluded from artifacts.
