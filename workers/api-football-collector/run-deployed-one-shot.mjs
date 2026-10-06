@@ -7,12 +7,13 @@ import {pathToFileURL} from 'node:url';
 import {EXPECTED_D1_DATABASE_ID} from '../data-platform/phase4b/live-contract.mjs';
 import {runApiFootballActivationLivePreflight} from './activation-live-preflight.mjs';
 import {deployedOneShotPreflightEnv} from './deployed-one-shot-readonly.mjs';
+import {readReplacementRouteTopology} from './replacement-reconciliation.mjs';
 import {
   DEPLOYED_ONE_SHOT_CLOUDFLARE_MUTATION_CEILINGS,DEPLOYED_ONE_SHOT_EXECUTION_VERSION,DEPLOYED_ONE_SHOT_MAX_D1_CALLS,DEPLOYED_ONE_SHOT_MAX_D1_ROWS_CHANGED,
   DEPLOYED_ONE_SHOT_MAX_TRIGGER_REQUESTS,DEPLOYED_ONE_SHOT_PREFLIGHT_STAGE,DEPLOYED_ONE_SHOT_READINESS_DELAYS_MS,DEPLOYED_ONE_SHOT_REQUEST_TIMEOUT_MS,
   DEPLOYED_ONE_SHOT_RUNTIME_SQL,DEPLOYED_ONE_SHOT_TRIGGER_TIMEOUT_MS,DEPLOYED_ONE_SHOT_VERSION_ID,DEPLOYED_ONE_SHOT_WORKER,
   buildDeploymentBody,deployedOneShotAdmissionDiagnostic,deploymentListState,deploymentSelectsExactVersion,deriveWorkersDevTarget,
-  runDeployedOneShot,validateDeployedOneShotAdmissionHandoff,workerSignatureMatches
+  runDeployedOneShot,validateDeployedOneShotAdmissionHandoff,validateZoneTopology,workerSignatureMatches
 } from './deployed-one-shot.mjs';
 
 const API='https://api.cloudflare.com/client/v4';
@@ -46,12 +47,23 @@ export function deployedOneShotCriticalRecheckDiagnostic(report,identity){
   return diagnostic?'DEPLOYED_ONE_SHOT_CRITICAL_STATE_DRIFT__'+diagnostic.toUpperCase():null;
 }
 
-export async function executeDeployedOneShot({env=process.env,fetchImpl=globalThis.fetch,criticalRecheck=runApiFootballActivationLivePreflight,wait=delay}={}){
+// Fresh authoritative zone-scoped Workers Routes scan immediately before the first mutation.
+// Read-only (GET) with the dedicated topology credential; any failure or matching route stops before mutation.
+export async function deployedOneShotFinalRouteScan({accountId,topologyToken,fetchImpl,routeScan=readReplacementRouteTopology}){
+  let topology;
+  try{topology=await routeScan({account:accountId,topologyToken,fetchImpl,workerName:DEPLOYED_ONE_SHOT_WORKER});}
+  catch{fail('DEPLOYED_ONE_SHOT_FINAL_ROUTE_SCAN_FAILED');}
+  if(!validateZoneTopology(topology))fail('DEPLOYED_ONE_SHOT_FINAL_ROUTE_SCAN_NOT_INERT');
+  return Object.freeze({proof:topology.proof,zoneCount:topology.zoneCount,routeRowCount:topology.routeRowCount,routeCount:topology.routeCount});
+}
+
+export async function executeDeployedOneShot({env=process.env,fetchImpl=globalThis.fetch,criticalRecheck=runApiFootballActivationLivePreflight,routeScan=readReplacementRouteTopology,wait=delay}={}){
   const accountId=required(env,'CLOUDFLARE_ACCOUNT_ID'),fingerprint=required(env,'CLOUDFLARE_ACCOUNT_FINGERPRINT');
   const readToken=required(env,'CLOUDFLARE_ATTENDED_READ_TOKEN'),mutationToken=required(env,'CLOUDFLARE_ATTENDED_MUTATION_TOKEN');
   const approvedSha=required(env,'APPROVED_SHA'),trigger=required(env,'API_FOOTBALL_ATTENDED_TRIGGER_SECRET');
-  if(readToken===mutationToken)fail('DEPLOYED_ONE_SHOT_CREDENTIAL_SEPARATION_REQUIRED');
-  if(trigger===readToken||trigger===mutationToken||trigger.length<32)fail('DEPLOYED_ONE_SHOT_TRIGGER_SECRET_INVALID');
+  const topologyToken=required(env,'CLOUDFLARE_TOPOLOGY_READ_TOKEN');
+  if(readToken===mutationToken||topologyToken===mutationToken||topologyToken===readToken)fail('DEPLOYED_ONE_SHOT_CREDENTIAL_SEPARATION_REQUIRED');
+  if(trigger===readToken||trigger===mutationToken||trigger===topologyToken||trigger.length<32)fail('DEPLOYED_ONE_SHOT_TRIGGER_SECRET_INVALID');
   if(!HEX40.test(approvedSha))fail('DEPLOYED_ONE_SHOT_APPROVED_SHA_INVALID');
   if(!HEX64.test(fingerprint)||digest(accountId)!==fingerprint)fail('DEPLOYED_ONE_SHOT_ACCOUNT_IDENTITY_MISMATCH');
   const admission=JSON.parse(fs.readFileSync(required(env,'API_FOOTBALL_DEPLOYED_ONE_SHOT_ADMISSION_PATH'),'utf8'));
@@ -60,6 +72,7 @@ export async function executeDeployedOneShot({env=process.env,fetchImpl=globalTh
   // Fresh critical recheck with the protected read credential immediately before the first mutation.
   const critical=await criticalRecheck({env:deployedOneShotPreflightEnv({accountId,accountFingerprint:fingerprint,readToken,approvedSha}),fetchImpl,stage:DEPLOYED_ONE_SHOT_PREFLIGHT_STAGE});
   const drift=deployedOneShotCriticalRecheckDiagnostic(critical,{approvedSha,accountFingerprint:fingerprint});if(drift)fail(drift);
+  const finalRouteScan=await deployedOneShotFinalRouteScan({accountId,topologyToken,fetchImpl,routeScan});
   const target=deriveWorkersDevTarget({accountSubdomain:critical.inventory.accountSubdomain});
 
   const paths=deployedOneShotCloudflarePaths(accountId);
@@ -145,7 +158,7 @@ export async function executeDeployedOneShot({env=process.env,fetchImpl=globalTh
     disableCollection:()=>runtime(DEPLOYED_ONE_SHOT_RUNTIME_SQL.disable,'DISABLE'),
     disableWorkersDev:()=>subdomain(false)
   }});
-  return Object.freeze({...result,approvedSha,deployment:Object.freeze({...deployment}),readiness:Object.freeze({...readiness}),
+  return Object.freeze({...result,approvedSha,finalRouteScan,deployment:Object.freeze({...deployment}),readiness:Object.freeze({...readiness}),
     triggerRequests,collectionEnableSucceeded,mutations:Object.freeze({...mutations}),controlBudget:Object.freeze({d1Calls,d1RowsChanged})});
 }
 
@@ -154,7 +167,7 @@ export function buildDeployedOneShotExecutionEvidence(result,{approvedSha=null}=
   return Object.freeze({
     version:DEPLOYED_ONE_SHOT_EXECUTION_VERSION,approvedSha,versionId:DEPLOYED_ONE_SHOT_VERSION_ID,ok:result.ok===true,
     classification:result.classification??null,diagnostic:result.diagnostic??null,primaryFailure:result.primaryFailure??null,cleanupFailure:result.cleanupFailure??null,
-    stagesReached:result.stagesReached??[],deployment:result.deployment??null,readiness:result.readiness??null,
+    stagesReached:result.stagesReached??[],finalRouteScan:result.finalRouteScan??null,deployment:result.deployment??null,readiness:result.readiness??null,
     triggerRequests:result.triggerRequests,trigger:result.trigger??null,collectionEnableSucceeded:result.collectionEnableSucceeded===true,
     cleanup:result.cleanup??null,mutations:result.mutations??null,controlBudget:result.controlBudget??null,retryAuthorized:false,
     evidence:Object.freeze({apiFootballRequestsByExecutor:0,secretValuesSerialized:0})
@@ -165,7 +178,7 @@ export function buildDeployedOneShotPreMutationFailure(error,{approvedSha=null}=
   const message=String(error?.message??'');
   return Object.freeze({version:DEPLOYED_ONE_SHOT_EXECUTION_VERSION,approvedSha,versionId:DEPLOYED_ONE_SHOT_VERSION_ID,ok:false,
     classification:'DEPLOYED_ONE_SHOT_STOPPED_BEFORE_MUTATION',diagnostic:/^DEPLOYED_ONE_SHOT_[A-Z0-9_]{1,128}$/.test(message)?message:'DEPLOYED_ONE_SHOT_UNEXPECTED_FAILURE',
-    primaryFailure:null,cleanupFailure:null,stagesReached:[],deployment:{outcome:'NOT_ATTEMPTED',deploymentId:null,readbackExact:null},readiness:null,
+    primaryFailure:null,cleanupFailure:null,stagesReached:[],finalRouteScan:null,deployment:{outcome:'NOT_ATTEMPTED',deploymentId:null,readbackExact:null},readiness:null,
     triggerRequests:0,trigger:null,collectionEnableSucceeded:false,cleanup:null,mutations:{createDeployment:0,enableWorkersDev:0,disableWorkersDev:0},
     controlBudget:{d1Calls:0,d1RowsChanged:0},retryAuthorized:false,evidence:{apiFootballRequestsByExecutor:0,secretValuesSerialized:0}});
 }

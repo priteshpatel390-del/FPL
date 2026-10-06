@@ -165,7 +165,7 @@ jobs:
         with:
           name: api-football-deployed-one-shot-admission
           path: ${{ runner.temp }}/deployed-one-shot-admission
-      - name: Deploy exact Version, trigger once, cleanup inside executor regardless of outcome
+      - name: Recheck state and zone routes, deploy exact Version, trigger once, cleanup inside executor regardless of outcome
         id: execute
         continue-on-error: true
         env:
@@ -176,6 +176,8 @@ jobs:
           CLOUDFLARE_ACCOUNT_FINGERPRINT: ${{ vars.CLOUDFLARE_ACCOUNT_FINGERPRINT }}
           CLOUDFLARE_ATTENDED_READ_TOKEN: ${{ secrets.CLOUDFLARE_ATTENDED_READ_TOKEN }}
           CLOUDFLARE_ATTENDED_MUTATION_TOKEN: ${{ secrets.CLOUDFLARE_ATTENDED_MUTATION_TOKEN }}
+          # Read-only Zone Read + Workers Routes Read; used only for the final pre-mutation route scan.
+          CLOUDFLARE_TOPOLOGY_READ_TOKEN: ${{ secrets.CLOUDFLARE_REPLACEMENT_TOPOLOGY_READ_TOKEN }}
           EXPECTED_ARTIFACT_SHA256: ${{ needs.fresh-readonly-admission.outputs.artifact_sha256 }}
           API_FOOTBALL_DEPLOYED_ONE_SHOT_EXECUTION_REPORT_PATH: ${{ runner.temp }}/deployed-one-shot-execution.json
         run: |

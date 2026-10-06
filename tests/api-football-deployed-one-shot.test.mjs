@@ -13,13 +13,14 @@ import {
 } from '../workers/api-football-collector/deployed-one-shot.mjs';
 import {runDeployedOneShotAdmission,runDeployedOneShotReconciliation} from '../workers/api-football-collector/deployed-one-shot-readonly.mjs';
 import {
-  assertDeployedOneShotRequestAllowed,buildDeployedOneShotExecutionEvidence,buildDeployedOneShotPreMutationFailure,deployedOneShotCloudflarePaths,executeDeployedOneShot
+  assertDeployedOneShotRequestAllowed,buildDeployedOneShotExecutionEvidence,buildDeployedOneShotPreMutationFailure,deployedOneShotCloudflarePaths,deployedOneShotFinalRouteScan,executeDeployedOneShot
 } from '../workers/api-football-collector/run-deployed-one-shot.mjs';
 import {ATTENDED_VERSION_ID} from '../workers/api-football-collector/attended-version.mjs';
+import {REPLACEMENT_COLLECTOR} from '../workers/api-football-collector/replacement-foundation.mjs';
 import {EXPECTED_D1_DATABASE_ID} from '../workers/data-platform/phase4b/live-contract.mjs';
 
 const ACCOUNT='production-account',FINGERPRINT=createHash('sha256').update(ACCOUNT).digest('hex');
-const SHA='b'.repeat(40),SUBDOMAIN='fpltsheet',TRIGGER='t'.repeat(64),READ='attended-read',MUTATE='attended-mutate';
+const SHA='b'.repeat(40),SUBDOMAIN='fpltsheet',TRIGGER='t'.repeat(64),READ='attended-read',MUTATE='attended-mutate',TOPO_TOKEN='topology-read';
 const API='https://api.cloudflare.com/client/v4';
 const TARGET=`https://${DEPLOYED_ONE_SHOT_WORKER}.${SUBDOMAIN}.workers.dev${ATTENDED_ACCEPTANCE_PATH}`;
 const paths=deployedOneShotCloudflarePaths(ACCOUNT);
@@ -50,11 +51,26 @@ const json=(body,status=200)=>new Response(JSON.stringify(body),{status,headers:
 const worker=(status,body)=>new Response(body,{status,headers:{'content-type':'text/plain; charset=utf-8','cache-control':'no-store'}});
 const exactDeployment={id:'dep-1',strategy:'percentage',versions:[{version_id:ATTENDED_VERSION_ID,percentage:100}]};
 
-function fakeLive({deploy='ok',readback='exact',enableDev='ok',readinessFailures=0,trigger='accepted',enableD1='ok',disableD1='ok',disableDev='ok'}={}){
+function fakeLive({zones='ok',deploy='ok',readback='exact',enableDev='ok',readinessFailures=0,trigger='accepted',enableD1='ok',disableD1='ok',disableDev='ok'}={}){
   const calls=[];
   const fetchImpl=async(url,init={})=>{
     const href=String(url),method=init.method||'GET',body=init.body?JSON.parse(init.body):null;
     calls.push({href,method,body,headers:init.headers??{}});
+    const parsed=new URL(href);
+    if(parsed.pathname==='/client/v4/zones'){
+      assert.equal(method,'GET');assert.equal(init.headers?.Authorization,'Bearer '+TOPO_TOKEN);
+      if(zones==='throw')throw new Error('reset');
+      if(zones==='malformed')return json({success:true,result:[{id:'zone-a',account:{id:ACCOUNT}}],result_info:{total_pages:'x'}});
+      if(zones==='http')return json({success:false},500);
+      return json({success:true,result:[{id:'zone-a',account:{id:ACCOUNT}}],result_info:{total_pages:1}});
+    }
+    if(parsed.pathname==='/client/v4/zones/zone-a/workers/routes'){
+      assert.equal(method,'GET');assert.equal(init.headers?.Authorization,'Bearer '+TOPO_TOKEN);
+      if(zones==='badrow')return json({success:true,result:[{id:7,pattern:'x/*'}]});
+      const rows=[{id:'r0',pattern:'other.example/*',script:REPLACEMENT_COLLECTOR}];
+      if(zones==='route')rows.push({id:'r1',pattern:'example.com/*',script:DEPLOYED_ONE_SHOT_WORKER});
+      return json({success:true,result:rows});
+    }
     if(href===API+paths.deployments&&method==='POST'){
       if(deploy==='throw')throw new Error('reset');
       if(deploy==='reject')return json({success:false,errors:[{code:1}]},400);
@@ -88,7 +104,7 @@ function fakeLive({deploy='ok',readback='exact',enableDev='ok',readinessFailures
 }
 function liveEnv(file=tempAdmission()){
   return {CLOUDFLARE_ACCOUNT_ID:ACCOUNT,CLOUDFLARE_ACCOUNT_FINGERPRINT:FINGERPRINT,CLOUDFLARE_ATTENDED_READ_TOKEN:READ,CLOUDFLARE_ATTENDED_MUTATION_TOKEN:MUTATE,
-    APPROVED_SHA:SHA,API_FOOTBALL_ATTENDED_TRIGGER_SECRET:TRIGGER,API_FOOTBALL_DEPLOYED_ONE_SHOT_ADMISSION_PATH:file};
+    APPROVED_SHA:SHA,API_FOOTBALL_ATTENDED_TRIGGER_SECRET:TRIGGER,API_FOOTBALL_DEPLOYED_ONE_SHOT_ADMISSION_PATH:file,CLOUDFLARE_TOPOLOGY_READ_TOKEN:TOPO_TOKEN};
 }
 const recheck=(value=report())=>async({env,stage})=>{
   assert.equal(stage,DEPLOYED_ONE_SHOT_PREFLIGHT_STAGE);
@@ -177,7 +193,13 @@ test('successful execution deploys the exact reviewed Version once, uses workers
   assert.equal(triggerPosts(calls)[0].headers['x-teamsheet-attended-trigger'],TRIGGER);
   assert.deepEqual(d1Sql(calls),[DEPLOYED_ONE_SHOT_RUNTIME_SQL.enable.sql,DEPLOYED_ONE_SHOT_RUNTIME_SQL.disable.sql]);
   assert.deepEqual(result.mutations,{createDeployment:1,enableWorkersDev:1,disableWorkersDev:1});
-  assert.ok(calls.every(call=>!/\/versions|\/schedules|workers\/routes|workers\/domains|preview/i.test(call.href)&&call.method!=='DELETE'&&call.method!=='PUT'));
+  const firstRouteRead=calls.findIndex(call=>call.href.endsWith('/zones/zone-a/workers/routes')),firstMutation=calls.findIndex(call=>call.method==='POST');
+  assert.ok(firstRouteRead>=0&&firstRouteRead<firstMutation,'final zone route scan precedes the first mutation');
+  assert.deepEqual(result.finalRouteScan,{proof:'ZONE_ROUTE_SCAN',zoneCount:1,routeRowCount:1,routeCount:0});
+  assert.ok(calls.every(call=>!/\/versions|\/schedules|workers\/domains|preview/i.test(call.href)&&call.method!=='DELETE'&&call.method!=='PUT'));
+  // Route endpoints are touched only by the read-only final scan: GET with the topology credential, never mutated.
+  const routeCalls=calls.filter(call=>/\/zones/.test(call.href));
+  assert.ok(routeCalls.length>0&&routeCalls.every(call=>call.method==='GET'&&call.headers.Authorization==='Bearer '+TOPO_TOKEN));
   const evidence=buildDeployedOneShotExecutionEvidence(result,{approvedSha:SHA});
   assert.equal(evidence.version,DEPLOYED_ONE_SHOT_EXECUTION_VERSION);assert.equal(evidence.triggerRequests,1);assert.equal(evidence.deployment.deploymentId,'dep-1');
   const serialized=JSON.stringify(evidence);
@@ -399,6 +421,46 @@ test('workflow is dormant, manual, first-attempt-only, exact-main and least-priv
   const protectedJob=jobs.find(job=>job.startsWith('protected-one-shot-execution'));
   for(const job of jobs.filter(job=>job!==protectedJob))assert.doesNotMatch(job,/CLOUDFLARE_ATTENDED_MUTATION_TOKEN|API_FOOTBALL_ATTENDED_TRIGGER_SECRET/);
   assert.match(protectedJob,/CLOUDFLARE_ATTENDED_MUTATION_TOKEN/);assert.match(protectedJob,/API_FOOTBALL_ATTENDED_TRIGGER_SECRET/);
-  assert.doesNotMatch(protectedJob,/DATA_STEWARD_CLOUDFLARE_READ_TOKEN|CLOUDFLARE_REPLACEMENT_TOPOLOGY_READ_TOKEN/);
+  assert.doesNotMatch(protectedJob,/DATA_STEWARD_CLOUDFLARE_READ_TOKEN/);
+  // The topology credential reaches the protected job only as the read-only final route-scan input.
+  assert.equal((protectedJob.match(/CLOUDFLARE_REPLACEMENT_TOPOLOGY_READ_TOKEN/g)||[]).length,1);
+  assert.match(protectedJob,/CLOUDFLARE_TOPOLOGY_READ_TOKEN: \$\{\{ secrets\.CLOUDFLARE_REPLACEMENT_TOPOLOGY_READ_TOKEN \}\}/);
   assert.match(source,/permissions:\n  contents: read\n  actions: read\n  checks: read\n/);
+});
+
+// Final pre-mutation route scan (closes the admission-to-execution gap)
+const mutationOrTrigger=calls=>calls.filter(call=>call.method==='POST');
+
+test('a route, malformed topology or failed topology read after admission stops before any mutation',async()=>{
+  for(const [zones,diagnostic] of [['route','DEPLOYED_ONE_SHOT_FINAL_ROUTE_SCAN_NOT_INERT'],['malformed','DEPLOYED_ONE_SHOT_FINAL_ROUTE_SCAN_FAILED'],
+    ['badrow','DEPLOYED_ONE_SHOT_FINAL_ROUTE_SCAN_FAILED'],['throw','DEPLOYED_ONE_SHOT_FINAL_ROUTE_SCAN_FAILED'],['http','DEPLOYED_ONE_SHOT_FINAL_ROUTE_SCAN_FAILED']]){
+    const fake=fakeLive({zones});
+    await assert.rejects(executeDeployedOneShot({env:liveEnv(),fetchImpl:fake.fetchImpl,criticalRecheck:recheck(),wait:async()=>{}}),new RegExp(diagnostic),zones);
+    assert.equal(mutationOrTrigger(fake.calls).length,0,zones);
+    assert.equal(fake.calls.filter(call=>call.href.includes('/deployments')||call.href.includes('/subdomain')||call.href.includes('/d1/')||call.href===TARGET).length,0,zones);
+    assert.ok(fake.calls.every(call=>call.method==='GET'&&call.headers.Authorization==='Bearer '+TOPO_TOKEN),zones);
+    const evidence=buildDeployedOneShotPreMutationFailure(new Error(diagnostic),{approvedSha:SHA});
+    assert.equal(evidence.diagnostic,diagnostic);assert.equal(evidence.triggerRequests,0);
+    assert.deepEqual(evidence.mutations,{createDeployment:0,enableWorkersDev:0,disableWorkersDev:0});assert.deepEqual(evidence.controlBudget,{d1Calls:0,d1RowsChanged:0});
+  }
+});
+
+test('final route scan targets the original collector, never replacement-v2, and requires a distinct topology credential',async()=>{
+  let seen=null;
+  const scan=await deployedOneShotFinalRouteScan({accountId:ACCOUNT,topologyToken:TOPO_TOKEN,fetchImpl:async()=>{throw new Error('unused');},
+    routeScan:async options=>{seen=options;return {proof:'ZONE_ROUTE_SCAN',zoneCount:2,routeRowCount:3,routeCount:0};}});
+  assert.equal(seen.workerName,DEPLOYED_ONE_SHOT_WORKER);assert.notEqual(seen.workerName,REPLACEMENT_COLLECTOR);assert.equal(seen.topologyToken,TOPO_TOKEN);
+  assert.deepEqual(scan,{proof:'ZONE_ROUTE_SCAN',zoneCount:2,routeRowCount:3,routeCount:0});
+  for(const bad of [{proof:'LEGACY_SCRIPT_INVENTORY',zoneCount:1,routeRowCount:0,routeCount:0},{proof:'ZONE_ROUTE_SCAN',zoneCount:-1,routeRowCount:0,routeCount:0},
+    {proof:'ZONE_ROUTE_SCAN',zoneCount:1,routeRowCount:null,routeCount:0},{proof:'ZONE_ROUTE_SCAN',zoneCount:1,routeRowCount:1,routeCount:1},null])
+    await assert.rejects(deployedOneShotFinalRouteScan({accountId:ACCOUNT,topologyToken:TOPO_TOKEN,fetchImpl:null,routeScan:async()=>bad}),/FINAL_ROUTE_SCAN_NOT_INERT/);
+  for(const env of [{...liveEnv(),CLOUDFLARE_TOPOLOGY_READ_TOKEN:MUTATE},{...liveEnv(),CLOUDFLARE_TOPOLOGY_READ_TOKEN:READ},{...liveEnv(),CLOUDFLARE_TOPOLOGY_READ_TOKEN:undefined}]){
+    const fake=fakeLive();
+    await assert.rejects(executeDeployedOneShot({env,fetchImpl:fake.fetchImpl,criticalRecheck:recheck(),wait:async()=>{}}),/DEPLOYED_ONE_SHOT_(?:CREDENTIAL_SEPARATION_REQUIRED|ENVIRONMENT_INCOMPLETE)/);
+    assert.equal(fake.calls.length,0);
+  }
+  // A drifted critical recheck stops before even the route scan.
+  const fake=fakeLive();
+  await assert.rejects(executeDeployedOneShot({env:liveEnv(),fetchImpl:fake.fetchImpl,criticalRecheck:recheck(report({inventory:{workersDev:true}})),wait:async()=>{}}),/CRITICAL_STATE_DRIFT/);
+  assert.equal(fake.calls.length,0);
 });
