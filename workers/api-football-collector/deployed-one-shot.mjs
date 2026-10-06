@@ -19,11 +19,22 @@ export const DEPLOYED_ONE_SHOT_CLONE_APPROVED_SHA='cdb7d7ba140c38395893f223c42ae
 export const DEPLOYED_ONE_SHOT_PREFLIGHT_STAGE=COLLECTOR_PREFLIGHT_LIFECYCLE_CLONE_CLOSEOUT_STAGE;
 export const DEPLOYED_ONE_SHOT_PATH=ATTENDED_ACCEPTANCE_PATH;
 export const DEPLOYED_ONE_SHOT_SECRET_BINDINGS=Object.freeze(['API_FOOTBALL_API_KEY','API_FOOTBALL_ATTENDED_TRIGGER_SECRET']);
+export const DEPLOYED_ONE_SHOT_CONTINUATION_ADMISSION_VERSION='api-football-deployed-one-shot-continuation-admission-v1';
+export const DEPLOYED_ONE_SHOT_CONTINUATION_EXECUTION_VERSION='api-football-deployed-one-shot-continuation-execution-v1';
+export const DEPLOYED_ONE_SHOT_CONTINUATION_RECONCILIATION_VERSION='api-football-deployed-one-shot-continuation-reconciliation-v1';
+export const DEPLOYED_ONE_SHOT_CONTINUATION_READY='READY_FOR_DEPLOYED_ONE_SHOT_CONTINUATION';
+// Run 37505586273 (consumed) submitted the single Deployment POST; independent readback proved this exact Deployment exists.
+export const DEPLOYED_ONE_SHOT_EXISTING_DEPLOYMENT_ID='2417a3e0-15db-4e45-a3c8-00b148a300f4';
+// The generic lifecycle preflight still expects zero Deployments and so STOPs with this exact reason once the Deployment exists.
+export const DEPLOYED_ONE_SHOT_CONTINUATION_PREFLIGHT_STOP='STOP_VERSION_URL_CREATION_EXPERIMENT_CLOSEOUT_REVIEW_REQUIRED';
+export const DEPLOYED_ONE_SHOT_CONTINUATION_PREFLIGHT_REASON='lifecycle_clone_inventory_unexpected';
 export const DEPLOYED_ONE_SHOT_MAX_PROVIDER_REQUESTS=5;
 export const DEPLOYED_ONE_SHOT_MAX_FIXTURE_REVISIONS=2500;
 export const DEPLOYED_ONE_SHOT_MAX_TRIGGER_REQUESTS=1;
 // Cloudflare mutation ceilings: one Deployment, one workers.dev enable, one workers.dev disable.
 export const DEPLOYED_ONE_SHOT_CLOUDFLARE_MUTATION_CEILINGS=Object.freeze({createDeployment:1,enableWorkersDev:1,disableWorkersDev:1});
+// Continuation reuses the existing inert Deployment: the Deployment mutation ceiling is zero.
+export const DEPLOYED_ONE_SHOT_CONTINUATION_MUTATION_CEILINGS=Object.freeze({createDeployment:0,enableWorkersDev:1,disableWorkersDev:1});
 // D1 ceiling: one bounded enable plus one idempotent cleanup disable, one row each.
 export const DEPLOYED_ONE_SHOT_MAX_D1_CALLS=2;
 export const DEPLOYED_ONE_SHOT_MAX_D1_ROWS_CHANGED=2;
@@ -142,6 +153,25 @@ export function deploymentListState(result){
   return safe({count:rows.length,exactSingle:rows.length===1&&deploymentSelectsExactVersion(rows[0]),deploymentId:rows.length===1&&typeof rows[0]?.id==='string'?rows[0].id:null});
 }
 
+// Deployment creation: the POST is submitted at most once and is never resent. An ambiguous immediate response is
+// resolved by exactly one bounded read-only readback. Run 37505586273 showed a POST can apply while its response is
+// classified ambiguous. Precondition: the caller proved zero Deployments before the POST.
+export const DEPLOYMENT_CREATE_OUTCOMES=Object.freeze(['CREATED','APPLIED_CONFIRMED_BY_READBACK','REJECTED','NOT_APPLIED','AMBIGUOUS_OWNER_ATTENTION']);
+export async function createDeploymentWithReadback({post,readback}={}){
+  if(typeof post!=='function'||typeof readback!=='function')throw new Error('DEPLOYED_ONE_SHOT_OPERATIONS_INCOMPLETE');
+  let submitted;
+  try{submitted=await post();}catch{submitted={kind:'AMBIGUOUS'};}
+  if(submitted?.kind==='REJECTED')return safe({outcome:'REJECTED',deploymentId:null,readbackPerformed:false});
+  if(submitted?.kind==='OK'&&deploymentSelectsExactVersion(submitted.result))return safe({outcome:'CREATED',deploymentId:submitted.result.id,readbackPerformed:false});
+  let state=null;
+  try{state=await readback();}catch{state=null;}
+  if(state&&Number.isSafeInteger(state.count)){
+    if(state.count===0)return safe({outcome:'NOT_APPLIED',deploymentId:null,readbackPerformed:true});
+    if(state.exactSingle===true&&typeof state.deploymentId==='string')return safe({outcome:'APPLIED_CONFIRMED_BY_READBACK',deploymentId:state.deploymentId,readbackPerformed:true});
+  }
+  return safe({outcome:'AMBIGUOUS_OWNER_ATTENTION',deploymentId:null,readbackPerformed:true});
+}
+
 export function workerSignatureMatches({status,body,cacheControl,contentType}){
   return status===404&&body==='Not found'&&cacheControl==='no-store'&&typeof contentType==='string'&&contentType.startsWith('text/plain');
 }
@@ -181,8 +211,12 @@ export async function runDeployedOneShot({admissionValid=false,ops}={}){
 }
 
 // Independent post-run classification from read-only state only.
-export function classifyDeployedOneShotReconciliation({report,deployments,topology,execution,approvedSha,accountFingerprint}={}){
-  const base={version:DEPLOYED_ONE_SHOT_RECONCILIATION_VERSION,retryAuthorized:false};
+export function classifyDeployedOneShotReconciliation(input={}){return classifyReconciliation(input,{continuation:false});}
+// Continuation reconciliation: the one existing Deployment must remain exact and unmodified, and the execution made no Deployment mutation.
+export function classifyDeployedOneShotContinuationReconciliation(input={}){return classifyReconciliation(input,{continuation:true});}
+
+function classifyReconciliation({report,deployments,topology,execution,approvedSha,accountFingerprint}={},{continuation}){
+  const base={version:continuation?DEPLOYED_ONE_SHOT_CONTINUATION_RECONCILIATION_VERSION:DEPLOYED_ONE_SHOT_RECONCILIATION_VERSION,retryAuthorized:false};
   const stop=reason=>safe({...base,ok:false,classification:'DEPLOYED_ONE_SHOT_OWNER_ATTENTION_REQUIRED',reason});
   // The pre-run classifier necessarily STOPs after a Deployment or history exists, so post-run
   // safety is judged from the observed fields themselves, never from that classification.
@@ -198,7 +232,8 @@ export function classifyDeployedOneShotReconciliation({report,deployments,topolo
   if(!deployments||!Number.isSafeInteger(deployments.count))return stop('deployment_state_unreadable');
   if(deployments.count!==inventory.deploymentCount)return stop('deployment_state_inconsistent');
   if(deployments.count>1||(deployments.count===1&&deployments.exactSingle!==true))return stop('deployment_identity_unexpected');
-  if(execution?.deployment?.outcome==='CREATED'&&(deployments.count!==1||deployments.deploymentId!==execution.deployment.deploymentId))return stop('deployment_identity_unexpected');
+  if(continuation&&(deployments.count!==1||deployments.exactSingle!==true||deployments.deploymentId!==DEPLOYED_ONE_SHOT_EXISTING_DEPLOYMENT_ID))return stop('deployment_identity_unexpected');
+  if(['CREATED','APPLIED_CONFIRMED_BY_READBACK'].includes(execution?.deployment?.outcome)&&(deployments.count!==1||deployments.deploymentId!==execution.deployment.deploymentId))return stop('deployment_identity_unexpected');
   if(runtime.activeLease!==false)return stop('active_lease');
   if(runtime.credentialState==='INVALID'||history.authFailureCount>0)return stop('authentication_failure');
   if(history.quotaBlockedCount>0)return stop('quota_blocked');
@@ -212,8 +247,9 @@ export function classifyDeployedOneShotReconciliation({report,deployments,topolo
   if(history.stagingGenerationCount>0)return stop('staging_generation_unresolved');
   if(history.attempt2Count>0)return stop('retry_attempt_detected');
   if(runtime.credentialState!=='AVAILABLE')return stop('credential_state_unexpected');
-  const executionValid=execution?.version===DEPLOYED_ONE_SHOT_EXECUTION_VERSION&&execution.approvedSha===approvedSha&&
-    execution.versionId===DEPLOYED_ONE_SHOT_VERSION_ID&&execution.retryAuthorized===false&&[0,1].includes(execution.triggerRequests);
+  const executionValid=execution?.version===(continuation?DEPLOYED_ONE_SHOT_CONTINUATION_EXECUTION_VERSION:DEPLOYED_ONE_SHOT_EXECUTION_VERSION)&&execution.approvedSha===approvedSha&&
+    execution.versionId===DEPLOYED_ONE_SHOT_VERSION_ID&&execution.retryAuthorized===false&&[0,1].includes(execution.triggerRequests)&&
+    (!continuation||(execution.mutations?.createDeployment===0&&execution.deployment?.deploymentId===DEPLOYED_ONE_SHOT_EXISTING_DEPLOYMENT_ID));
   const pristine=history.requestAttempts===0&&history.generations===0&&history.fixtureRevisions===0&&history.attempt1Count===0;
   if(pristine)return safe({...base,ok:false,classification:'DEPLOYED_ONE_SHOT_CLEAN_STOP_NO_PROVIDER_REQUEST',
     reason:executionValid?(execution.triggerRequests===1?'trigger_sent_without_provider_activity':'stopped_before_trigger'):'execution_evidence_unavailable'});
@@ -225,4 +261,89 @@ export function classifyDeployedOneShotReconciliation({report,deployments,topolo
   if(!executionValid||execution.triggerRequests!==1)return stop('execution_evidence_inconsistent');
   if(deployments.count!==1||deployments.exactSingle!==true)return stop('deployment_identity_unexpected');
   return safe({...base,ok:true,classification:'DEPLOYED_ONE_SHOT_RECONCILED_SUCCESS',reason:null});
+}
+
+// ---- Continuation from the one existing inert Deployment (run 37505586273 consumed; no recreate, no delete, no retry) ----
+
+// Admission is judged from observed fields. The generic lifecycle preflight must STOP with exactly the stale zero-Deployment
+// reason; any other classification, reason or readiness verdict is refused. Historical zero-Deployment admission is untouched.
+export function deployedOneShotContinuationAdmissionDiagnostic(report,deployments,{approvedSha,accountFingerprint}={}){
+  if(!HEX40.test(String(approvedSha||''))||!HEX64.test(String(accountFingerprint||'')))return 'admission_identity_invalid';
+  if(report?.ok!==false||report.classification!==DEPLOYED_ONE_SHOT_CONTINUATION_PREFLIGHT_STOP||report.reason!==DEPLOYED_ONE_SHOT_CONTINUATION_PREFLIGHT_REASON)return 'preflight_not_continuation_state';
+  const foundational=foundationalDiagnostic(report,{approvedSha,accountFingerprint});if(foundational)return foundational;
+  const inventory=report.inventory,runtime=report.runtime||{},prior=report.priorState||{};
+  if(inventory.databaseIdPlaceholder!==false||inventory.previewUrlIdentityExact!==true)return 'collector_configuration_mismatch';
+  if(!deployments||!Number.isSafeInteger(deployments.count))return 'deployment_state_unreadable';
+  if(deployments.count!==1||inventory.deploymentCount!==1||deployments.exactSingle!==true||deployments.deploymentId!==DEPLOYED_ONE_SHOT_EXISTING_DEPLOYMENT_ID)return 'deployment_identity_unexpected';
+  if(inventory.workersDev!==false||inventory.previewUrls!==false||inventory.cronCount!==0||inventory.routeCount!==0||inventory.customDomainCount!==0)return 'collector_topology_mismatch';
+  if(runtime.collectionEnabled!==0)return 'collection_not_disabled';
+  if(runtime.credentialState!=='AVAILABLE')return 'credential_not_available';
+  if(runtime.activeLease!==false)return 'active_lease';
+  if(prior.requestAttempts!==0||prior.generations!==0||prior.fixtureRevisions!==0||prior.attempt1Count!==0||prior.attempt2Count!==0||
+    prior.reservedAttemptCount!==0||prior.stagingGenerationCount!==0||prior.succeededAttemptCount!==0)return 'history_not_pristine';
+  return null;
+}
+
+export function buildDeployedOneShotContinuationAdmission({report,deployments,topology,approvedSha,accountFingerprint,topologyFailure=null}={}){
+  let reason=deployedOneShotContinuationAdmissionDiagnostic(report,deployments,{approvedSha,accountFingerprint});
+  if(!reason&&topologyFailure)reason='zone_route_topology_unreadable';
+  if(!reason&&!validateZoneTopology(topology))reason='zone_route_topology_not_inert';
+  const ok=reason===null;
+  return safe({
+    version:DEPLOYED_ONE_SHOT_CONTINUATION_ADMISSION_VERSION,ok,approvedSha:approvedSha??null,accountFingerprint:accountFingerprint??null,
+    versionId:DEPLOYED_ONE_SHOT_VERSION_ID,workerId:DEPLOYED_ONE_SHOT_WORKER_ID,deploymentId:DEPLOYED_ONE_SHOT_EXISTING_DEPLOYMENT_ID,
+    classification:ok?DEPLOYED_ONE_SHOT_CONTINUATION_READY:'STOP_DEPLOYED_ONE_SHOT_CONTINUATION_ADMISSION_REVIEW_REQUIRED',reason,
+    preflightClassification:report?.classification??null,preflightReason:report?.reason??null,
+    deployments:deployments?safe({count:deployments.count,exactSingle:deployments.exactSingle,deploymentId:deployments.deploymentId}):null,
+    topology:topology?safe({proof:topology.proof,zoneCount:topology.zoneCount,routeRowCount:topology.routeRowCount,routeCount:topology.routeCount}):null,
+    preflight:report??null,retryAuthorized:false,
+    evidence:safe({productionMutations:0,apiFootballRequests:0,secretValuesRead:0})
+  });
+}
+
+export function validateDeployedOneShotContinuationAdmissionHandoff(admission,{approvedSha,accountFingerprint}={}){
+  if(admission?.version!==DEPLOYED_ONE_SHOT_CONTINUATION_ADMISSION_VERSION||admission.ok!==true||admission.classification!==DEPLOYED_ONE_SHOT_CONTINUATION_READY||
+    admission.approvedSha!==approvedSha||admission.accountFingerprint!==accountFingerprint||admission.versionId!==DEPLOYED_ONE_SHOT_VERSION_ID||
+    admission.workerId!==DEPLOYED_ONE_SHOT_WORKER_ID||admission.deploymentId!==DEPLOYED_ONE_SHOT_EXISTING_DEPLOYMENT_ID||!validateZoneTopology(admission.topology)||
+    admission.retryAuthorized!==false||admission.evidence?.productionMutations!==0||admission.evidence?.apiFootballRequests!==0||admission.evidence?.secretValuesRead!==0)throw new Error('DEPLOYED_ONE_SHOT_ADMISSION_HANDOFF_INVALID');
+  if(deployedOneShotContinuationAdmissionDiagnostic(admission.preflight,admission.deployments,{approvedSha,accountFingerprint}))throw new Error('DEPLOYED_ONE_SHOT_ADMISSION_HANDOFF_INVALID');
+  return true;
+}
+
+// Pure continuation orchestration. There is no createDeployment operation: a Deployment mutation is unrepresentable here.
+export async function runDeployedOneShotContinuation({admissionValid=false,ops}={}){
+  const required=['verifyDeployment','enableWorkersDev','proveReadiness','enableCollection','triggerOnce','disableCollection','disableWorkersDev'];
+  const refuse=code=>safe({ok:false,classification:code,diagnostic:code,stagesReached:Object.freeze([]),retryAuthorized:false,cleanup:null,trigger:null});
+  if(admissionValid!==true)return refuse('DEPLOYED_ONE_SHOT_NOT_ADMITTED');
+  if(!ops||required.some(name=>typeof ops[name]!=='function')||Object.hasOwn(ops,'createDeployment'))return refuse('DEPLOYED_ONE_SHOT_OPERATIONS_INCOMPLETE');
+  const stagesReached=[];let primary=null,trigger=null,workersDevTouched=false;
+  const step=async(name,operation)=>{stagesReached.push(name);await operation();};
+  try{
+    await step('VERIFY_EXISTING_DEPLOYMENT',ops.verifyDeployment);
+    workersDevTouched=true;
+    await step('ENABLE_WORKERS_DEV',ops.enableWorkersDev);
+    await step('PROVE_READINESS',ops.proveReadiness);
+    await step('ENABLE_COLLECTION',ops.enableCollection);
+    stagesReached.push('TRIGGER_ONCE');
+    trigger=await ops.triggerOnce();
+    if(!trigger||trigger.requestCount!==1)throw new Error('DEPLOYED_ONE_SHOT_TRIGGER_ACCOUNTING_INVALID');
+    if(trigger.outcome!=='ACCEPTED')throw new Error(trigger.diagnostic||'DEPLOYED_ONE_SHOT_TRIGGER_AMBIGUOUS');
+  }catch(error){primary=closedDiagnostic(error);}
+  // Before the first mutation nothing was changed, so no cleanup is owed or attempted.
+  const cleanup={collectionDisable:null,workersDevDisable:null};
+  if(workersDevTouched){
+    try{await ops.disableCollection();cleanup.collectionDisable=safe({attempted:true,outcome:'SUCCEEDED',diagnostic:null});}
+    catch(error){cleanup.collectionDisable=safe({attempted:true,outcome:'FAILED',diagnostic:closedDiagnostic(error)});}
+    try{await ops.disableWorkersDev();cleanup.workersDevDisable=safe({attempted:true,outcome:'SUCCEEDED',diagnostic:null});}
+    catch(error){cleanup.workersDevDisable=safe({attempted:true,outcome:'FAILED',diagnostic:closedDiagnostic(error)});}
+  }
+  const cleanupOk=!workersDevTouched||(cleanup.collectionDisable.outcome==='SUCCEEDED'&&cleanup.workersDevDisable.outcome==='SUCCEEDED');
+  const cleanupFailure=cleanupOk?null:(cleanup.collectionDisable.diagnostic??cleanup.workersDevDisable.diagnostic);
+  const ok=primary===null&&cleanupOk;
+  return safe({
+    ok,classification:ok?'DEPLOYED_ONE_SHOT_TRIGGER_ACCEPTED_RECONCILIATION_REQUIRED':'DEPLOYED_ONE_SHOT_EXECUTION_RECONCILIATION_REQUIRED',
+    diagnostic:primary??(cleanupOk?'DEPLOYED_ONE_SHOT_WORKER_ACCEPTED':null),primaryFailure:primary,cleanupFailure,
+    stagesReached:Object.freeze([...stagesReached]),trigger:trigger?safe({requestCount:trigger.requestCount,outcome:trigger.outcome,diagnostic:trigger.diagnostic??null}):null,
+    cleanup:workersDevTouched?safe(cleanup):null,retryAuthorized:false
+  });
 }

@@ -1,3 +1,7 @@
+## Deployed one-shot continuation — no source or provider-scope change
+
+The continuation reuses the unchanged five fixture-discovery queries, competitions, response/row ceilings, semantic validation, 20/20 mapping and shadow isolation of the one-shot design. It adds no endpoint, provider, retention or model/product path and makes no provider request itself. Consumed run `37505586273` made no provider request. See [continuation record](API-FOOTBALL-DEPLOYED-ONE-SHOT-CONTINUATION.md).
+
 ## Deployed one-shot shadow collection — no source or provider-scope change
 
 The one-shot path reuses the existing five fixture-discovery queries for the approved competitions, the existing response-byte and row ceilings, semantic validation, 20/20 mapping and normalized shadow persistence. No new endpoint, competition, lineup/player/event detail, raw-payload retention or model input is added. The executor makes no provider request itself and never holds the API key. Nothing has been collected yet.

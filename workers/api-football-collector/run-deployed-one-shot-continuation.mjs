@@ -1,20 +1,21 @@
-// Protected executor for the deployed one-shot shadow collection. Dormant: dispatch is separately owner-gated.
-// Mutations: one Deployment of the exact reviewed Version, workers.dev on/off, bounded runtime enable/disable.
-// Exactly one trigger request. No Version upload, Cron, route, domain, Preview or secret mutation exists here.
+// Protected executor for the deployed one-shot CONTINUATION from the existing inert Deployment. Dormant: dispatch is separately owner-gated.
+// Mutations: workers.dev on/off and bounded runtime enable/disable only. There is NO Deployment mutation, Version upload, Preview,
+// Cron, route, domain, DELETE or PUT in this path: the Deployment POST is refused before network and its ceiling is zero.
+// Exactly one trigger request.
 import {createHash} from 'node:crypto';
 import fs from 'node:fs';
 import {pathToFileURL} from 'node:url';
-import {EXPECTED_D1_DATABASE_ID} from '../data-platform/phase4b/live-contract.mjs';
 import {runApiFootballActivationLivePreflight} from './activation-live-preflight.mjs';
 import {deployedOneShotPreflightEnv} from './deployed-one-shot-readonly.mjs';
 import {readReplacementRouteTopology} from './replacement-reconciliation.mjs';
 import {
-  DEPLOYED_ONE_SHOT_CLOUDFLARE_MUTATION_CEILINGS,DEPLOYED_ONE_SHOT_EXECUTION_VERSION,DEPLOYED_ONE_SHOT_MAX_D1_CALLS,DEPLOYED_ONE_SHOT_MAX_D1_ROWS_CHANGED,
-  DEPLOYED_ONE_SHOT_MAX_TRIGGER_REQUESTS,DEPLOYED_ONE_SHOT_PREFLIGHT_STAGE,DEPLOYED_ONE_SHOT_READINESS_DELAYS_MS,DEPLOYED_ONE_SHOT_REQUEST_TIMEOUT_MS,
-  DEPLOYED_ONE_SHOT_RUNTIME_SQL,DEPLOYED_ONE_SHOT_TRIGGER_TIMEOUT_MS,DEPLOYED_ONE_SHOT_VERSION_ID,DEPLOYED_ONE_SHOT_WORKER,
-  buildDeploymentBody,createDeploymentWithReadback,deployedOneShotAdmissionDiagnostic,deploymentListState,deploymentSelectsExactVersion,deriveWorkersDevTarget,
-  runDeployedOneShot,validateDeployedOneShotAdmissionHandoff,validateZoneTopology,workerSignatureMatches
+  DEPLOYED_ONE_SHOT_CONTINUATION_EXECUTION_VERSION,DEPLOYED_ONE_SHOT_CONTINUATION_MUTATION_CEILINGS,DEPLOYED_ONE_SHOT_EXISTING_DEPLOYMENT_ID,
+  DEPLOYED_ONE_SHOT_MAX_D1_CALLS,DEPLOYED_ONE_SHOT_MAX_D1_ROWS_CHANGED,DEPLOYED_ONE_SHOT_MAX_TRIGGER_REQUESTS,DEPLOYED_ONE_SHOT_PREFLIGHT_STAGE,
+  DEPLOYED_ONE_SHOT_READINESS_DELAYS_MS,DEPLOYED_ONE_SHOT_REQUEST_TIMEOUT_MS,DEPLOYED_ONE_SHOT_RUNTIME_SQL,DEPLOYED_ONE_SHOT_TRIGGER_TIMEOUT_MS,
+  DEPLOYED_ONE_SHOT_VERSION_ID,DEPLOYED_ONE_SHOT_WORKER,deployedOneShotContinuationAdmissionDiagnostic,deploymentListState,deriveWorkersDevTarget,
+  runDeployedOneShotContinuation,validateDeployedOneShotContinuationAdmissionHandoff,workerSignatureMatches
 } from './deployed-one-shot.mjs';
+import {boundedText,deployedOneShotCloudflarePaths,deployedOneShotFinalRouteScan,statusClass} from './run-deployed-one-shot.mjs';
 
 const API='https://api.cloudflare.com/client/v4';
 const HEX40=/^[0-9a-f]{40}$/;
@@ -23,41 +24,22 @@ const fail=code=>{throw new Error(code);};
 const digest=value=>createHash('sha256').update(String(value)).digest('hex');
 const delay=milliseconds=>new Promise(resolve=>setTimeout(resolve,milliseconds));
 const required=(env,name)=>typeof env[name]==='string'&&env[name]?env[name]:fail('DEPLOYED_ONE_SHOT_ENVIRONMENT_INCOMPLETE');
-export const statusClass=status=>Number.isInteger(status)&&status>=100&&status<=599?`${Math.floor(status/100)}XX`:'UNKNOWN';
-export async function boundedText(response,maxBytes=32){
-  const declared=Number(response.headers?.get?.('content-length'));if(Number.isFinite(declared)&&declared>maxBytes)return null;
-  let text;try{text=await response.text();}catch{return null;}return Buffer.byteLength(text)<=maxBytes?text:null;
-}
 
-export function deployedOneShotCloudflarePaths(accountId){
-  const script=`/accounts/${encodeURIComponent(accountId)}/workers/scripts/${DEPLOYED_ONE_SHOT_WORKER}`;
-  return Object.freeze({deployments:`${script}/deployments`,subdomain:`${script}/subdomain`,
-    d1:`/accounts/${encodeURIComponent(accountId)}/d1/database/${encodeURIComponent(EXPECTED_D1_DATABASE_ID)}/query`});
-}
-// Closed endpoint allowlist. Anything else (Version upload, schedules, routes, domains, DELETE) is refused before network.
-export function assertDeployedOneShotRequestAllowed(method,requestPath,{accountId}={}){
+// Closed endpoint allowlist: Deployment POST is deliberately absent.
+export function assertDeployedOneShotContinuationRequestAllowed(method,requestPath,{accountId}={}){
   const paths=deployedOneShotCloudflarePaths(accountId),verb=String(method).toUpperCase();
-  if(verb==='POST'&&[paths.deployments,paths.subdomain,paths.d1].includes(requestPath))return 'MUTATION';
+  if(verb==='POST'&&[paths.subdomain,paths.d1].includes(requestPath))return 'MUTATION';
   if(verb==='GET'&&requestPath===paths.deployments)return 'READ';
   return fail('DEPLOYED_ONE_SHOT_ENDPOINT_FORBIDDEN');
 }
 
-export function deployedOneShotCriticalRecheckDiagnostic(report,identity){
-  const diagnostic=deployedOneShotAdmissionDiagnostic(report,identity);
+export function deployedOneShotContinuationCriticalRecheckDiagnostic(report,deployments,identity){
+  const diagnostic=deployedOneShotContinuationAdmissionDiagnostic(report,deployments,identity);
   return diagnostic?'DEPLOYED_ONE_SHOT_CRITICAL_STATE_DRIFT__'+diagnostic.toUpperCase():null;
 }
 
-// Fresh authoritative zone-scoped Workers Routes scan immediately before the first mutation.
-// Read-only (GET) with the dedicated topology credential; any failure or matching route stops before mutation.
-export async function deployedOneShotFinalRouteScan({accountId,topologyToken,fetchImpl,routeScan=readReplacementRouteTopology}){
-  let topology;
-  try{topology=await routeScan({account:accountId,topologyToken,fetchImpl,workerName:DEPLOYED_ONE_SHOT_WORKER});}
-  catch{fail('DEPLOYED_ONE_SHOT_FINAL_ROUTE_SCAN_FAILED');}
-  if(!validateZoneTopology(topology))fail('DEPLOYED_ONE_SHOT_FINAL_ROUTE_SCAN_NOT_INERT');
-  return Object.freeze({proof:topology.proof,zoneCount:topology.zoneCount,routeRowCount:topology.routeRowCount,routeCount:topology.routeCount});
-}
-
-export async function executeDeployedOneShot({env=process.env,fetchImpl=globalThis.fetch,criticalRecheck=runApiFootballActivationLivePreflight,routeScan=readReplacementRouteTopology,wait=delay}={}){
+export async function executeDeployedOneShotContinuation({env=process.env,fetchImpl=globalThis.fetch,criticalRecheck=runApiFootballActivationLivePreflight,routeScan=readReplacementRouteTopology,wait=delay}={}){
+  // Every credential is required before any network request.
   const accountId=required(env,'CLOUDFLARE_ACCOUNT_ID'),fingerprint=required(env,'CLOUDFLARE_ACCOUNT_FINGERPRINT');
   const readToken=required(env,'CLOUDFLARE_ATTENDED_READ_TOKEN'),mutationToken=required(env,'CLOUDFLARE_ATTENDED_MUTATION_TOKEN');
   const approvedSha=required(env,'APPROVED_SHA'),trigger=required(env,'API_FOOTBALL_ATTENDED_TRIGGER_SECRET');
@@ -67,24 +49,16 @@ export async function executeDeployedOneShot({env=process.env,fetchImpl=globalTh
   if(!HEX40.test(approvedSha))fail('DEPLOYED_ONE_SHOT_APPROVED_SHA_INVALID');
   if(!HEX64.test(fingerprint)||digest(accountId)!==fingerprint)fail('DEPLOYED_ONE_SHOT_ACCOUNT_IDENTITY_MISMATCH');
   const admission=JSON.parse(fs.readFileSync(required(env,'API_FOOTBALL_DEPLOYED_ONE_SHOT_ADMISSION_PATH'),'utf8'));
-  validateDeployedOneShotAdmissionHandoff(admission,{approvedSha,accountFingerprint:fingerprint});
-
-  // Fresh critical recheck with the protected read credential immediately before the first mutation.
-  const critical=await criticalRecheck({env:deployedOneShotPreflightEnv({accountId,accountFingerprint:fingerprint,readToken,approvedSha}),fetchImpl,stage:DEPLOYED_ONE_SHOT_PREFLIGHT_STAGE});
-  const drift=deployedOneShotCriticalRecheckDiagnostic(critical,{approvedSha,accountFingerprint:fingerprint});if(drift)fail(drift);
-  const finalRouteScan=await deployedOneShotFinalRouteScan({accountId,topologyToken,fetchImpl,routeScan});
-  const target=deriveWorkersDevTarget({accountSubdomain:critical.inventory.accountSubdomain});
+  validateDeployedOneShotContinuationAdmissionHandoff(admission,{approvedSha,accountFingerprint:fingerprint});
 
   const paths=deployedOneShotCloudflarePaths(accountId);
   const mutations={createDeployment:0,enableWorkersDev:0,disableWorkersDev:0};
   let d1Calls=0,d1RowsChanged=0,triggerRequests=0,readinessAttempts=0,collectionEnableSucceeded=false;
-  let deployment={outcome:'NOT_ATTEMPTED',deploymentId:null,readbackExact:null};
+  let deployment={outcome:'NOT_VERIFIED',deploymentId:null,readbackExact:null};
   let readiness={outcome:'NOT_STARTED',attempts:0,lastHttpStatus:null,workerSignatureProved:false};
-  const countMutation=kind=>{mutations[kind]+=1;if(mutations[kind]>DEPLOYED_ONE_SHOT_CLOUDFLARE_MUTATION_CEILINGS[kind])fail('DEPLOYED_ONE_SHOT_MUTATION_CEILING_EXCEEDED');};
-
-  // Returns {kind:'OK',result} | {kind:'REJECTED'} | {kind:'AMBIGUOUS'}. Never retries.
+  const countMutation=kind=>{mutations[kind]+=1;if(mutations[kind]>DEPLOYED_ONE_SHOT_CONTINUATION_MUTATION_CEILINGS[kind])fail('DEPLOYED_ONE_SHOT_MUTATION_CEILING_EXCEEDED');};
   const cloudflare=async(method,requestPath,{body=null,token=mutationToken,headers={}}={})=>{
-    assertDeployedOneShotRequestAllowed(method,requestPath,{accountId});
+    assertDeployedOneShotContinuationRequestAllowed(method,requestPath,{accountId});
     let response;
     try{response=await fetchImpl(API+requestPath,{method,headers:{Authorization:'Bearer '+token,Accept:'application/json',...(body===null?{}:{'content-type':'application/json'}),...headers},
       ...(body===null?{}:{body:JSON.stringify(body)}),redirect:'error',signal:AbortSignal.timeout(DEPLOYED_ONE_SHOT_REQUEST_TIMEOUT_MS)});}
@@ -94,6 +68,19 @@ export async function executeDeployedOneShot({env=process.env,fetchImpl=globalTh
     if(response.status>=400&&response.status<500&&payload?.success===false)return {kind:'REJECTED'};
     return {kind:'AMBIGUOUS'};
   };
+  // Fresh Deployment GET: exactly one Deployment, exact ID, exact reviewed Version at 100%. Never repairs, recreates or deletes.
+  const readDeployment=async()=>{
+    const outcome=await cloudflare('GET',paths.deployments,{token:readToken});
+    return outcome.kind==='OK'?deploymentListState(outcome.result):null;
+  };
+
+  // Final pre-mutation proof: bound admission, fresh critical state, fresh Deployment GET, fresh authoritative zone route scan.
+  const critical=await criticalRecheck({env:deployedOneShotPreflightEnv({accountId,accountFingerprint:fingerprint,readToken,approvedSha}),fetchImpl,stage:DEPLOYED_ONE_SHOT_PREFLIGHT_STAGE});
+  const preDeployments=await readDeployment();
+  const drift=deployedOneShotContinuationCriticalRecheckDiagnostic(critical,preDeployments,{approvedSha,accountFingerprint:fingerprint});if(drift)fail(drift);
+  const finalRouteScan=await deployedOneShotFinalRouteScan({accountId,topologyToken,fetchImpl,routeScan});
+  const target=deriveWorkersDevTarget({accountSubdomain:critical.inventory.accountSubdomain});
+
   const subdomain=async(enabled)=>{
     countMutation(enabled?'enableWorkersDev':'disableWorkersDev');
     const outcome=await cloudflare('POST',paths.subdomain,{body:{enabled,previews_enabled:false},headers:{'Cloudflare-Workers-Script-Api-Date':'2025-08-01'}});
@@ -112,24 +99,11 @@ export async function executeDeployedOneShot({env=process.env,fetchImpl=globalTh
     d1RowsChanged+=changes;if(d1RowsChanged>DEPLOYED_ONE_SHOT_MAX_D1_ROWS_CHANGED)fail('DEPLOYED_ONE_SHOT_D1_BUDGET_EXCEEDED');
   };
 
-  const result=await runDeployedOneShot({admissionValid:true,ops:{
-    createDeployment:async()=>{
-      countMutation('createDeployment');
-      // At most one POST; an ambiguous response is resolved by exactly one read-only readback, never by a second POST.
-      const created=await createDeploymentWithReadback({
-        post:()=>cloudflare('POST',paths.deployments,{body:buildDeploymentBody(approvedSha)}),
-        readback:async()=>{const outcome=await cloudflare('GET',paths.deployments,{token:readToken});return outcome.kind==='OK'?deploymentListState(outcome.result):null;}
-      });
-      deployment={outcome:created.outcome,deploymentId:created.deploymentId,readbackExact:created.readbackPerformed?created.outcome==='APPLIED_CONFIRMED_BY_READBACK':null};
-      if(created.outcome==='REJECTED')fail('DEPLOYED_ONE_SHOT_DEPLOYMENT_REJECTED');
-      if(created.outcome==='NOT_APPLIED')fail('DEPLOYED_ONE_SHOT_DEPLOYMENT_NOT_APPLIED');
-      if(created.outcome==='AMBIGUOUS_OWNER_ATTENTION')fail('DEPLOYED_ONE_SHOT_DEPLOYMENT_AMBIGUOUS');
-    },
+  const result=await runDeployedOneShotContinuation({admissionValid:true,ops:{
     verifyDeployment:async()=>{
-      const outcome=await cloudflare('GET',paths.deployments,{token:readToken});
-      const state=outcome.kind==='OK'?deploymentListState(outcome.result):null;
-      const exact=Boolean(state?.exactSingle&&state.deploymentId===deployment.deploymentId);
-      deployment={...deployment,readbackExact:exact};
+      const state=await readDeployment();
+      const exact=Boolean(state&&state.count===1&&state.exactSingle&&state.deploymentId===DEPLOYED_ONE_SHOT_EXISTING_DEPLOYMENT_ID);
+      deployment={outcome:exact?'EXISTING_VERIFIED':'EXISTING_MISMATCH',deploymentId:exact?state.deploymentId:null,readbackExact:exact};
       if(!exact)fail('DEPLOYED_ONE_SHOT_DEPLOYMENT_READBACK_MISMATCH');
     },
     enableWorkersDev:()=>subdomain(true),
@@ -167,10 +141,10 @@ export async function executeDeployedOneShot({env=process.env,fetchImpl=globalTh
     triggerRequests,collectionEnableSucceeded,mutations:Object.freeze({...mutations}),controlBudget:Object.freeze({d1Calls,d1RowsChanged})});
 }
 
-export function buildDeployedOneShotExecutionEvidence(result,{approvedSha=null}={}){
+export function buildDeployedOneShotContinuationExecutionEvidence(result,{approvedSha=null}={}){
   if(![0,1].includes(result?.triggerRequests))fail('DEPLOYED_ONE_SHOT_TRIGGER_ACCOUNTING_INVALID');
   return Object.freeze({
-    version:DEPLOYED_ONE_SHOT_EXECUTION_VERSION,approvedSha,versionId:DEPLOYED_ONE_SHOT_VERSION_ID,ok:result.ok===true,
+    version:DEPLOYED_ONE_SHOT_CONTINUATION_EXECUTION_VERSION,approvedSha,versionId:DEPLOYED_ONE_SHOT_VERSION_ID,ok:result.ok===true,
     classification:result.classification??null,diagnostic:result.diagnostic??null,primaryFailure:result.primaryFailure??null,cleanupFailure:result.cleanupFailure??null,
     stagesReached:result.stagesReached??[],finalRouteScan:result.finalRouteScan??null,deployment:result.deployment??null,readiness:result.readiness??null,
     triggerRequests:result.triggerRequests,trigger:result.trigger??null,collectionEnableSucceeded:result.collectionEnableSucceeded===true,
@@ -179,19 +153,19 @@ export function buildDeployedOneShotExecutionEvidence(result,{approvedSha=null}=
   });
 }
 
-export function buildDeployedOneShotPreMutationFailure(error,{approvedSha=null}={}){
+export function buildDeployedOneShotContinuationPreMutationFailure(error,{approvedSha=null}={}){
   const message=String(error?.message??'');
-  return Object.freeze({version:DEPLOYED_ONE_SHOT_EXECUTION_VERSION,approvedSha,versionId:DEPLOYED_ONE_SHOT_VERSION_ID,ok:false,
+  return Object.freeze({version:DEPLOYED_ONE_SHOT_CONTINUATION_EXECUTION_VERSION,approvedSha,versionId:DEPLOYED_ONE_SHOT_VERSION_ID,ok:false,
     classification:'DEPLOYED_ONE_SHOT_STOPPED_BEFORE_MUTATION',diagnostic:/^DEPLOYED_ONE_SHOT_[A-Z0-9_]{1,128}$/.test(message)?message:'DEPLOYED_ONE_SHOT_UNEXPECTED_FAILURE',
-    primaryFailure:null,cleanupFailure:null,stagesReached:[],finalRouteScan:null,deployment:{outcome:'NOT_ATTEMPTED',deploymentId:null,readbackExact:null},readiness:null,
+    primaryFailure:null,cleanupFailure:null,stagesReached:[],finalRouteScan:null,deployment:{outcome:'NOT_VERIFIED',deploymentId:null,readbackExact:null},readiness:null,
     triggerRequests:0,trigger:null,collectionEnableSucceeded:false,cleanup:null,mutations:{createDeployment:0,enableWorkersDev:0,disableWorkersDev:0},
     controlBudget:{d1Calls:0,d1RowsChanged:0},retryAuthorized:false,evidence:{apiFootballRequestsByExecutor:0,secretValuesSerialized:0}});
 }
 
 export async function main(){
   const approvedSha=process.env.APPROVED_SHA??null;let output;
-  try{output=buildDeployedOneShotExecutionEvidence(await executeDeployedOneShot(),{approvedSha});}
-  catch(error){output=buildDeployedOneShotPreMutationFailure(error,{approvedSha});}
+  try{output=buildDeployedOneShotContinuationExecutionEvidence(await executeDeployedOneShotContinuation(),{approvedSha});}
+  catch(error){output=buildDeployedOneShotContinuationPreMutationFailure(error,{approvedSha});}
   const outputPath=process.env.API_FOOTBALL_DEPLOYED_ONE_SHOT_EXECUTION_REPORT_PATH;
   if(outputPath)fs.writeFileSync(outputPath,JSON.stringify(output,null,2)+'\n',{mode:0o600});
   console.log(JSON.stringify({ok:output.ok,classification:output.classification,diagnostic:output.diagnostic,triggerRequests:output.triggerRequests,retryAuthorized:false}));

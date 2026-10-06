@@ -1,3 +1,9 @@
+## Current API-Football checkpoint — deployed one-shot continuation
+
+Owner-approved live one-shot run `37505586273` (starting main `a8d4e78f022259868208e097fc779f9de768b2f6`, PR #311, attempt 1) is **consumed and must never be rerun**. It submitted exactly one Deployment creation POST, its immediate response handling classified the result ambiguous and stopped fail-closed (`DEPLOYED_ONE_SHOT_DEPLOYMENT_AMBIGUOUS`; no trigger, no provider request, cleanup succeeded), and the independent final reconciliation then proved the POST had applied: exact Deployment `2417a3e0-15db-4e45-a3c8-00b148a300f4` selects reviewed attended Version `04d79556-3070-429f-9944-b5b53d799842` at 100%, workers.dev/Preview/Cron/routes/domains are off or zero, collection is disabled, credential `AVAILABLE`, provider history is pristine and production is inert (`DEPLOYED_ONE_SHOT_CLEAN_STOP_NO_PROVIDER_REQUEST`). That inert Deployment is now accepted live state: do not delete, recreate or modify it, and submit no further Deployment POST on the continuation path.
+
+Approved work is repository implementation only of the [continuation](API-FOOTBALL-DEPLOYED-ONE-SHOT-CONTINUATION.md). Remaining gates, each separate: (1) owner review/merge of the draft PR; (2) post-merge exact-main verification; (3) a new explicit owner approval to dispatch `API-Football Deployed One-Shot Continuation` once on that exact main; (4) independent reconciliation review. Run `37505586273` is never rerun. No model/product use, Cron or second collection is planned or approved.
+
 ## Current API-Football checkpoint — controlled deployed one-shot shadow collection
 
 Replacement recovery is closed: topology closeout run `37493107003` passed on main `9b8e5ccc635c192512f2d4f94bb369e87c2c1f9a`.

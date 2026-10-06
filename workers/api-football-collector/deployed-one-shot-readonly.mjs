@@ -15,7 +15,7 @@ const API='https://api.cloudflare.com/client/v4';
 const HEX40=/^[0-9a-f]{40}$/;
 const HEX64=/^[0-9a-f]{64}$/;
 const digest=value=>createHash('sha256').update(String(value)).digest('hex');
-const zero=Object.freeze({productionMutations:0,apiFootballRequests:0,secretValuesRead:0});
+export const zero=Object.freeze({productionMutations:0,apiFootballRequests:0,secretValuesRead:0});
 
 export function deployedOneShotPreflightEnv({accountId,accountFingerprint,readToken,approvedSha}){
   return Object.freeze({
@@ -26,7 +26,7 @@ export function deployedOneShotPreflightEnv({accountId,accountFingerprint,readTo
   });
 }
 
-function readIdentity(env){
+export function readIdentity(env){
   const accountId=env.DATA_STEWARD_CLOUDFLARE_ACCOUNT_ID,accountFingerprint=env.DATA_STEWARD_CLOUDFLARE_ACCOUNT_FINGERPRINT;
   const readToken=env.DATA_STEWARD_CLOUDFLARE_READ_TOKEN,topologyToken=env.CLOUDFLARE_TOPOLOGY_READ_TOKEN,approvedSha=env.APPROVED_SHA;
   if(typeof accountId!=='string'||!accountId||!HEX64.test(String(accountFingerprint||''))||digest(accountId)!==accountFingerprint||
@@ -34,7 +34,7 @@ function readIdentity(env){
   return Object.freeze({accountId,accountFingerprint,readToken,topologyToken,approvedSha});
 }
 
-async function readTopology(identity,fetchImpl){
+export async function readTopology(identity,fetchImpl){
   try{return {topology:await readReplacementRouteTopology({account:identity.accountId,topologyToken:identity.topologyToken,fetchImpl,workerName:DEPLOYED_ONE_SHOT_WORKER}),failure:null};}
   catch{return {topology:null,failure:'zone_route_topology_unreadable'};}
 }

@@ -1,3 +1,11 @@
+## 2026-10-06 — continue the one-shot from the existing inert Deployment instead of recreating it
+
+**Decision:** after consumed run `37505586273` applied its single Deployment POST while classifying the response ambiguous, accept Deployment `2417a3e0-15db-4e45-a3c8-00b148a300f4` as live state and implement (repository only) a continuation with a Deployment mutation ceiling of zero, rather than deleting/recreating it or weakening the historical zero-Deployment admission.
+
+**Choices:** a continuation-specific admission that consumes the stale lifecycle-preflight STOP only against independently observed exact fields and a direct Deployments read; a separate executor/workflow so a Deployment POST is unrepresentable; one reusable creation helper that never resends a POST and reads back once on ambiguity; the old workflow is marked consumed. Retry of run `37505586273` is forbidden.
+
+**Not decided:** live dispatch of the continuation, Cron/scheduled collection, any later collection, any model or product use. Each needs a separate owner gate. See [API-FOOTBALL-DEPLOYED-ONE-SHOT-CONTINUATION.md](API-FOOTBALL-DEPLOYED-ONE-SHOT-CONTINUATION.md).
+
 ## 2026-10-06 — implement the deployed one-shot shadow collection on the original collector
 
 **Decision:** after topology closeout run `37493107003` passed, implement (repository only) one controlled deployed shadow collection using `teamsheet-api-football-shadow-collector` and reviewed attended Version `04d79556-3070-429f-9944-b5b53d799842`.

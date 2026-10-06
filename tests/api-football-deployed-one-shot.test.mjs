@@ -225,7 +225,7 @@ test('closed endpoint allowlist refuses Version upload, schedules, routes, domai
 });
 
 test('wrong Version in the Deployment response or readback stops before any traffic surface',async()=>{
-  for(const options of [{deploy:'wrong'},{readback:'none'},{readback:'two'}]){
+  for(const options of [{deploy:'wrong',readback:'none'},{deploy:'wrong',readback:'two'},{readback:'none'},{readback:'two'}]){
     const {result,calls}=await run(options);
     assert.equal(result.ok,false);assert.equal(triggerPosts(calls).length,0);
     assert.equal(result.collectionEnableSucceeded,false);
@@ -234,14 +234,27 @@ test('wrong Version in the Deployment response or readback stops before any traf
   }
 });
 
-test('Deployment rejection and ambiguity stop without retry and still run cleanup',async()=>{
-  for(const [deploy,diagnostic,outcome] of [['reject','DEPLOYED_ONE_SHOT_DEPLOYMENT_REJECTED','REJECTED'],['throw','DEPLOYED_ONE_SHOT_DEPLOYMENT_AMBIGUOUS','AMBIGUOUS'],['server','DEPLOYED_ONE_SHOT_DEPLOYMENT_AMBIGUOUS','AMBIGUOUS']]){
-    const {result,calls}=await run({deploy});
+test('Deployment rejection and ambiguity never resend the POST, read back exactly once and still run cleanup',async()=>{
+  for(const [deploy,readback,diagnostic,outcome] of [
+    ['reject','exact','DEPLOYED_ONE_SHOT_DEPLOYMENT_REJECTED','REJECTED'],
+    ['throw','none','DEPLOYED_ONE_SHOT_DEPLOYMENT_NOT_APPLIED','NOT_APPLIED'],['server','none','DEPLOYED_ONE_SHOT_DEPLOYMENT_NOT_APPLIED','NOT_APPLIED'],
+    ['throw','two','DEPLOYED_ONE_SHOT_DEPLOYMENT_AMBIGUOUS','AMBIGUOUS_OWNER_ATTENTION'],['server','two','DEPLOYED_ONE_SHOT_DEPLOYMENT_AMBIGUOUS','AMBIGUOUS_OWNER_ATTENTION']]){
+    const {result,calls}=await run({deploy,readback});
     assert.equal(result.primaryFailure,diagnostic);assert.equal(result.deployment.outcome,outcome);
     assert.equal(calls.filter(call=>call.href===API+paths.deployments&&call.method==='POST').length,1);
+    assert.equal(calls.filter(call=>call.href===API+paths.deployments&&call.method==='GET').length,outcome==='REJECTED'?0:1);
     assert.equal(triggerPosts(calls).length,0);
     assert.equal(result.cleanup.collectionDisable.attempted,true);assert.equal(result.cleanup.workersDevDisable.attempted,true);
     assert.equal(result.retryAuthorized,false);
+  }
+});
+
+test('an applied Deployment whose POST response was ambiguous is confirmed by one readback and continues without a second POST',async()=>{
+  for(const deploy of ['throw','server','wrong']){
+    const {result,calls}=await run({deploy});
+    assert.equal(result.deployment.outcome,'APPLIED_CONFIRMED_BY_READBACK');assert.equal(result.deployment.deploymentId,'dep-1');
+    assert.equal(calls.filter(call=>call.href===API+paths.deployments&&call.method==='POST').length,1);
+    assert.equal(result.mutations.createDeployment,1);assert.equal(result.ok,true);
   }
 });
 
