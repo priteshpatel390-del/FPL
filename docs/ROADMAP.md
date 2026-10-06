@@ -1,3 +1,9 @@
+## Current API-Football replacement checkpoint — standard read boundary diagnostics
+
+Run `37485321534` passed the original-side re-proof and then stopped at a generic standard replacement Cloudflare read. The immediate approved work is repository-only endpoint-class diagnostics for those reads, with no acceptance or live-state change.
+
+After tests, deterministic build, review, merge and exact-main verification, a separately approved read-only reconciliation may identify the exact failing read boundary. No live mutation or provider activity belongs to this checkpoint.
+
 ## Current API-Football replacement checkpoint — nullable legacy route remediation
 
 Run `37481520674` reduced the remaining blocker to one repository false-negative: nullable/omitted legacy Scripts `routes` metadata. Current approved work is repository-only handling of that optional field while preserving the independent zone-route proof as authoritative.

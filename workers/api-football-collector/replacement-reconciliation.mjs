@@ -12,11 +12,11 @@ const MAX_ZONE_PAGES=20;
 const fail=code=>{throw new Error(code);};
 const enc=value=>encodeURIComponent(String(value));
 
-async function request(path,{token,fetchImpl}){
+async function request(path,{token,fetchImpl,failureCode='replacement_reconciliation_read_failed'}){
   let response,payload;
   try{response=await fetchImpl(API+path,{headers:{Authorization:'Bearer '+token,Accept:'application/json'},redirect:'error',signal:AbortSignal.timeout(20_000)});payload=await response.json();}
-  catch{return fail('replacement_reconciliation_read_failed');}
-  if(!response.ok||payload?.success!==true)fail('replacement_reconciliation_read_failed');
+  catch{return fail(failureCode);}
+  if(!response.ok||payload?.success!==true)fail(failureCode);
   return payload.result;
 }
 async function topologyRequest(path,{token,fetchImpl}){
@@ -76,8 +76,9 @@ export async function readReplacementRouteTopology({account,topologyToken,fetchI
 // and become authoritative for route-count proof.
 export async function readReplacementState({account,token,topologyToken=null,versionId=null,approvedSha,versionApprovedSha=approvedSha,fetchImpl=globalThis.fetch}){
   const paths=replacementPaths(account);
-  const betaWorkers=await request(paths.betaWorkers,{token,fetchImpl});
-  const scripts=await request(paths.scripts,{token,fetchImpl}),domains=await request(paths.domains,{token,fetchImpl});
+  const betaWorkers=await request(paths.betaWorkers,{token,fetchImpl,failureCode:'replacement_reconciliation_worker_inventory_read_failed'});
+  const scripts=await request(paths.scripts,{token,fetchImpl,failureCode:'replacement_reconciliation_legacy_scripts_read_failed'}),
+    domains=await request(paths.domains,{token,fetchImpl,failureCode:'replacement_reconciliation_custom_domains_read_failed'});
   const workers=list(betaWorkers,'items').filter(row=>row?.name===REPLACEMENT_COLLECTOR);
   const script=list(scripts,'items').find(row=>row?.id===REPLACEMENT_COLLECTOR);
   const customDomainCount=list(domains,'items').filter(row=>row?.service===REPLACEMENT_COLLECTOR).length;
@@ -97,9 +98,10 @@ export async function readReplacementState({account,token,topologyToken=null,ver
   }
 
   const worker=workers[0];
-  const subdomain=await request(paths.replacementSubdomain,{token,fetchImpl});
-  const deployments=await request(paths.replacementDeployments,{token,fetchImpl}),schedules=await request(paths.replacementSchedules,{token,fetchImpl});
-  const versionRows=list(await request(paths.replacementVersions,{token,fetchImpl}),'items'),versionIds=versionRows.map(row=>row?.id).filter(id=>typeof id==='string');
+  const subdomain=await request(paths.replacementSubdomain,{token,fetchImpl,failureCode:'replacement_reconciliation_subdomain_read_failed'});
+  const deployments=await request(paths.replacementDeployments,{token,fetchImpl,failureCode:'replacement_reconciliation_deployments_read_failed'}),
+    schedules=await request(paths.replacementSchedules,{token,fetchImpl,failureCode:'replacement_reconciliation_schedules_read_failed'});
+  const versionRows=list(await request(paths.replacementVersions,{token,fetchImpl,failureCode:'replacement_reconciliation_version_inventory_read_failed'}),'items'),versionIds=versionRows.map(row=>row?.id).filter(id=>typeof id==='string');
   let legacyRouteCount=null;
   if(script){
     if(script.routes==null)legacyRouteCount=null;
@@ -121,8 +123,8 @@ export async function readReplacementState({account,token,topologyToken=null,ver
   let versionIdentityExact=null;
   if(versionId!==null){
     if(!HEX40.test(String(versionApprovedSha||'')))fail('replacement_reconciliation_version_provenance_invalid');
-    const stableVersion=await request(paths.replacement+'/'+enc(versionId),{token,fetchImpl});
-    const betaVersion=await request(paths.createShell+'/'+enc(worker.id)+'/versions/'+enc(versionId)+'?include=modules',{token,fetchImpl});
+    const stableVersion=await request(paths.replacement+'/'+enc(versionId),{token,fetchImpl,failureCode:'replacement_reconciliation_stable_version_read_failed'});
+    const betaVersion=await request(paths.createShell+'/'+enc(worker.id)+'/versions/'+enc(versionId)+'?include=modules',{token,fetchImpl,failureCode:'replacement_reconciliation_beta_version_read_failed'});
     versionIdentityExact=false;try{validateReplacementVersion({stableVersion,betaVersion,versionId,identity:buildReplacementIdentity(versionApprovedSha)});versionIdentityExact=true;}catch{}
   }
   return Object.freeze({

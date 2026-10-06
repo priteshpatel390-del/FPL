@@ -30,7 +30,7 @@ function fixtureVersion(){
   };
 }
 
-function fakeCloudflare({preview=false,replacementRoute=false,zoneARoutes=undefined,legacyScript=false,legacyRoutes=[],legacyRoutesMissing=false,workerDeployed=false,domain=false}={}){
+function fakeCloudflare({preview=false,replacementRoute=false,zoneARoutes=undefined,legacyScript=false,legacyRoutes=[],legacyRoutesMissing=false,workerDeployed=false,domain=false,readFailure=null}={}){
   const paths=replacementPaths(ACCOUNT),fx=fixtureVersion(),calls=[];
   const worker={id:REPLACEMENT_RECOVERY_WORKER_ID,name:REPLACEMENT_COLLECTOR,deployed_on:workerDeployed?'2026-10-01T00:00:00Z':null};
   const fetchImpl=async(url,init={})=>{
@@ -48,6 +48,17 @@ function fakeCloudflare({preview=false,replacementRoute=false,zoneARoutes=undefi
     if(parsed.pathname==='/client/v4/zones/zone-b/workers/routes'){assert.equal(auth,'Bearer '+TOPOLOGY_TOKEN);return ok([]);}
     assert.equal(auth,'Bearer '+READ_TOKEN);
     const full=String(url).slice(API.length),p=full.split('?')[0];
+    const failedPath=
+      (readFailure==='worker_inventory'&&full===paths.betaWorkers)||
+      (readFailure==='legacy_scripts'&&p===paths.scripts)||
+      (readFailure==='custom_domains'&&p===paths.domains)||
+      (readFailure==='subdomain'&&p===paths.replacementSubdomain)||
+      (readFailure==='deployments'&&p===paths.replacementDeployments)||
+      (readFailure==='schedules'&&p===paths.replacementSchedules)||
+      (readFailure==='version_inventory'&&full===paths.replacementVersions)||
+      (readFailure==='stable_version'&&p===paths.replacement+'/'+REPLACEMENT_LIVE_VERSION_ID)||
+      (readFailure==='beta_version'&&full===paths.createShell+'/'+REPLACEMENT_RECOVERY_WORKER_ID+'/versions/'+REPLACEMENT_LIVE_VERSION_ID+'?include=modules');
+    if(failedPath)throw new Error('private transport detail must not escape');
     if(full===paths.betaWorkers)return ok([worker]);
     if(p===paths.scripts)return ok([{id:ORIGINAL_COLLECTOR,routes:[]},...(legacyScript?[{id:REPLACEMENT_COLLECTOR,...(legacyRoutesMissing?{}:{routes:legacyRoutes})}]:[])]);
     if(p===paths.domains)return ok(domain?[{service:REPLACEMENT_COLLECTOR}]:[]);
@@ -73,6 +84,26 @@ test('one-Version state is provable when legacy Scripts row is still absent',asy
     versionId:REPLACEMENT_LIVE_VERSION_ID,approvedSha:EXEC_SHA,versionApprovedSha:REPLACEMENT_LIVE_VERSION_APPROVED_SHA,fetchImpl:fake.fetchImpl});
   assert.equal(state.scriptPresent,false);assert.equal(state.routeProof,'ZONE_ROUTE_SCAN');assert.equal(state.routeCount,0);assert.equal(state.topologyZoneCount,2);assert.equal(state.topologyRouteRowCount,1);
   assert.equal(state.versionIdentityExact,true);assert.equal(state.workerDeployedOnNull,true);assert.equal(state.previewUrls,false);
+});
+
+test('standard Cloudflare read failures retain only endpoint-class diagnostics',async()=>{
+  const cases=[
+    ['worker_inventory','replacement_reconciliation_worker_inventory_read_failed'],
+    ['legacy_scripts','replacement_reconciliation_legacy_scripts_read_failed'],
+    ['custom_domains','replacement_reconciliation_custom_domains_read_failed'],
+    ['subdomain','replacement_reconciliation_subdomain_read_failed'],
+    ['deployments','replacement_reconciliation_deployments_read_failed'],
+    ['schedules','replacement_reconciliation_schedules_read_failed'],
+    ['version_inventory','replacement_reconciliation_version_inventory_read_failed'],
+    ['stable_version','replacement_reconciliation_stable_version_read_failed'],
+    ['beta_version','replacement_reconciliation_beta_version_read_failed']
+  ];
+  for(const [readFailure,reason] of cases){
+    const fake=fakeCloudflare({readFailure}),report=await runReplacementOneVersionReconciliation({env,fetchImpl:fake.fetchImpl});
+    assert.equal(report.ok,false);assert.equal(report.classification,'REPLACEMENT_ONE_VERSION_OWNER_ATTENTION_REQUIRED');
+    assert.equal(report.reason,reason);assert.equal(report.replacement,null);
+    assert.equal(JSON.stringify(report).includes('private transport detail'),false);
+  }
 });
 
 test('route inventory failures retain only closed field-level diagnostics',async()=>{

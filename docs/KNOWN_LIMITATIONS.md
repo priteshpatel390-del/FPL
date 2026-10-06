@@ -1,3 +1,9 @@
+## Run 37485321534 did not identify the exact standard read failure
+
+The latest read-only reconciliation stopped as `replacement_reconciliation_read_failed`. That proves a standard replacement Cloudflare read failed, but the current artifact cannot distinguish Worker inventory, legacy Scripts, custom domains, subdomain, Deployments, schedules, Version inventory or Version-detail reads.
+
+Safe replacement state therefore remains unproved. The diagnostic remediation identifies only the repository read boundary; it does not itself prove live safety or authorize a rerun.
+
 ## Run 37481520674 still did not prove replacement safe state
 
 The latest read-only reconciliation reached the legacy Scripts cross-check and stopped because `routes` was not an array. The repository had not yet allowed the optional/null representation. The artifact did not return a validated replacement state, so zero routes, Preview-disabled replacement state and overall safe reconciliation are still not claimed.

@@ -1,3 +1,7 @@
+## Per-endpoint replacement read diagnostics — no source change
+
+Run `37485321534` made zero API-Football requests and no production data mutation. Splitting Cloudflare infrastructure read failures into closed endpoint classes changes no provider, acquisition, retention, normalization, fallback, model input or product path. API-Football remains dormant/shadow-only and Official FPL authority is unchanged.
+
 ## Nullable legacy route remediation — no source change
 
 Run `37481520674` made zero API-Football requests and no production data mutation. Handling optional legacy Cloudflare route metadata changes no provider, acquisition, retention, normalization, fallback, model input or product path. API-Football remains dormant/shadow-only and Official FPL authority is unchanged.

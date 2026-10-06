@@ -1,3 +1,11 @@
+## 2026-10-06 — identify standard replacement read boundaries without remote detail
+
+**Decision:** consume run `37485321534` and replace the generic `replacement_reconciliation_read_failed` outcome with one closed repository-owned failure code per standard replacement read boundary.
+
+**Reason:** the latest run proved the previous nullable legacy-routes false-negative was passed, but the generic standard-read error was insufficient to identify which read failed. Endpoint-class diagnostics provide the minimum information needed for a safe next investigation while exposing no remote response or account detail.
+
+**Boundary:** this is diagnostic-only. No read ordering, credentials, endpoint set, accepted replacement state, topology rule, mutation authority or provider path changes.
+
 ## 2026-10-06 — nullable legacy routes do not override authoritative route proof
 
 **Decision:** consume run `37481520674` and remediate the exact false-negative by treating the legacy Scripts row's missing/null `routes` value as unavailable metadata rather than invalid inventory. Continue to require the independent zone-scoped Workers Routes scan for route truth.
