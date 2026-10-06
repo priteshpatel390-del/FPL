@@ -1,3 +1,9 @@
+## Replacement route-inventory diagnostic boundary
+
+The zone-route scanner keeps the same fail-closed acceptance contract but now distinguishes route-response array shape, route-row object shape, route id type, route pattern type, route script type and legacy Scripts route-array shape. Successful evidence may retain only `ZONE_ROUTE_SCAN`, zone count, total route-row count and replacement-route count. It never persists zone identifiers, route identifiers, route patterns, script names or arbitrary Cloudflare response content.
+
+This change is diagnostic only. A route still counts as targeting the replacement only when its `script` equals the exact replacement Worker name, and any malformed inventory still stops reconciliation.
+
 ## Replacement one-Version reconciliation architecture
 
 The live replacement now has exactly one known Version, `995b0396-a61e-4bee-a405-aa6b3f765e5c`, created by consumed run `36820805445` from main `18f5748ff88403cdbd89019ca3306706364962ea`. Version identity is therefore immutable historical provenance and must not be reconstructed from a later workflow SHA.

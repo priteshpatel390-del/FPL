@@ -27,6 +27,14 @@ async function topologyRequest(path,{token,fetchImpl}){
   return payload;
 }
 const list=(value,key)=>Array.isArray(value)?value:Array.isArray(value?.[key])?value[key]:fail('replacement_reconciliation_shape_invalid');
+const routeRows=value=>Array.isArray(value)?value:fail('replacement_reconciliation_zone_route_result_invalid');
+function validateZoneRouteRow(row){
+  if(!row||typeof row!=='object'||Array.isArray(row))fail('replacement_reconciliation_zone_route_row_invalid');
+  if(typeof row.id!=='string')fail('replacement_reconciliation_zone_route_id_invalid');
+  if(typeof row.pattern!=='string')fail('replacement_reconciliation_zone_route_pattern_invalid');
+  if(row.script!==undefined&&row.script!==null&&typeof row.script!=='string')fail('replacement_reconciliation_zone_route_script_invalid');
+  return row;
+}
 
 export async function readReplacementRouteTopology({account,topologyToken,fetchImpl=globalThis.fetch}){
   if(typeof account!=='string'||!account||typeof topologyToken!=='string'||!topologyToken)fail('replacement_reconciliation_topology_identity_invalid');
@@ -51,16 +59,16 @@ export async function readReplacementRouteTopology({account,topologyToken,fetchI
     if(page>=totalPages)break;
     page+=1;
   }
-  let routeCount=0;
+  let routeCount=0,routeRowCount=0;
   for(const zoneId of zones){
     const payload=await topologyRequest('/zones/'+enc(zoneId)+'/workers/routes',{token:topologyToken,fetchImpl});
-    const rows=list(payload?.result);
-    for(const row of rows){
-      if(typeof row?.id!=='string'||typeof row?.pattern!=='string'||(row?.script!==undefined&&row?.script!==null&&typeof row.script!=='string'))fail('replacement_reconciliation_route_inventory_invalid');
+    const rows=routeRows(payload?.result);
+    for(const raw of rows){
+      const row=validateZoneRouteRow(raw);routeRowCount+=1;
       if(row.script===REPLACEMENT_COLLECTOR)routeCount+=1;
     }
   }
-  return Object.freeze({proof:'ZONE_ROUTE_SCAN',zoneCount:zones.length,routeCount});
+  return Object.freeze({proof:'ZONE_ROUTE_SCAN',zoneCount:zones.length,routeRowCount,routeCount});
 }
 
 // Reads replacement state without assuming the legacy Scripts inventory has materialized.
@@ -85,7 +93,7 @@ export async function readReplacementState({account,token,topologyToken=null,ver
     if(script||customDomainCount!==0||(topology&&topology.routeCount!==0))fail('replacement_reconciliation_worker_invalid');
     return Object.freeze({present:false,workerName:null,workerId:null,versionId:null,versionIds:Object.freeze([]),versionIdentityExact:null,scriptPresent:false,
       workerDeployedOnNull:null,workersDev:null,previewUrls:null,versionCount:0,versionInventoryExact:true,deploymentCount:0,cronCount:0,
-      routeCount:topology?.routeCount??0,routeProof:topology?.proof??'WORKER_ABSENT',topologyZoneCount:topology?.zoneCount??null,legacyRouteCount:null,customDomainCount:0});
+      routeCount:topology?.routeCount??0,routeProof:topology?.proof??'WORKER_ABSENT',topologyZoneCount:topology?.zoneCount??null,topologyRouteRowCount:topology?.routeRowCount??null,legacyRouteCount:null,customDomainCount:0});
   }
 
   const worker=workers[0];
@@ -94,12 +102,12 @@ export async function readReplacementState({account,token,topologyToken=null,ver
   const versionRows=list(await request(paths.replacementVersions,{token,fetchImpl}),'items'),versionIds=versionRows.map(row=>row?.id).filter(id=>typeof id==='string');
   let legacyRouteCount=null;
   if(script){
-    if(!Array.isArray(script.routes))fail('replacement_reconciliation_route_inventory_invalid');
+    if(!Array.isArray(script.routes))fail('replacement_reconciliation_legacy_route_inventory_invalid');
     legacyRouteCount=script.routes.length;
   }
-  let routeCount,routeProof,topologyZoneCount=null;
+  let routeCount,routeProof,topologyZoneCount=null,topologyRouteRowCount=null;
   if(topology){
-    routeCount=topology.routeCount;routeProof=topology.proof;topologyZoneCount=topology.zoneCount;
+    routeCount=topology.routeCount;routeProof=topology.proof;topologyZoneCount=topology.zoneCount;topologyRouteRowCount=topology.routeRowCount;
     if(legacyRouteCount!==null&&legacyRouteCount!==routeCount)fail('replacement_reconciliation_route_inventory_mismatch');
   }else if(legacyRouteCount!==null){
     routeCount=legacyRouteCount;routeProof='LEGACY_SCRIPT_INVENTORY';
@@ -121,7 +129,7 @@ export async function readReplacementState({account,token,topologyToken=null,ver
     workerDeployedOnNull:worker.deployed_on==null,workersDev:subdomain?.enabled!==false,previewUrls:subdomain?.previews_enabled!==false,
     versionCount:versionRows.length,versionInventoryExact:versionId===null?versionRows.length===0:versionRows.length===1&&versionRows[0]?.id===versionId,
     deploymentCount:list(deployments,'deployments').length,cronCount:list(schedules,'schedules').length,
-    routeCount,routeProof,topologyZoneCount,legacyRouteCount,customDomainCount
+    routeCount,routeProof,topologyZoneCount,topologyRouteRowCount,legacyRouteCount,customDomainCount
   });
 }
 

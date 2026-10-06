@@ -1,3 +1,9 @@
+## Run 37365722097 did not prove replacement safe state
+
+The read-only reconciliation reached Cloudflare zone-route validation but stopped as `replacement_reconciliation_route_inventory_invalid`. Retained evidence intentionally contains no offending route payload, so the exact failed field is not yet known. Original collector/D1/runtime state remained independently healthy and no production mutation/provider request occurred.
+
+Until the diagnostic remediation is merged and a later read-only run completes, do not claim Preview-disabled replacement safe state or zero-route reconciliation is proved.
+
 ## Replacement run 36820805445 consumed; one-Version safe state is not yet live-reconciled
 
 Run `36820805445` definitely uploaded replacement Version `995b0396-a61e-4bee-a405-aa6b3f765e5c` and submitted its one allowed Preview-disable cleanup, but retained evidence does not prove the final Preview state or routing because the common reader rejected a missing legacy Scripts row after Version creation. The original collector/D1/runtime side independently remained pristine and provider requests stayed zero.

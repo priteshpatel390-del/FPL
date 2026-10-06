@@ -1,3 +1,11 @@
+## 2026-10-05 — split route-inventory diagnostics without weakening validation
+
+**Decision:** consume read-only run `37365722097` and keep its generic `replacement_reconciliation_route_inventory_invalid` outcome as historical evidence. Replace that generic repository-owned error with closed field-level diagnostic enums and retain only bounded route-row counts. Do not retain raw zone/route values and do not loosen the zero-route requirement.
+
+**Reason:** the live read-only credential and topology path worked far enough to reach route validation, but the generic error did not reveal which repository shape assertion failed. A narrower diagnostic is required before another read-only attempt can be interpreted safely.
+
+**Gate:** repository tests/build/docs/draft PR only. A later live rerun remains separately approved.
+
 ## 2026-10-01 — preserve the first replacement Version and prove routes independently
 
 **Decision:** consume run `36820805445`; preserve replacement Version `995b0396-a61e-4bee-a405-aa6b3f765e5c`; do not upload a second Version or rerun the recovery. Separate the Version's immutable creation SHA from later execution SHA. For a one-Version replacement whose legacy Scripts row is absent, prove zero Worker routes by an independent account-zone scan using a distinct read-only credential with only `Zone Zone Read` and `Workers Routes Read`. Preview cleanup proof is narrowed to exact Worker identity plus Script Subdomain flags.

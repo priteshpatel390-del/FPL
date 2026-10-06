@@ -1,3 +1,7 @@
+## Replacement route-inventory diagnostics — no source change
+
+Run `37365722097` made zero API-Football requests and changed no production data. The repository diagnostic remediation observes only Cloudflare topology metadata and changes no provider, field, acquisition, retention, fallback, model input or product path. API-Football remains dormant/shadow-only and Official FPL authority is unchanged.
+
 ## Replacement shell-only recovery — source remains dormant
 
 Consumed run `36770767679` made **0 API-Football requests** and uploaded no replacement Version. The live v2 Worker is an inactive zero-Version shell. The recovery candidate adds no data source and cannot call API-Football: a later separately approved run may only upload the reviewed inactive runtime and issue two secret-free routing GETs. Provider acquisition, fixture ingestion and all model/product consumption remain unchanged and separately gated.

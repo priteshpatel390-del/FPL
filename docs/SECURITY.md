@@ -1,3 +1,9 @@
+## Route-inventory diagnostic evidence remains closed
+
+The remediation for run `37365722097` does not retain raw Cloudflare route responses. Diagnostics are restricted to repository-owned enums for result/row/id/pattern/script/legacy-array shape plus bounded numeric counts. Zone IDs, zone names, route IDs, route patterns, Worker script names from remote rows, authorization material and arbitrary remote text are excluded from retained evidence.
+
+No permission is broadened and no write credential is introduced. The topology credential remains read-only; reconciliation still has no Preview mutation, Version upload, D1 write, provider request or trigger-secret path.
+
 ## Replacement one-Version reconciliation security boundary
 
 Consumed run `36820805445` left one definite replacement Version but an unproved final Preview state. The remediation adds no mutation capability. The new one-Version reconciliation receives the existing Workers/D1 read credential only for the established Worker, Version, subdomain, deployment, schedule and custom-domain reads. Exact route proof is deliberately separated into a future `CLOUDFLARE_REPLACEMENT_TOPOLOGY_READ_TOKEN`, which must be distinct and read-only with only `Zone Zone Read` and `Workers Routes Read`. Reusing the existing Workers read token is rejected rather than silently broadening it.

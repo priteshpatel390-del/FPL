@@ -30,7 +30,7 @@ function fixtureVersion(){
   };
 }
 
-function fakeCloudflare({preview=false,replacementRoute=false,legacyScript=false,workerDeployed=false,domain=false}={}){
+function fakeCloudflare({preview=false,replacementRoute=false,zoneARoutes=undefined,legacyScript=false,legacyRoutes=[],workerDeployed=false,domain=false}={}){
   const paths=replacementPaths(ACCOUNT),fx=fixtureVersion(),calls=[];
   const worker={id:REPLACEMENT_RECOVERY_WORKER_ID,name:REPLACEMENT_COLLECTOR,deployed_on:workerDeployed?'2026-10-01T00:00:00Z':null};
   const fetchImpl=async(url,init={})=>{
@@ -42,13 +42,14 @@ function fakeCloudflare({preview=false,replacementRoute=false,legacyScript=false
     }
     if(parsed.pathname==='/client/v4/zones/zone-a/workers/routes'){
       assert.equal(auth,'Bearer '+TOPOLOGY_TOKEN);
-      return ok(replacementRoute?[{id:'route-a',pattern:'example.com/*',script:REPLACEMENT_COLLECTOR}]:[{id:'route-a',pattern:'example.com/*',script:'other-worker'}]);
+      const rows=zoneARoutes!==undefined?zoneARoutes:(replacementRoute?[{id:'route-a',pattern:'example.com/*',script:REPLACEMENT_COLLECTOR}]:[{id:'route-a',pattern:'example.com/*',script:'other-worker'}]);
+      return ok(rows);
     }
     if(parsed.pathname==='/client/v4/zones/zone-b/workers/routes'){assert.equal(auth,'Bearer '+TOPOLOGY_TOKEN);return ok([]);}
     assert.equal(auth,'Bearer '+READ_TOKEN);
     const full=String(url).slice(API.length),p=full.split('?')[0];
     if(full===paths.betaWorkers)return ok([worker]);
-    if(p===paths.scripts)return ok([{id:ORIGINAL_COLLECTOR,routes:[]},...(legacyScript?[{id:REPLACEMENT_COLLECTOR,routes:[]}]:[])]);
+    if(p===paths.scripts)return ok([{id:ORIGINAL_COLLECTOR,routes:[]},...(legacyScript?[{id:REPLACEMENT_COLLECTOR,routes:legacyRoutes}]:[])]);
     if(p===paths.domains)return ok(domain?[{service:REPLACEMENT_COLLECTOR}]:[]);
     if(p===paths.replacementSubdomain)return ok({enabled:false,previews_enabled:preview});
     if(p===paths.replacementDeployments)return ok({deployments:[]});
@@ -63,15 +64,36 @@ function fakeCloudflare({preview=false,replacementRoute=false,legacyScript=false
 
 test('independent zone route scan proves zero replacement routes without retaining zone identity',async()=>{
   const fake=fakeCloudflare(),proof=await readReplacementRouteTopology({account:ACCOUNT,topologyToken:TOPOLOGY_TOKEN,fetchImpl:fake.fetchImpl});
-  assert.deepEqual(proof,{proof:'ZONE_ROUTE_SCAN',zoneCount:2,routeCount:0});
+  assert.deepEqual(proof,{proof:'ZONE_ROUTE_SCAN',zoneCount:2,routeRowCount:1,routeCount:0});
   assert.equal(JSON.stringify(proof).includes('zone-a'),false);
 });
 
 test('one-Version state is provable when legacy Scripts row is still absent',async()=>{
   const fake=fakeCloudflare(),state=await readReplacementState({account:ACCOUNT,token:READ_TOKEN,topologyToken:TOPOLOGY_TOKEN,
     versionId:REPLACEMENT_LIVE_VERSION_ID,approvedSha:EXEC_SHA,versionApprovedSha:REPLACEMENT_LIVE_VERSION_APPROVED_SHA,fetchImpl:fake.fetchImpl});
-  assert.equal(state.scriptPresent,false);assert.equal(state.routeProof,'ZONE_ROUTE_SCAN');assert.equal(state.routeCount,0);assert.equal(state.topologyZoneCount,2);
+  assert.equal(state.scriptPresent,false);assert.equal(state.routeProof,'ZONE_ROUTE_SCAN');assert.equal(state.routeCount,0);assert.equal(state.topologyZoneCount,2);assert.equal(state.topologyRouteRowCount,1);
   assert.equal(state.versionIdentityExact,true);assert.equal(state.workerDeployedOnNull,true);assert.equal(state.previewUrls,false);
+});
+
+test('route inventory failures retain only closed field-level diagnostics',async()=>{
+  const cases=[
+    [{zoneARoutes:{}},'replacement_reconciliation_zone_route_result_invalid'],
+    [{zoneARoutes:[null]},'replacement_reconciliation_zone_route_row_invalid'],
+    [{zoneARoutes:[{pattern:'private.example/*',script:'other-worker'}]},'replacement_reconciliation_zone_route_id_invalid'],
+    [{zoneARoutes:[{id:'route-private',script:'other-worker'}]},'replacement_reconciliation_zone_route_pattern_invalid'],
+    [{zoneARoutes:[{id:'route-private',pattern:'private.example/*',script:{name:'secret-worker'}}]},'replacement_reconciliation_zone_route_script_invalid']
+  ];
+  for(const [options,reason] of cases){
+    const fake=fakeCloudflare(options),report=await runReplacementOneVersionReconciliation({env,fetchImpl:fake.fetchImpl});
+    assert.equal(report.ok,false);assert.equal(report.reason,reason);assert.equal(report.replacement,null);
+    const serialized=JSON.stringify(report);
+    assert.equal(serialized.includes('private.example'),false);assert.equal(serialized.includes('route-private'),false);assert.equal(serialized.includes('secret-worker'),false);
+  }
+});
+
+test('legacy Scripts route-array failure has a distinct closed diagnostic',async()=>{
+  const fake=fakeCloudflare({legacyScript:true,legacyRoutes:null}),report=await runReplacementOneVersionReconciliation({env,fetchImpl:fake.fetchImpl});
+  assert.equal(report.ok,false);assert.equal(report.reason,'replacement_reconciliation_legacy_route_inventory_invalid');assert.equal(report.replacement,null);
 });
 
 test('one-Version state without independent route credential fails closed instead of assuming zero routes',async()=>{
