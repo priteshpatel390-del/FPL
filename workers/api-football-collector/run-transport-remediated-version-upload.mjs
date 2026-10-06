@@ -5,16 +5,13 @@
 import {createHash} from 'node:crypto';
 import fs from 'node:fs';
 import {pathToFileURL} from 'node:url';
-import {assertActivationReadOnlySql,runApiFootballActivationLivePreflight} from './activation-live-preflight.mjs';
-import {DEPLOYED_ONE_SHOT_PREFLIGHT_STAGE,DEPLOYED_ONE_SHOT_WORKER} from './deployed-one-shot.mjs';
-import {deployedOneShotPreflightEnv} from './deployed-one-shot-readonly.mjs';
+import {DEPLOYED_ONE_SHOT_WORKER} from './deployed-one-shot.mjs';
 import {readReplacementRouteTopology} from './replacement-reconciliation.mjs';
 import {deployedOneShotFinalRouteScan} from './run-deployed-one-shot.mjs';
 import {extractVersionIds} from './stage-inactive-version.mjs';
-import {EXPECTED_D1_DATABASE_ID} from '../data-platform/phase4b/live-contract.mjs';
 import {
   TRANSPORT_REMEDIATED_MAX_VERSION_UPLOADS,activeDeploymentState,buildTransportRemediatedExecutionEvidence,
-  closedDiagnostic,submitTransportRemediatedVersionUpload,transportRemediatedAdmissionDiagnostic,validateTransportRemediatedAdmissionHandoff
+  closedDiagnostic,submitTransportRemediatedVersionUpload,validateTransportRemediatedAdmissionHandoff
 } from './transport-remediated-version-preparation.mjs';
 import {
   TRANSPORT_REMEDIATED_HISTORICAL_VERSION_IDS,buildTransportRemediatedVersionIdentity,buildTransportRemediatedVersionUploadForm,validateTransportRemediatedSecretMaterial
@@ -34,7 +31,10 @@ export const TRANSPORT_REMEDIATED_REQUEST_TIMEOUT_MS=15_000;
 export function transportRemediatedPaths(accountId){
   if(typeof accountId!=='string'||!/^[A-Za-z0-9_-]{1,128}$/.test(accountId))fail('TRANSPORT_REMEDIATED_ACCOUNT_INVALID');
   const account='/accounts/'+enc(accountId),script=account+'/workers/scripts/'+DEPLOYED_ONE_SHOT_WORKER;
-  return Object.freeze({versions:script+'/versions',versionList:script+'/versions?deployable=true',deployments:script+'/deployments',d1:account+'/d1/database/'+enc(EXPECTED_D1_DATABASE_ID)+'/query'});
+  return Object.freeze({
+    versions:script+'/versions',versionList:script+'/versions?deployable=true',deployments:script+'/deployments',
+    subdomain:script+'/subdomain',schedules:script+'/schedules',domains:account+'/workers/domains'
+  });
 }
 
 // The ONLY mutation endpoint: the Version upload. Every other method/path (Deployment, subdomain, D1, schedules, routes,
@@ -48,7 +48,7 @@ export function assertTransportRemediatedMutationAllowed(method,requestPath,{acc
 // and the read-only critical-recheck D1 query (read credential only, SELECT/PRAGMA foreign_key_check only). Anything else throws.
 export function createTransportRemediatedGuardedFetch({accountId,readToken,uploadToken,fetchImpl=globalThis.fetch}={}){
   const paths=transportRemediatedPaths(accountId);
-  const counters={versionUploadAttempts:0,d1ReadQueries:0,blockedEgress:0};
+  const counters={versionUploadAttempts:0,blockedEgress:0};
   const refuse=code=>{counters.blockedEgress+=1;return fail(code);};
   const guarded=async(input,init={})=>{
     let url;try{url=new URL(String(input));}catch{return refuse('TRANSPORT_REMEDIATED_EGRESS_FORBIDDEN');}
@@ -66,13 +66,6 @@ export function createTransportRemediatedGuardedFetch({accountId,readToken,uploa
       counters.versionUploadAttempts+=1;
       return fetchImpl(String(input),init);
     }
-    if(method==='POST'&&requestPath===paths.d1){
-      let statements;try{statements=JSON.parse(init.body).batch;}catch{return refuse('TRANSPORT_REMEDIATED_D1_QUERY_FORBIDDEN');}
-      if(authorization!=='Bearer '+readToken||!Array.isArray(statements)||statements.length===0)return refuse('TRANSPORT_REMEDIATED_D1_QUERY_FORBIDDEN');
-      try{for(const statement of statements)assertActivationReadOnlySql(statement?.sql);}catch{return refuse('TRANSPORT_REMEDIATED_D1_QUERY_FORBIDDEN');}
-      counters.d1ReadQueries+=1;
-      return fetchImpl(String(input),init);
-    }
     return refuse('TRANSPORT_REMEDIATED_ENDPOINT_FORBIDDEN');
   };
   return Object.freeze({fetch:guarded,counters});
@@ -87,7 +80,21 @@ async function cloudflareGet(guardedFetch,requestPath,token){
   }catch{return null;}
 }
 
-export async function executeTransportRemediatedVersionUpload({env=process.env,fetchImpl=globalThis.fetch,criticalRecheck=runApiFootballActivationLivePreflight,routeScan=readReplacementRouteTopology,wait=delay}={}){
+export async function readFreshTransportRemediatedInertState({guardedFetch,paths,readToken}={}){
+  const [subdomain,schedules,domains]=await Promise.all([
+    cloudflareGet(guardedFetch,paths.subdomain,readToken),
+    cloudflareGet(guardedFetch,paths.schedules,readToken),
+    cloudflareGet(guardedFetch,paths.domains,readToken)
+  ]);
+  const scheduleRows=Array.isArray(schedules?.schedules)?schedules.schedules:Array.isArray(schedules)?schedules:null;
+  if(!subdomain||!scheduleRows||!Array.isArray(domains))return null;
+  return Object.freeze({
+    workersDev:subdomain.enabled,previewUrls:subdomain.previews_enabled,cronCount:scheduleRows.length,
+    customDomainCount:domains.filter(row=>row?.service===DEPLOYED_ONE_SHOT_WORKER).length
+  });
+}
+
+export async function executeTransportRemediatedVersionUpload({env=process.env,fetchImpl=globalThis.fetch,routeScan=readReplacementRouteTopology,wait=delay}={}){
   let approvedSha=null,guard=null,identity=null;
   const evidence=(fields)=>buildTransportRemediatedExecutionEvidence({approvedSha,identity,counters:{versionUploadAttempts:guard?.counters.versionUploadAttempts??0},...fields});
   try{
@@ -111,12 +118,16 @@ export async function executeTransportRemediatedVersionUpload({env=process.env,f
 
     guard=createTransportRemediatedGuardedFetch({accountId,readToken,uploadToken,fetchImpl});
     const paths=transportRemediatedPaths(accountId);
-    // Final pre-mutation proof: fresh critical state, fresh active Deployment, fresh authoritative zone route scan, fresh Version inventory.
-    const critical=await criticalRecheck({env:deployedOneShotPreflightEnv({accountId,accountFingerprint:fingerprint,readToken,approvedSha}),fetchImpl:guard.fetch,stage:DEPLOYED_ONE_SHOT_PREFLIGHT_STAGE});
+    // Final pre-mutation proof is Cloudflare-only. D1/history truth is carried by the hash-bound read-only admission
+    // artifact; this protected executor has no D1 endpoint at all.
+    const inert=await readFreshTransportRemediatedInertState({guardedFetch:guard.fetch,paths,readToken});
+    if(!inert||inert.workersDev!==false||inert.previewUrls!==false||inert.cronCount!==0||inert.customDomainCount!==0)
+      fail('TRANSPORT_REMEDIATED_CLOUDFLARE_STATE_NOT_INERT');
     const deploymentsResult=await cloudflareGet(guard.fetch,paths.deployments,readToken);
     const deployments=deploymentsResult===null?null:activeDeploymentState(deploymentsResult);
-    const drift=transportRemediatedAdmissionDiagnostic(critical,deployments,{approvedSha,accountFingerprint:fingerprint});
-    if(drift)fail('TRANSPORT_REMEDIATED_CRITICAL_STATE_DRIFT__'+drift.toUpperCase());
+    if(!deployments||deployments.count!==admission.deployments.count||deployments.activeDeploymentId!==admission.deployments.activeDeploymentId||
+      deployments.selectsRetainedVersionAt100!==true||JSON.stringify(deployments.activeVersionIds)!==JSON.stringify(admission.deployments.activeVersionIds))
+      fail('TRANSPORT_REMEDIATED_DEPLOYMENT_STATE_DRIFT');
     const finalRouteScan=await deployedOneShotFinalRouteScan({accountId,topologyToken,fetchImpl:guard.fetch,routeScan}).catch(error=>fail(String(error?.message).replace(/^DEPLOYED_ONE_SHOT_/,'TRANSPORT_REMEDIATED_')));
     const readVersions=async()=>{const result=await cloudflareGet(guard.fetch,paths.versionList,readToken);if(result===null)fail('TRANSPORT_REMEDIATED_VERSION_READ_FAILED');return extractVersionIds(result);};
     const beforeIds=await readVersions();
