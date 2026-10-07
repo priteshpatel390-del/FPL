@@ -48,8 +48,9 @@ export const PROMOTION_POST_DEPLOYMENT_COUNT=2;
 export const PROMOTION_OUTCOMES=Object.freeze(['CREATED','APPLIED_CONFIRMED_BY_READBACK','REJECTED','AMBIGUOUS_OWNER_ATTENTION','NOT_SUBMITTED']);
 export const PROMOTION_MAX_DEPLOYMENT_POSTS=1;
 export const PROMOTION_READBACK_DELAYS_MS=Object.freeze([0,2_000,5_000]);
-// Conservative bound for Cloudflare's Deployment message annotation; the deterministic message never exceeds it.
-export const PROMOTION_MESSAGE_MAX_LENGTH=100;
+// Cloudflare's Deployment API allows workers/message up to 1000 bytes. Keep the exact full immutable provenance
+// in the annotation rather than shortening either SHA.
+export const PROMOTION_MESSAGE_MAX_LENGTH=1000;
 // Every Cloudflare mutation class this path could conceivably touch. Only the Deployment POST is non-zero.
 export const PROMOTION_MUTATION_CEILINGS=Object.freeze({
   deploymentPost:1,versionUpload:0,workersDev:0,preview:0,d1:0,schedules:0,routes:0,domains:0,workerShell:0,delete:0,put:0,patch:0,apiFootball:0,workerInvocation:0
@@ -196,10 +197,10 @@ export function validatePromotionAdmissionHandoff(admission,{approvedSha,account
 }
 
 // ---- Exact Deployment body: candidate only, 100%, percentage strategy, no force, deterministic sanitized message ----
-// v= immutable candidate Version, c= its immutable creation SHA (prefix; the full SHA is pinned above), x= execution main SHA.
+// v= immutable candidate Version, c= its full immutable creation SHA, x= execution main SHA.
 export function buildPromotionDeploymentMessage(approvedSha){
   if(!HEX40.test(String(approvedSha||'')))fail('TRANSPORT_REMEDIATED_PROMOTION_APPROVED_SHA_INVALID');
-  const message='GateB v='+PROMOTION_CANDIDATE_VERSION_ID+' c='+PROMOTION_CANDIDATE_CREATION_SHA.slice(0,8)+' x='+approvedSha;
+  const message='GateB v='+PROMOTION_CANDIDATE_VERSION_ID+' c='+PROMOTION_CANDIDATE_CREATION_SHA+' x='+approvedSha;
   if(message.length>PROMOTION_MESSAGE_MAX_LENGTH)fail('TRANSPORT_REMEDIATED_PROMOTION_MESSAGE_TOO_LONG');
   return message;
 }
