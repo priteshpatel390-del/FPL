@@ -1,3 +1,7 @@
+## API-Football transport-remediated Deployment promotion (Gate B) — repository candidate
+
+Gate A run `37680114065` is complete and consumed: corrected Version `4171f3cf-953e-452e-9e5f-068df9a3ca47` (created on `f01ccff5…`) exists, prepared but not deployed; historical Deployment `2417a3e0…` still selects old Version `04d79556…` at 100%. A repository-only Gate B path (immutable candidate provenance, four-Version admission, one-Deployment-POST-only executor, bounded readback that never infers non-application, no rollback, independent two-Deployment reconciliation, dormant manual workflow) can later promote the candidate to 100% while every traffic surface stays off. No live action occurred. See the [transport-remediated Deployment promotion](API-FOOTBALL-TRANSPORT-REMEDIATED-DEPLOYMENT-PROMOTION.md).
+
 ## API-Football remediated reviewed Version preparation — repository candidate
 
 The corrected provider request exists only in the repository; the live Version `04d79556` still carries the old contract. A repository-only path (distinct current-tree identity, fresh consumed-history admission, one-POST Version-upload-only executor, independent reconciliation, dormant manual workflow) can later create one new Version without touching the existing Deployment. No live action occurred. See [remediated reviewed Version preparation](API-FOOTBALL-REMEDIATED-REVIEWED-VERSION-PREPARATION.md).

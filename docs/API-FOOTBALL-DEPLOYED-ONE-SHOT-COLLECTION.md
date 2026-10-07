@@ -1,5 +1,7 @@
 # API-Football Controlled Deployed One-Shot Shadow Collection
 
+> **Current state (Gate A complete):** consumed Gate A run `37680114065` created corrected Version `4171f3cf-953e-452e-9e5f-068df9a3ca47`, prepared but not deployed. Historical Deployment `2417a3e0…` still selects `04d79556…`. Promotion is the separately gated [transport-remediated Deployment promotion](API-FOOTBALL-TRANSPORT-REMEDIATED-DEPLOYMENT-PROMOTION.md) (Gate B); Gate C remains separate.
+
 > **Superseding next step:** see the [remediated reviewed Version preparation](API-FOOTBALL-REMEDIATED-REVIEWED-VERSION-PREPARATION.md); this one-shot workflow is consumed and its historical zero-Deployment admission is unchanged.
 
 Date: 6 October 2026

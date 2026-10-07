@@ -1,21 +1,18 @@
-# CONSUMED (run 37680114065, attempt 1, exact main f01ccff5b13a4bbc98d7927cf620f69f46c4c54c): do NOT dispatch again.
-# It created corrected Version 4171f3cf-953e-452e-9e5f-068df9a3ca47, independently reconciled as
-# TRANSPORT_REMEDIATED_VERSION_PREPARED_NOT_DEPLOYED. Its admission requires exactly three Versions, which no longer holds,
-# and it would attempt a second Version upload. Gate B promotion uses api-football-remediated-deployment-promotion.yml.
-# Dormant owner-gated TRANSPORT-REMEDIATED REVIEWED VERSION PREPARATION on the ORIGINAL collector (Gate A only).
+# Dormant owner-gated TRANSPORT-REMEDIATED DEPLOYMENT PROMOTION on the ORIGINAL collector (Gate B only).
 # Repository presence and merge authorize nothing live. Dispatch requires a separate explicit owner approval after merge and
-# exact-main verification, plus a protected environment api-football-remediated-version-upload provisioned by the owner.
-# It uploads exactly ONE new reviewed Worker Version built from the CURRENT TREE (redirect:'manual', one provider header)
-# beside the three historical Versions and the retained inert Deployment. It never creates or changes a Deployment, never
-# enables workers.dev or Preview, never mutates D1, never touches Cron/routes/domains, never invokes the Worker and never
-# calls API-Football. Promotion (Gate B) and a new-day collection (Gate C) are separate later gates.
-name: API-Football Transport-Remediated Reviewed Version Preparation
+# exact-main verification, plus a protected environment api-football-remediated-deployment-promotion provisioned by the owner.
+# It submits at most ONE new Deployment POST selecting the corrected Gate A Version 4171f3cf-953e-452e-9e5f-068df9a3ca47
+# (immutable creation SHA f01ccff5b13a4bbc98d7927cf620f69f46c4c54c) at exactly 100%, never resent. It never uploads a Version,
+# never edits or deletes the historical Deployment, never enables workers.dev or Preview, never mutates D1, never touches
+# Cron/routes/domains, never invokes the Worker, never calls API-Football and never rolls back automatically.
+# The new-day collection (Gate C) is a separate later gate.
+name: API-Football Transport-Remediated Deployment Promotion
 
 on:
   workflow_dispatch:
     inputs:
       approved_sha:
-        description: Exact current main SHA separately approved for the one-time transport-remediated Version upload
+        description: Exact current main SHA separately approved for the one-time transport-remediated Deployment promotion
         required: true
         type: string
 
@@ -78,9 +75,9 @@ jobs:
       - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
         with:
           node-version: 24.19.0
-      - name: Run focused remediated-Version tests
+      - name: Run focused Deployment-promotion tests
         run: |
-          node --test tests/api-football-transport-remediated-version.test.mjs tests/api-football-transport-diagnostics.test.mjs tests/api-football-collector-activation-live-preflight.test.mjs
+          node --test tests/api-football-transport-remediated-deployment-promotion.test.mjs tests/api-football-transport-remediated-version.test.mjs tests/api-football-collector-activation-live-preflight.test.mjs
           test -z "$(git status --porcelain --untracked-files=all)"
 
   fresh-readonly-admission:
@@ -110,20 +107,20 @@ jobs:
           test "$(git rev-parse HEAD)" = "$APPROVED_SHA"
           test "$(git ls-remote https://github.com/priteshpatel390-del/FPL.git refs/heads/main | cut -f1)" = "$APPROVED_SHA"
           test -z "$(git status --porcelain --untracked-files=all)"
-      - name: Prove exact three-Version inventory, retained active Deployment, inert topology and exact consumed history
+      - name: Prove exact four-Version inventory, retained single active Deployment, inert topology and exact consumed history
         env:
           APPROVED_SHA: ${{ needs.repository-gate.outputs.approved_sha }}
-          API_FOOTBALL_TRANSPORT_REMEDIATED_MODE: ADMISSION
+          API_FOOTBALL_DEPLOYMENT_PROMOTION_MODE: ADMISSION
           DATA_STEWARD_CLOUDFLARE_ACCOUNT_ID: ${{ secrets.DATA_STEWARD_CLOUDFLARE_ACCOUNT_ID }}
           DATA_STEWARD_CLOUDFLARE_ACCOUNT_FINGERPRINT: ${{ vars.DATA_STEWARD_CLOUDFLARE_ACCOUNT_FINGERPRINT }}
           DATA_STEWARD_CLOUDFLARE_READ_TOKEN: ${{ secrets.DATA_STEWARD_CLOUDFLARE_READ_TOKEN }}
           CLOUDFLARE_TOPOLOGY_READ_TOKEN: ${{ secrets.CLOUDFLARE_REPLACEMENT_TOPOLOGY_READ_TOKEN }}
-          API_FOOTBALL_TRANSPORT_REMEDIATED_REPORT_PATH: ${{ runner.temp }}/transport-remediated-admission.json
-        run: node workers/api-football-collector/transport-remediated-version-readonly.mjs
+          API_FOOTBALL_DEPLOYMENT_PROMOTION_REPORT_PATH: ${{ runner.temp }}/deployment-promotion-admission.json
+        run: node workers/api-football-collector/transport-remediated-deployment-promotion-readonly.mjs
       - name: Bind sanitized admission handoff
         id: handoff
         env:
-          REPORT: ${{ runner.temp }}/transport-remediated-admission.json
+          REPORT: ${{ runner.temp }}/deployment-promotion-admission.json
           APPROVED_SHA: ${{ needs.repository-gate.outputs.approved_sha }}
         run: |
           set -euo pipefail
@@ -131,24 +128,24 @@ jobs:
           import fs from 'node:fs';
           import {createHash} from 'node:crypto';
           const bytes=fs.readFileSync(process.env.REPORT),report=JSON.parse(bytes);
-          if(report.version!=='api-football-transport-remediated-version-admission-v1'||report.ok!==true||report.approvedSha!==process.env.APPROVED_SHA||report.classification!=='READY_FOR_TRANSPORT_REMEDIATED_VERSION_UPLOAD'||report.retryAuthorized!==false)throw new Error('transport-remediated admission handoff invalid');
+          if(report.version!=='api-football-transport-remediated-deployment-promotion-admission-v1'||report.ok!==true||report.approvedSha!==process.env.APPROVED_SHA||report.classification!=='READY_FOR_TRANSPORT_REMEDIATED_DEPLOYMENT_PROMOTION'||report.retryAuthorized!==false)throw new Error('deployment-promotion admission handoff invalid');
           fs.appendFileSync(process.env.GITHUB_OUTPUT,`classification=${report.classification}\nartifact_sha256=${createHash('sha256').update(bytes).digest('hex')}\n`);
           NODE
       - uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6
         if: always()
         with:
-          name: api-football-transport-remediated-admission
-          path: ${{ runner.temp }}/transport-remediated-admission.json
+          name: api-football-deployment-promotion-admission
+          path: ${{ runner.temp }}/deployment-promotion-admission.json
           if-no-files-found: error
           retention-days: 7
 
-  protected-version-upload:
-    if: github.event_name == 'workflow_dispatch' && github.run_attempt == 1 && needs.fresh-readonly-admission.outputs.classification == 'READY_FOR_TRANSPORT_REMEDIATED_VERSION_UPLOAD'
+  protected-deployment-promotion:
+    if: github.event_name == 'workflow_dispatch' && github.run_attempt == 1 && needs.fresh-readonly-admission.outputs.classification == 'READY_FOR_TRANSPORT_REMEDIATED_DEPLOYMENT_PROMOTION'
     needs: [repository-gate, fresh-readonly-admission]
     runs-on: ubuntu-latest
     timeout-minutes: 12
     environment:
-      name: api-football-remediated-version-upload
+      name: api-football-remediated-deployment-promotion
       deployment: false
     outputs:
       execution_artifact_sha256: ${{ steps.execution-handoff.outputs.execution_artifact_sha256 }}
@@ -170,37 +167,37 @@ jobs:
           test -z "$(git status --porcelain --untracked-files=all)"
       - uses: actions/download-artifact@95815c38cf2ff2164869cbab79da8d1f422bc89e # v4
         with:
-          name: api-football-transport-remediated-admission
-          path: ${{ runner.temp }}/transport-remediated-admission
-      - name: Recheck state, active Deployment and zone routes, then submit at most one Version upload
+          name: api-football-deployment-promotion-admission
+          path: ${{ runner.temp }}/deployment-promotion-admission
+      - name: Recheck Versions, active Deployment, inert topology and zone routes, then submit at most one Deployment POST
         id: execute
         continue-on-error: true
         env:
           APPROVED_SHA: ${{ needs.repository-gate.outputs.approved_sha }}
-          API_FOOTBALL_TRANSPORT_REMEDIATED_ADMISSION_PATH: ${{ runner.temp }}/transport-remediated-admission/transport-remediated-admission.json
-          API_FOOTBALL_TRANSPORT_REMEDIATED_EXECUTION_REPORT_PATH: ${{ runner.temp }}/transport-remediated-execution.json
+          API_FOOTBALL_DEPLOYMENT_PROMOTION_ADMISSION_PATH: ${{ runner.temp }}/deployment-promotion-admission/deployment-promotion-admission.json
+          API_FOOTBALL_DEPLOYMENT_PROMOTION_EXECUTION_REPORT_PATH: ${{ runner.temp }}/deployment-promotion-execution.json
           EXPECTED_ARTIFACT_SHA256: ${{ needs.fresh-readonly-admission.outputs.artifact_sha256 }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           CLOUDFLARE_ACCOUNT_FINGERPRINT: ${{ vars.CLOUDFLARE_ACCOUNT_FINGERPRINT }}
           CLOUDFLARE_ATTENDED_READ_TOKEN: ${{ secrets.CLOUDFLARE_ATTENDED_READ_TOKEN }}
-          CLOUDFLARE_ATTENDED_VERSION_UPLOAD_TOKEN: ${{ secrets.CLOUDFLARE_ATTENDED_VERSION_UPLOAD_TOKEN }}
+          # Dedicated Deployment-creation credential. Cloudflare's Deployment API lists Workers Scripts Write as the accepted
+          # permission; where the dashboard uses Workers roles, use Editor scoped to this existing Worker only. The token is
+          # usable only for the single Deployment POST and refused for every read.
+          CLOUDFLARE_REMEDIATED_DEPLOYMENT_PROMOTION_TOKEN: ${{ secrets.CLOUDFLARE_REMEDIATED_DEPLOYMENT_PROMOTION_TOKEN }}
           # Read-only Zone Read + Workers Routes Read; used only for the final pre-mutation route scan.
           CLOUDFLARE_TOPOLOGY_READ_TOKEN: ${{ secrets.CLOUDFLARE_REPLACEMENT_TOPOLOGY_READ_TOKEN }}
-          # Secret binding VALUES for the new Version only; never serialized, logged or returned.
-          API_FOOTBALL_API_KEY: ${{ secrets.API_FOOTBALL_API_KEY }}
-          API_FOOTBALL_ATTENDED_TRIGGER_SECRET: ${{ secrets.API_FOOTBALL_ATTENDED_TRIGGER_SECRET }}
         run: |
           set -euo pipefail
           test "$(git rev-parse HEAD)" = "$APPROVED_SHA"
           test "$(git ls-remote https://github.com/priteshpatel390-del/FPL.git refs/heads/main | cut -f1)" = "$APPROVED_SHA"
-          test "$(sha256sum "$API_FOOTBALL_TRANSPORT_REMEDIATED_ADMISSION_PATH" | cut -d' ' -f1)" = "$EXPECTED_ARTIFACT_SHA256"
+          test "$(sha256sum "$API_FOOTBALL_DEPLOYMENT_PROMOTION_ADMISSION_PATH" | cut -d' ' -f1)" = "$EXPECTED_ARTIFACT_SHA256"
           test -z "$(git status --porcelain --untracked-files=all)"
-          node workers/api-football-collector/run-transport-remediated-version-upload.mjs
+          node workers/api-football-collector/run-transport-remediated-deployment-promotion.mjs
       - name: Bind sanitized execution evidence
         id: execution-handoff
         if: always()
         env:
-          REPORT: ${{ runner.temp }}/transport-remediated-execution.json
+          REPORT: ${{ runner.temp }}/deployment-promotion-execution.json
           APPROVED_SHA: ${{ needs.repository-gate.outputs.approved_sha }}
         run: |
           set -euo pipefail
@@ -209,14 +206,14 @@ jobs:
           import fs from 'node:fs';
           import {createHash} from 'node:crypto';
           const bytes=fs.readFileSync(process.env.REPORT),report=JSON.parse(bytes);
-          if(report.version!=='api-football-transport-remediated-version-execution-v1'||report.approvedSha!==process.env.APPROVED_SHA||report.retryAuthorized!==false||![0,1].includes(report.versionUploadAttempts)||report.deploymentMutations!==0||report.d1Mutations!==0||report.workersDevMutations!==0||report.previewMutations!==0||report.apiFootballRequests!==0||report.secretValuesSerialized!==0)throw new Error('transport-remediated execution evidence invalid');
+          if(report.version!=='api-football-transport-remediated-deployment-promotion-execution-v1'||report.approvedSha!==process.env.APPROVED_SHA||report.retryAuthorized!==false||![0,1].includes(report.deploymentPostAttempts)||report.deploymentMutations!==report.deploymentPostAttempts||report.versionUploads!==0||report.d1Mutations!==0||report.workersDevMutations!==0||report.previewMutations!==0||report.scheduleMutations!==0||report.routeMutations!==0||report.domainMutations!==0||report.workerInvocations!==0||report.apiFootballRequests!==0||report.secretValuesSerialized!==0)throw new Error('deployment-promotion execution evidence invalid');
           fs.appendFileSync(process.env.GITHUB_OUTPUT,`execution_artifact_sha256=${createHash('sha256').update(bytes).digest('hex')}\n`);
           NODE
       - uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6
         if: always()
         with:
-          name: api-football-transport-remediated-execution
-          path: ${{ runner.temp }}/transport-remediated-execution.json
+          name: api-football-deployment-promotion-execution
+          path: ${{ runner.temp }}/deployment-promotion-execution.json
           if-no-files-found: error
           retention-days: 7
       - name: Preserve protected execution outcome
@@ -225,7 +222,7 @@ jobs:
 
   final-readonly-reconciliation:
     if: ${{ always() && github.event_name == 'workflow_dispatch' && github.run_attempt == 1 && needs.repository-gate.result == 'success' }}
-    needs: [repository-gate, fresh-readonly-admission, protected-version-upload]
+    needs: [repository-gate, fresh-readonly-admission, protected-deployment-promotion]
     runs-on: ubuntu-latest
     timeout-minutes: 12
     environment:
@@ -248,38 +245,38 @@ jobs:
           test "$(git ls-remote https://github.com/priteshpatel390-del/FPL.git refs/heads/main | cut -f1)" = "$APPROVED_SHA"
           test -z "$(git status --porcelain --untracked-files=all)"
       - uses: actions/download-artifact@95815c38cf2ff2164869cbab79da8d1f422bc89e # v4
-        if: needs.protected-version-upload.outputs.execution_artifact_sha256 != ''
+        if: needs.protected-deployment-promotion.outputs.execution_artifact_sha256 != ''
         with:
-          name: api-football-transport-remediated-execution
-          path: ${{ runner.temp }}/transport-remediated-execution
+          name: api-football-deployment-promotion-execution
+          path: ${{ runner.temp }}/deployment-promotion-execution
       - name: Verify sanitized execution handoff
-        if: needs.protected-version-upload.outputs.execution_artifact_sha256 != ''
+        if: needs.protected-deployment-promotion.outputs.execution_artifact_sha256 != ''
         env:
-          REPORT: ${{ runner.temp }}/transport-remediated-execution/transport-remediated-execution.json
-          EXPECTED_SHA256: ${{ needs.protected-version-upload.outputs.execution_artifact_sha256 }}
+          REPORT: ${{ runner.temp }}/deployment-promotion-execution/deployment-promotion-execution.json
+          EXPECTED_SHA256: ${{ needs.protected-deployment-promotion.outputs.execution_artifact_sha256 }}
         run: |
           set -euo pipefail
           test "$(sha256sum "$REPORT" | cut -d' ' -f1)" = "$EXPECTED_SHA256"
-      - name: Independently reconcile the new Version, retained Deployment, inert topology and consumed history
+      - name: Independently reconcile the promoted Deployment, retained historical Deployment, four Versions, inert topology and consumed history
         id: reconcile
         continue-on-error: true
         env:
           APPROVED_SHA: ${{ needs.repository-gate.outputs.approved_sha }}
-          API_FOOTBALL_TRANSPORT_REMEDIATED_MODE: RECONCILIATION
+          API_FOOTBALL_DEPLOYMENT_PROMOTION_MODE: RECONCILIATION
           DATA_STEWARD_CLOUDFLARE_ACCOUNT_ID: ${{ secrets.DATA_STEWARD_CLOUDFLARE_ACCOUNT_ID }}
           DATA_STEWARD_CLOUDFLARE_ACCOUNT_FINGERPRINT: ${{ vars.DATA_STEWARD_CLOUDFLARE_ACCOUNT_FINGERPRINT }}
           DATA_STEWARD_CLOUDFLARE_READ_TOKEN: ${{ secrets.DATA_STEWARD_CLOUDFLARE_READ_TOKEN }}
           CLOUDFLARE_TOPOLOGY_READ_TOKEN: ${{ secrets.CLOUDFLARE_REPLACEMENT_TOPOLOGY_READ_TOKEN }}
-          API_FOOTBALL_TRANSPORT_REMEDIATED_REPORT_PATH: ${{ runner.temp }}/transport-remediated-reconciliation.json
-          API_FOOTBALL_TRANSPORT_REMEDIATED_EXECUTION_PATH: ${{ needs.protected-version-upload.outputs.execution_artifact_sha256 != '' && format('{0}/transport-remediated-execution/transport-remediated-execution.json', runner.temp) || '' }}
-        run: node workers/api-football-collector/transport-remediated-version-readonly.mjs
+          API_FOOTBALL_DEPLOYMENT_PROMOTION_REPORT_PATH: ${{ runner.temp }}/deployment-promotion-reconciliation.json
+          API_FOOTBALL_DEPLOYMENT_PROMOTION_EXECUTION_PATH: ${{ needs.protected-deployment-promotion.outputs.execution_artifact_sha256 != '' && format('{0}/deployment-promotion-execution/deployment-promotion-execution.json', runner.temp) || '' }}
+        run: node workers/api-football-collector/transport-remediated-deployment-promotion-readonly.mjs
       - uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6
         if: always()
         with:
-          name: api-football-transport-remediated-reconciliation
-          path: ${{ runner.temp }}/transport-remediated-reconciliation.json
+          name: api-football-deployment-promotion-reconciliation
+          path: ${{ runner.temp }}/deployment-promotion-reconciliation.json
           if-no-files-found: error
           retention-days: 7
-      - name: Require independently reconciled prepared-not-deployed Version
+      - name: Require independently reconciled promoted-but-inert Deployment
         if: steps.reconcile.outcome != 'success'
         run: exit 1
