@@ -69,10 +69,10 @@ Any mismatch stops before mutation with a closed reason. The sanitized admission
 
 ```json
 {"strategy":"percentage","versions":[{"version_id":"4171f3cf-953e-452e-9e5f-068df9a3ca47","percentage":100}],
- "annotations":{"workers/message":"GateB v=4171f3cf-953e-452e-9e5f-068df9a3ca47 c=f01ccff5 x=<execution main SHA>"}}
+ "annotations":{"workers/message":"GateB v=4171f3cf-953e-452e-9e5f-068df9a3ca47 c=f01ccff5b13a4bbc98d7927cf620f69f46c4c54c x=<execution main SHA>"}}
 ```
 
-One Version only, 100%, `percentage` strategy, no old Version, no split, no gradual rollout, **no `force`**. The message is deterministic and kept at or below 100 characters, a conservative bound for Cloudflare's Deployment message annotation (the exact live limit is not re-verified here): `v=` immutable candidate Version, `c=` its immutable creation SHA (8-character prefix; the full SHA is pinned in the repository), `x=` the full execution main SHA. It contains no credential or secret. The serialized body is built before any network request and the guarded fetch accepts only that exact byte string.
+One Version only, 100%, `percentage` strategy, no old Version, no split, no gradual rollout, **no `force`**. The message is deterministic and carries the full immutable provenance: `v=` immutable candidate Version, `c=` its full immutable 40-character creation SHA, `x=` the full execution main SHA. Cloudflare's Deployment API allows `workers/message` up to 1000 bytes, so no provenance field needs truncation. It contains no credential or secret. The serialized body is built before any network request and the guarded fetch accepts only that exact byte string.
 
 ## 5. Protected Deployment-promotion executor
 
@@ -131,7 +131,7 @@ Unchanged one-row state with `NOT_SUBMITTED` or `REJECTED` evidence is `TRANSPOR
 
 `api-football-remediated-deployment-promotion` — environment secrets `CLOUDFLARE_ACCOUNT_ID`, `CLOUDFLARE_ATTENDED_READ_TOKEN`, `CLOUDFLARE_REMEDIATED_DEPLOYMENT_PROMOTION_TOKEN`, `CLOUDFLARE_REPLACEMENT_TOPOLOGY_READ_TOKEN`; environment variable `CLOUDFLARE_ACCOUNT_FINGERPRINT`. It must **not** hold `API_FOOTBALL_API_KEY` or `API_FOOTBALL_ATTENDED_TRIGGER_SECRET` (the executor refuses to run if either is present).
 
-`CLOUDFLARE_REMEDIATED_DEPLOYMENT_PROMOTION_TOKEN` should be a new dedicated token with only the minimum permission to create Worker Deployments: Cloudflare documents Deployment creation under the Workers **Editor** role (API token: Workers Scripts Edit), and current Cloudflare Workers authorization allows that role to be scoped to selected Workers — scope it to `teamsheet-api-football-shadow-collector` only, with no Workers Routes, Zone, D1, Account Settings or other permission. This is not broader than Workers Scripts write. It must differ from both read credentials. Repository work created, rotated or read no token.
+`CLOUDFLARE_REMEDIATED_DEPLOYMENT_PROMOTION_TOKEN` should be a new dedicated token with only the minimum permission to create Worker Deployments. Cloudflare's Create Worker Deployment API lists **Workers Scripts Write** as the accepted API-token permission. In Cloudflare's newer Workers role UI, the equivalent edit capability is the **Editor** role and can be scoped to selected existing Workers; where that UI is available, scope it only to `teamsheet-api-football-shadow-collector`. Do not add Workers Routes, Zone, D1, Account Settings or other permissions. It must differ from both read credentials. Repository work created, rotated or read no token.
 
 ## 9. Gates
 
@@ -143,5 +143,5 @@ Unchanged one-row state with `NOT_SUBMITTED` or `REJECTED` evidence is `TRANSPOR
 
 - Repository tests prove the contracts against fakes. Live Cloudflare Deployment POST and list response shapes for a two-row history remain unproven until the Gate B live run.
 - The original blocked Version is checked by exact stable bindings only (its full module bytes are not reproducible in-repository), as in every earlier checkpoint.
-- The Deployment message carries an 8-character creation-SHA prefix to stay within the conservative 100-character bound; the full creation SHA is pinned in the repository and in the evidence.
+- The Deployment message carries the full immutable candidate creation SHA and full execution SHA; Cloudflare's 1000-byte message limit is ample, so provenance is not truncated.
 - A successful Gate B leaves the corrected Version active but unreachable; the remediated provider request is not proven against the Workers runtime or API-Football until Gate C.
