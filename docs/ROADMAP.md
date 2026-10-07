@@ -1,3 +1,7 @@
+## Current API-Football checkpoint — after Gate B
+
+Gate B is complete and consumed: live run `37688525299`, exact main `2516eeec669f3b44001f9cc5d22135dcbe0e235e`, final classification `TRANSPORT_REMEDIATED_DEPLOYMENT_PROMOTED_INERT`. The corrected Version is now selected by the active Deployment but remains unreachable because all traffic surfaces are off. The next possible checkpoint is Gate C, but Gate C is not implemented and requires a separate owner-approved design/implementation gate. Provider transport remains unproven. See [Gate B live closeout](API-FOOTBALL-TRANSPORT-REMEDIATED-DEPLOYMENT-PROMOTION-CLOSEOUT.md).
+
 ## Current API-Football checkpoint — transport-remediated Deployment promotion (Gate B)
 
 Gate A is complete and consumed (run `37680114065`; Version `4171f3cf…` prepared, not deployed). Gate B is a repository-only draft PR. Next gates are separate: (1) owner merge approval; (2) exact-main verification; (3) owner provisioning of the `api-football-remediated-deployment-promotion` environment and a dedicated Deployment-creation token; (4) explicit approval of the one-time live Gate B dispatch plus reconciliation; (5) Gate C new-day collection with owner-gated admission for the consumed history. See the [transport-remediated Deployment promotion](API-FOOTBALL-TRANSPORT-REMEDIATED-DEPLOYMENT-PROMOTION.md).
