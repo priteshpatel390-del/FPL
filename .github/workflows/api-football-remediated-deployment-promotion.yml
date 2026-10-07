@@ -1,3 +1,8 @@
+# CONSUMED (run 37688525299, attempt 1, exact main 2516eeec669f3b44001f9cc5d22135dcbe0e235e): do NOT dispatch again.
+# Exactly one Deployment POST applied as Deployment 9b48b57a-e505-4213-9547-fe44835a9bdb selecting corrected Version
+# 4171f3cf-953e-452e-9e5f-068df9a3ca47 at 100%; independent reconciliation classified
+# TRANSPORT_REMEDIATED_DEPLOYMENT_PROMOTED_INERT. Live state now has two Deployment history rows, so the reviewed one-row
+# admission no longer holds. Gate C is a separate new gate. This workflow is retained as audit history only.
 # Dormant owner-gated TRANSPORT-REMEDIATED DEPLOYMENT PROMOTION on the ORIGINAL collector (Gate B only).
 # Repository presence and merge authorize nothing live. Dispatch requires a separate explicit owner approval after merge and
 # exact-main verification, plus a protected environment api-football-remediated-deployment-promotion provisioned by the owner.
