@@ -1,5 +1,7 @@
 # API-Football Transport-Unknown Investigation and Repository Remediation
 
+> **Next checkpoint:** [remediated reviewed Version preparation](API-FOOTBALL-REMEDIATED-REVIEWED-VERSION-PREPARATION.md) (Gate A, repository only) prepares the corrected collector as a new, separately identified Version. The old Version `04d79556` stays live and unchanged.
+
 Repository-only checkpoint following consumed continuation run `37511401491`. Owner approval covers investigation and repository diagnostic remediation only. **No live Cloudflare or API-Football action is authorized or was taken.** This adds no provider request, no attempt 2, no workflow dispatch, no trigger, no workers.dev change, no D1 mutation, no Worker Version upload, no Deployment change, no secret change and no merge.
 
 Starting main: `c632ea3cb6adb85cf7f1858c0f3192decfbd631e` (PR #312).
