@@ -83,7 +83,7 @@ export function consumedHistoryDiagnostic(prior){
 }
 
 // Shared foundational-state checks from observed fields only. The generic lifecycle preflight is not a verdict here.
-function foundationDiagnostic(report,{approvedSha,accountFingerprint,requireVersionInventory}){
+export function foundationDiagnostic(report,{approvedSha,accountFingerprint,requireVersionInventory}){
   const inventory=report?.inventory||{},mapping=report?.mapping||{};
   if(report?.approvedSha!==approvedSha||report?.versionApprovedSha!==DEPLOYED_ONE_SHOT_VERSION_APPROVED_SHA||
     report?.cloneApprovedSha!==DEPLOYED_ONE_SHOT_CLONE_APPROVED_SHA||report?.accountFingerprint!==accountFingerprint||

@@ -1,5 +1,7 @@
 # API-Football Deployed One-Shot Continuation from the Existing Inert Deployment
 
+> **Current state (Gate A complete):** consumed Gate A run `37680114065` created corrected Version `4171f3cf-953e-452e-9e5f-068df9a3ca47`, prepared but not deployed. Historical Deployment `2417a3e0…` still selects `04d79556…`. Promotion is the separately gated [transport-remediated Deployment promotion](API-FOOTBALL-TRANSPORT-REMEDIATED-DEPLOYMENT-PROMOTION.md) (Gate B); Gate C remains separate.
+
 > **Superseding next step:** this continuation is consumed. Any new live use needs the [remediated reviewed Version preparation](API-FOOTBALL-REMEDIATED-REVIEWED-VERSION-PREPARATION.md) (Gate A), a separate promotion (Gate B) and an owner-gated admission for the consumed history (Gate C).
 
 Date: 6 October 2026

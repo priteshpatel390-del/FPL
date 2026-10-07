@@ -1,5 +1,7 @@
 # API-Football Transport-Unknown Investigation and Repository Remediation
 
+> **Current state (Gate A complete):** consumed Gate A run `37680114065` created corrected Version `4171f3cf-953e-452e-9e5f-068df9a3ca47`, prepared but not deployed. Historical Deployment `2417a3e0…` still selects `04d79556…`. Promotion is the separately gated [transport-remediated Deployment promotion](API-FOOTBALL-TRANSPORT-REMEDIATED-DEPLOYMENT-PROMOTION.md) (Gate B); Gate C remains separate.
+
 > **Next checkpoint:** [remediated reviewed Version preparation](API-FOOTBALL-REMEDIATED-REVIEWED-VERSION-PREPARATION.md) (Gate A, repository only) prepares the corrected collector as a new, separately identified Version. The old Version `04d79556` stays live and unchanged.
 
 Repository-only checkpoint following consumed continuation run `37511401491`. Owner approval covers investigation and repository diagnostic remediation only. **No live Cloudflare or API-Football action is authorized or was taken.** This adds no provider request, no attempt 2, no workflow dispatch, no trigger, no workers.dev change, no D1 mutation, no Worker Version upload, no Deployment change, no secret change and no merge.

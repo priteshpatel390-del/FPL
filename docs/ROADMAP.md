@@ -1,3 +1,7 @@
+## Current API-Football checkpoint — transport-remediated Deployment promotion (Gate B)
+
+Gate A is complete and consumed (run `37680114065`; Version `4171f3cf…` prepared, not deployed). Gate B is a repository-only draft PR. Next gates are separate: (1) owner merge approval; (2) exact-main verification; (3) owner provisioning of the `api-football-remediated-deployment-promotion` environment and a dedicated Deployment-creation token; (4) explicit approval of the one-time live Gate B dispatch plus reconciliation; (5) Gate C new-day collection with owner-gated admission for the consumed history. See the [transport-remediated Deployment promotion](API-FOOTBALL-TRANSPORT-REMEDIATED-DEPLOYMENT-PROMOTION.md).
+
 ## Current API-Football checkpoint — remediated reviewed Version preparation (Gate A)
 
 Repository-only draft PR. Next gates are separate: (1) owner merge approval; (2) exact-main verification and owner provisioning of the `api-football-remediated-version-upload` environment; (3) Gate A one-time live Version upload plus reconciliation; (4) Gate B Deployment promotion; (5) Gate C new-day collection with owner-gated admission for the consumed history. See [remediated reviewed Version preparation](API-FOOTBALL-REMEDIATED-REVIEWED-VERSION-PREPARATION.md).

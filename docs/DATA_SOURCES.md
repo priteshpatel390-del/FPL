@@ -1,3 +1,7 @@
+## Remediated Deployment promotion — no source or provider-scope change
+
+Same provider, origin, endpoints, credential and ceilings. Gate B makes zero API-Football requests and holds no provider key; the protected job refuses to run if one is present. See the [transport-remediated Deployment promotion](API-FOOTBALL-TRANSPORT-REMEDIATED-DEPLOYMENT-PROMOTION.md).
+
 ## Remediated Version preparation — no source or provider-scope change
 
 Same provider, origin, endpoints, credential and ceilings. The new path makes zero API-Football requests; the corrected request contract (GET, `redirect:'manual'`, header `x-apisports-key` only) is carried only in the bytes of a future Version. See [remediated reviewed Version preparation](API-FOOTBALL-REMEDIATED-REVIEWED-VERSION-PREPARATION.md).

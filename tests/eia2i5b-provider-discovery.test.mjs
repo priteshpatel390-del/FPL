@@ -654,6 +654,7 @@ test('API-Football discovery stays isolated from production, live config and mig
     'api-football-deployed-one-shot-collection.yml',
     'api-football-deployed-one-shot-continuation.yml',
     'api-football-remediated-version-preparation.yml',
+    'api-football-remediated-deployment-promotion.yml',
     'api-football-version-url-lifecycle-observation.yml',
     'api-football-version-url-creation-experiment.yml',
     'api-football-replacement-inactive-foundation.yml',
@@ -765,6 +766,20 @@ test('API-Football discovery stays isolated from production, live config and mig
       assert.match(source,/github\.run_attempt == 1/);
       assert.match(source,/Tests and deterministic build/);
       assert.doesNotMatch(source.replace(/^\s*#.*$/gm,''),/x-apisports-key|v3\.football\.api-sports\.io|wrangler|\/deployments|\/subdomain|workers\.dev|CLOUDFLARE_ATTENDED_MUTATION_TOKEN|CLOUDFLARE_ATTENDED_D1_MUTATION_TOKEN|x-teamsheet-attended-trigger|^\s{2}schedule:/im);
+      continue;
+    }
+    if(file==='api-football-remediated-deployment-promotion.yml'){
+      assert.match(source,/name: API-Football Transport-Remediated Deployment Promotion/);
+      assert.match(source,/name: api-football-remediated-deployment-promotion/);
+      assert.match(source,/name: data-steward-readonly/);
+      assert.match(source,/CLOUDFLARE_REMEDIATED_DEPLOYMENT_PROMOTION_TOKEN/);
+      assert.match(source,/CLOUDFLARE_ATTENDED_READ_TOKEN/);
+      assert.match(source,/CLOUDFLARE_REPLACEMENT_TOPOLOGY_READ_TOKEN/);
+      assert.match(source,/run-transport-remediated-deployment-promotion\.mjs/);
+      assert.match(source,/transport-remediated-deployment-promotion-readonly\.mjs/);
+      assert.match(source,/github\.run_attempt == 1/);
+      assert.match(source,/Tests and deterministic build/);
+      assert.doesNotMatch(source.replace(/^\s*#.*$/gm,''),/API_FOOTBALL_API_KEY|API_FOOTBALL_ATTENDED_TRIGGER_SECRET|x-apisports-key|v3\.football\.api-sports\.io|wrangler|\/subdomain|workers\.dev|CLOUDFLARE_ATTENDED_VERSION_UPLOAD_TOKEN|CLOUDFLARE_ATTENDED_MUTATION_TOKEN|CLOUDFLARE_ATTENDED_D1_MUTATION_TOKEN|x-teamsheet-attended-trigger|^\s{2}schedule:/im);
       continue;
     }
     if(file==='api-football-deployed-one-shot-collection.yml'){

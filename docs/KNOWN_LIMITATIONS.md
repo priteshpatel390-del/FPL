@@ -1,3 +1,7 @@
+## Remediated Deployment promotion limitations (Gate B)
+
+Nothing is promoted: the live Deployment still selects old Version `04d79556…`, which fails every provider request. Deployment POST and two-row list response shapes are proven only against fakes until the live Gate B run. Bounded absence after an ambiguous POST stays owner-attention with no retry and no rollback. The original blocked Version is checked by stable bindings only. The Deployment message carries an 8-character creation-SHA prefix (full SHA pinned in the repository). A promoted candidate remains unreachable and unproven against API-Football until Gate C. See the [transport-remediated Deployment promotion](API-FOOTBALL-TRANSPORT-REMEDIATED-DEPLOYMENT-PROMOTION.md).
+
 ## Remediated Version preparation limitations
 
 Nothing is uploaded: the corrected request is not live and Version `04d79556` still fails every provider request the old way. The Version-upload response shape and ambiguity behaviour are proven only against fakes until Gate A. Bounded absence after an ambiguous upload is deliberately not treated as `NOT_APPLIED`; it remains owner-attention with no retry. Historical Versions other than the retained attended Version are checked by id after upload. The Gate A policy of exactly one Deployment must not be reused for later promotions. See [remediated reviewed Version preparation](API-FOOTBALL-REMEDIATED-REVIEWED-VERSION-PREPARATION.md).
