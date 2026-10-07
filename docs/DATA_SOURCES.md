@@ -1,3 +1,7 @@
+## API-Football Gate B status — 7 October 2026
+
+Gate B is complete and consumed. Run `37688525299` promoted corrected Version `4171f3cf-953e-452e-9e5f-068df9a3ca47` into active Deployment `9b48b57a-e505-4213-9547-fe44835a9bdb` at 100% and independently reconciled an inert topology. No API-Football request occurred, so provider transport, reliability and workload acceptance remain unproven. API-Football remains strictly shadow-only; no data-source scope or model/product path changes were made. See [Gate B live closeout](API-FOOTBALL-TRANSPORT-REMEDIATED-DEPLOYMENT-PROMOTION-CLOSEOUT.md).
+
 ## Remediated Deployment promotion — no source or provider-scope change
 
 Same provider, origin, endpoints, credential and ceilings. Gate B makes zero API-Football requests and holds no provider key; the protected job refuses to run if one is present. See the [transport-remediated Deployment promotion](API-FOOTBALL-TRANSPORT-REMEDIATED-DEPLOYMENT-PROMOTION.md).
