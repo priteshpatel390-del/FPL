@@ -1,3 +1,7 @@
+## Gate B closeout — remaining API-Football limitation
+
+Gate B run `37688525299` successfully promoted the corrected Version and independently reconciled the resulting topology as `TRANSPORT_REMEDIATED_DEPLOYMENT_PROMOTED_INERT`. Because workers.dev/Preview/routes/domains/Cron remained off and the Worker was never invoked, this **does not prove the provider transport issue is fixed**. No successful API-Football response, validation, persistence or committed generation has yet been established for the corrected Version. Gate C is separate and not implemented. See [Gate B live closeout](API-FOOTBALL-TRANSPORT-REMEDIATED-DEPLOYMENT-PROMOTION-CLOSEOUT.md).
+
 ## Remediated Deployment promotion limitations (Gate B)
 
 Nothing is promoted: the live Deployment still selects old Version `04d79556…`, which fails every provider request. Deployment POST and two-row list response shapes are proven only against fakes until the live Gate B run. Bounded absence after an ambiguous POST stays owner-attention with no retry and no rollback. The original blocked Version is checked by stable bindings only. The Deployment message carries the full immutable candidate creation SHA and full execution SHA. A promoted candidate remains unreachable and unproven against API-Football until Gate C. See the [transport-remediated Deployment promotion](API-FOOTBALL-TRANSPORT-REMEDIATED-DEPLOYMENT-PROMOTION.md).

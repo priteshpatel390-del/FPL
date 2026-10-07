@@ -612,3 +612,24 @@ test('Gate A workflow is marked consumed and its admission can no longer admit t
   // The live four-Version state (preflight cannot prove the three-Version lifecycle inventory) is refused by Gate A admission.
   assert.equal(transportRemediatedAdmissionDiagnostic(report(),activeDeploymentState({deployments:[retainedRow]}),{approvedSha:EXEC_SHA,accountFingerprint:FINGERPRINT}),'version_identity_mismatch');
 });
+
+
+test('Gate B live promotion is canonically closed out and the workflow is consumed',()=>{
+  const workflow=read('.github/workflows/api-football-remediated-deployment-promotion.yml');
+  assert.match(workflow,/^# CONSUMED \(run 37688525299, attempt 1, exact main 2516eeec669f3b44001f9cc5d22135dcbe0e235e\): do NOT dispatch again\./);
+  assert.match(workflow,/9b48b57a-e505-4213-9547-fe44835a9bdb/);
+  assert.match(workflow,/TRANSPORT_REMEDIATED_DEPLOYMENT_PROMOTED_INERT/);
+  const closeout=read('docs/API-FOOTBALL-TRANSPORT-REMEDIATED-DEPLOYMENT-PROMOTION-CLOSEOUT.md');
+  for(const expected of [
+    '37688525299',
+    '2516eeec669f3b44001f9cc5d22135dcbe0e235e',
+    '9b48b57a-e505-4213-9547-fe44835a9bdb',
+    '4171f3cf-953e-452e-9e5f-068df9a3ca47',
+    '2417a3e0-15db-4e45-a3c8-00b148a300f4',
+    'TRANSPORT_REMEDIATED_DEPLOYMENT_PROMOTED_INERT',
+    'does **not** prove',
+    'Gate C is separate'
+  ]) assert.ok(closeout.includes(expected),expected);
+  assert.match(read('CLAUDE.md'),/Gate B complete and consumed; Gate C not implemented/);
+  assert.match(read('docs/API-FOOTBALL-TRANSPORT-REMEDIATED-DEPLOYMENT-PROMOTION.md'),/AUTHORITATIVE LIVE CLOSEOUT/);
+});

@@ -1,3 +1,5 @@
+> **Current state after Gate B:** the original `TRANSPORT_UNKNOWN` provider attempt remains consumed and unchanged. Gate A prepared the corrected Version; Gate B run `37688525299` promoted it through active Deployment `9b48b57a-e505-4213-9547-fe44835a9bdb` and independently reconciled `TRANSPORT_REMEDIATED_DEPLOYMENT_PROMOTED_INERT`. Gate B made no Worker invocation or API-Football request, so this remediation is **not yet live-proven against provider transport**. Gate C remains separate and unimplemented. See [Gate B live closeout](API-FOOTBALL-TRANSPORT-REMEDIATED-DEPLOYMENT-PROMOTION-CLOSEOUT.md).
+
 # API-Football Transport-Unknown Investigation and Repository Remediation
 
 > **Current state (Gate A complete):** consumed Gate A run `37680114065` created corrected Version `4171f3cf-953e-452e-9e5f-068df9a3ca47`, prepared but not deployed. Historical Deployment `2417a3e0…` still selects `04d79556…`. Promotion is the separately gated [transport-remediated Deployment promotion](API-FOOTBALL-TRANSPORT-REMEDIATED-DEPLOYMENT-PROMOTION.md) (Gate B); Gate C remains separate.

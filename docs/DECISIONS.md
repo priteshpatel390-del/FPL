@@ -1,3 +1,9 @@
+## 7 October 2026 — API-Football Gate B promotion consumed
+
+**Decision:** accept successful run `37688525299` as the one-time Gate B Deployment promotion and close it as consumed history. Deployment `9b48b57a-e505-4213-9547-fe44835a9bdb` selects corrected Version `4171f3cf-953e-452e-9e5f-068df9a3ca47` at 100%, while the prior Deployment is retained unchanged as history. Final classification is `TRANSPORT_REMEDIATED_DEPLOYMENT_PROMOTED_INERT`.
+
+**Boundary:** this proves promotion provenance and inert topology only. It does not prove Worker invocation or API-Football transport. No retry of Gate B is authorized. Gate C requires a separate evidence-led proposal and explicit owner approval before implementation or live mutation. See [Gate B live closeout](API-FOOTBALL-TRANSPORT-REMEDIATED-DEPLOYMENT-PROMOTION-CLOSEOUT.md).
+
 ## 2026-10-07 — promote the corrected Version by one new Deployment, pinned to immutable Gate A provenance, with no automatic rollback
 
 Decision: Gate B validates candidate `4171f3cf…` only against its immutable creation SHA `f01ccff5…` and pinned graph/metadata hashes; submits at most one Deployment POST selecting only the candidate at 100% (no split, no `force`); adds a new Deployment history row rather than editing or deleting `2417a3e0…`; resolves ambiguity by bounded GET readback and never infers `NOT_APPLIED` from absence; and implements no automatic rollback. Rationale: rebuilding identity from a later SHA would validate a Version that does not exist; a second Deployment POST (including a rollback) would compound an unproven mutation while every traffic surface is already off and read-only inspection is safer. See the [transport-remediated Deployment promotion](API-FOOTBALL-TRANSPORT-REMEDIATED-DEPLOYMENT-PROMOTION.md).
