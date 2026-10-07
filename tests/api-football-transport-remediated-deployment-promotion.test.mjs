@@ -254,12 +254,12 @@ test('admission handoff refuses tampering',()=>{
 test('promotion body selects only the candidate at exactly 100% with percentage strategy, no force and a sanitized deterministic message',()=>{
   const body=buildPromotionDeploymentBody(EXEC_SHA);
   assert.deepEqual(JSON.parse(JSON.stringify(body)),{strategy:'percentage',versions:[{version_id:CANDIDATE,percentage:100}],
-    annotations:{'workers/message':'GateB v='+CANDIDATE+' c=f01ccff5 x='+EXEC_SHA}});
+    annotations:{'workers/message':'GateB v='+CANDIDATE+' c='+PROMOTION_CANDIDATE_CREATION_SHA+' x='+EXEC_SHA}});
   assert.equal(body.versions.length,1);assert.equal(body.versions.reduce((sum,row)=>sum+row.percentage,0),100);
   assert.ok(!body.versions.some(row=>row.version_id===PROMOTION_RETAINED_VERSION_ID));
   assert.equal(Object.hasOwn(body,'force'),false);assert.doesNotMatch(serializePromotionDeploymentBody(EXEC_SHA),/force/);
   const message=buildPromotionDeploymentMessage(EXEC_SHA);
-  assert.ok(message.length<=PROMOTION_MESSAGE_MAX_LENGTH);assert.ok(message.includes(EXEC_SHA));assert.ok(message.includes(CANDIDATE));
+  assert.ok(message.length<=PROMOTION_MESSAGE_MAX_LENGTH);assert.ok(message.includes(EXEC_SHA));assert.ok(message.includes(CANDIDATE));assert.ok(message.includes(PROMOTION_CANDIDATE_CREATION_SHA));
   assert.ok(message.includes(PROMOTION_CANDIDATE_CREATION_SHA.slice(0,8)));
   assert.doesNotMatch(message,/token|secret|key|account/i);
   assert.equal(serializePromotionDeploymentBody(EXEC_SHA),serializePromotionDeploymentBody(EXEC_SHA));
