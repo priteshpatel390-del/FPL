@@ -1,3 +1,5 @@
+> **Current state after Gate B:** the historical one-shot path remains consumed. Gate B run `37688525299` promoted corrected Version `4171f3cf-953e-452e-9e5f-068df9a3ca47` into active Deployment `9b48b57a-e505-4213-9547-fe44835a9bdb` at 100% while all traffic surfaces stayed off. Final classification: `TRANSPORT_REMEDIATED_DEPLOYMENT_PROMOTED_INERT`. No Worker invocation/API-Football request occurred. Gate C is a new, separate owner-gated path and is not implemented. See [Gate B live closeout](API-FOOTBALL-TRANSPORT-REMEDIATED-DEPLOYMENT-PROMOTION-CLOSEOUT.md).
+
 # API-Football Controlled Deployed One-Shot Shadow Collection
 
 > **Current state (Gate A complete):** consumed Gate A run `37680114065` created corrected Version `4171f3cf-953e-452e-9e5f-068df9a3ca47`, prepared but not deployed. Historical Deployment `2417a3e0…` still selects `04d79556…`. Promotion is the separately gated [transport-remediated Deployment promotion](API-FOOTBALL-TRANSPORT-REMEDIATED-DEPLOYMENT-PROMOTION.md) (Gate B); Gate C remains separate.
