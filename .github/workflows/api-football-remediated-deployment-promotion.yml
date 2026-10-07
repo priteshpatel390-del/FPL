@@ -180,7 +180,8 @@ jobs:
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           CLOUDFLARE_ACCOUNT_FINGERPRINT: ${{ vars.CLOUDFLARE_ACCOUNT_FINGERPRINT }}
           CLOUDFLARE_ATTENDED_READ_TOKEN: ${{ secrets.CLOUDFLARE_ATTENDED_READ_TOKEN }}
-          # Dedicated Deployment-creation credential (Workers Scripts Edit, scoped to this one Worker where Cloudflare allows);
+          # Dedicated Deployment-creation credential. Cloudflare's Deployment API lists Workers Scripts Write as the accepted
+          # permission; where the dashboard uses Workers roles, use Editor scoped to this existing Worker only. The token is
           # usable only for the single Deployment POST and refused for every read.
           CLOUDFLARE_REMEDIATED_DEPLOYMENT_PROMOTION_TOKEN: ${{ secrets.CLOUDFLARE_REMEDIATED_DEPLOYMENT_PROMOTION_TOKEN }}
           # Read-only Zone Read + Workers Routes Read; used only for the final pre-mutation route scan.
