@@ -1,3 +1,7 @@
+## 8 October 2026 — Gate C merged; separately authorise repository-only readiness hardening
+
+**Facts:** PR #317 merged as main `f8c9820e290007e1d611ea4adf58a2709714a683`; Verify `37770135682` passed 2,592/2,592 with reproducible builds. No corrected-Version provider collection is established. **Decision:** approve a separate branch/draft PR for non-consuming read-only admission workflow, workflow structural validation, fuller synthetic Gate C executor/reconciliation tests and canonical status corrections. **Not approved:** hardening PR merge, read-only workflow dispatch, Gate C live collection, Cloudflare/D1 operation, API-Football call, retry, or model/product use. Earlier no-merge lines below are historical and superseded only with respect to PR #317. [Hardening record](API-FOOTBALL-GATE-C-READINESS-HARDENING.md).
+
 ## 8 October 2026 — Gate C merged; repository-only readiness hardening authorised
 
 PR #317 merged at `f8c9820e290007e1d611ea4adf58a2709714a683`, exact-main Verify `37770135682` passed 2,592/2,592 and reproducible builds. Owner's next approval permits only a separate dormant, repeatable READ-ONLY admission workflow, offline validation, synthetic executor/reconciliation tests and canonical documentation. It does **not** permit either workflow dispatch, Cloudflare/D1 contact, provider invocation, merge of the hardening PR, or historical retries. Future live Gate C requires fresh separate explicit authority. [Readiness hardening](API-FOOTBALL-GATE-C-READINESS-HARDENING.md).
