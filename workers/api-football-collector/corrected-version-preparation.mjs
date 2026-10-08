@@ -160,6 +160,10 @@ export function classifyCorrectedReconciliation({admission,report,detail,deploym
   try{validateCorrectedAdmission(admission,{approvedSha,accountFingerprint});}catch{return stop('admission_invalid');}
   // Check all non-Version invariants again, comparing the exact pre- and post-upload historical D1 evidence.
   if(!same(report?.priorState,admission.preflight?.priorState)||!same(detail,admission.detail)||
+    report?.ok!==false||report?.classification!==DEPLOYED_ONE_SHOT_CONTINUATION_PREFLIGHT_STOP||
+    report?.reason!==DEPLOYED_ONE_SHOT_CONTINUATION_PREFLIGHT_REASON||
+    foundationDiagnostic({...report,priorState:TRANSPORT_REMEDIATED_CONSUMED_HISTORY},
+      {approvedSha,accountFingerprint,requireVersionInventory:false})||
     report?.inventory?.deploymentCount!==2||!promotionPostStateExact(deployments)||
     !same(deployments,admission.deployments)||!validateZoneTopology(topology)||!same(topology,admission.topology))
     return stop('preparation_state_drift');
