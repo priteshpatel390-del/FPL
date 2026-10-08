@@ -55,6 +55,21 @@ jobs:
           test "$(git ls-remote https://github.com/priteshpatel390-del/FPL.git refs/heads/main | cut -f1)" = "$APPROVED_SHA"
           test -z "$(git status --porcelain --untracked-files=all)"
           echo "approved_sha=$APPROVED_SHA" >> "$GITHUB_OUTPUT"
+      - name: Refuse every second Gate C workflow dispatch, including earlier pre-egress stops
+        env:
+          GH_TOKEN: ${{ github.token }}
+          CURRENT_RUN_ID: ${{ github.run_id }}
+        run: |
+          set -euo pipefail
+          gh api "repos/${{ github.repository }}/actions/workflows/api-football-gate-c-new-day-collection.yml/runs?event=workflow_dispatch&per_page=100" > "$RUNNER_TEMP/gate-c-dispatch-history.json"
+          node --input-type=module - "$RUNNER_TEMP/gate-c-dispatch-history.json" <<'NODE'
+          import fs from 'node:fs';
+          const result=JSON.parse(fs.readFileSync(process.argv[2],'utf8'));
+          if(!Number.isInteger(result.total_count)||result.total_count!==1||
+              result.workflow_runs?.length!==1||String(result.workflow_runs[0].id)!==process.env.CURRENT_RUN_ID)
+            throw new Error('GATE_C_DISPATCH_ALREADY_CONSUMED_OR_UNPROVEN');
+          NODE
+          rm -f "$RUNNER_TEMP/gate-c-dispatch-history.json"
       - name: Require exact-head Verify Teamsheet success
         env:
           GH_TOKEN: ${{ github.token }}
