@@ -1,3 +1,7 @@
+## API-Football next checkpoint — Gate C repository implementation (8 October 2026)
+
+Gate B is complete/consumed; post-merge Verify `37691491606` passed 2,582/2,582. Gate C is an owner-approved **repository-only** dormant draft candidate: implement/test two-Deployment consumed-history admission, one protected new-day five-request collection and independent terminal reconciliation. After green exact-head CI and draft PR review: owner decides merge; after post-merge exact-main check: separate owner decision on any one-time live dispatch. No provider transport success claimed. [Gate C](API-FOOTBALL-GATE-C-CONTROLLED-COLLECTION.md).
+
 ## Current API-Football checkpoint — after Gate B
 
 Gate B is complete and consumed: live run `37688525299`, exact main `2516eeec669f3b44001f9cc5d22135dcbe0e235e`, final classification `TRANSPORT_REMEDIATED_DEPLOYMENT_PROMOTED_INERT`. The corrected Version is now selected by the active Deployment but remains unreachable because all traffic surfaces are off. The next possible checkpoint is Gate C, but Gate C is not implemented and requires a separate owner-approved design/implementation gate. Provider transport remains unproven. See [Gate B live closeout](API-FOOTBALL-TRANSPORT-REMEDIATED-DEPLOYMENT-PROMOTION-CLOSEOUT.md).
