@@ -653,6 +653,8 @@ test('API-Football discovery stays isolated from production, live config and mig
     'api-football-collector-attended-acceptance.yml',
     'api-football-deployed-one-shot-collection.yml',
     'api-football-deployed-one-shot-continuation.yml',
+    // Approved Gate C repository-only, dormant, one-shot shadow collection; no new model/provider path.
+    'api-football-gate-c-new-day-collection.yml',
     'api-football-remediated-version-preparation.yml',
     'api-football-remediated-deployment-promotion.yml',
     'api-football-version-url-lifecycle-observation.yml',
@@ -752,6 +754,22 @@ test('API-Football discovery stays isolated from production, live config and mig
       assert.match(source,/github\.run_attempt == 1/);
       assert.match(source,/Tests and deterministic build/);
       assert.doesNotMatch(source,/secrets\.API_FOOTBALL_API_KEY|x-apisports-key|v3\.football\.api-sports\.io|wrangler|versions\s+upload|CLOUDFLARE_REPLACEMENT_MUTATION_TOKEN|teamsheet-api-football-shadow-collector-v2|^\s{2}schedule:/im);
+      continue;
+    }
+    if(file==='api-football-gate-c-new-day-collection.yml'){
+      // This is an intentional addition to the historical workflow allowlist, NOT an exception
+      // to provider isolation or a grant of live dispatch authority.
+      assert.match(source,/name: API-Football Gate C New-Day Shadow Collection/);
+      assert.match(source,/name: data-steward-readonly/);
+      assert.match(source,/name: api-football-attended-acceptance/);
+      assert.match(source,/API_FOOTBALL_ATTENDED_TRIGGER_SECRET/);
+      assert.match(source,/GATE_C_DISPATCH_ALREADY_CONSUMED_OR_UNPROVEN/);
+      assert.match(source,/run-gate-c\.mjs/);
+      assert.match(source,/gate-c-readonly\.mjs/);
+      assert.match(source,/github\.run_attempt == 1/);
+      assert.match(source,/Tests and deterministic build/);
+      assert.match(source,/group: api-football-collector-attended-acceptance/);
+      assert.doesNotMatch(source,/secrets\.API_FOOTBALL_API_KEY|x-apisports-key|v3\.football\.api-sports\.io|wrangler\s+deploy|versions\s+upload|teamsheet-api-football-shadow-collector-v2|^\s{2}schedule:/im);
       continue;
     }
     if(file==='api-football-remediated-version-preparation.yml'){

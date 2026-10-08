@@ -1,3 +1,7 @@
+## Gate C repository-only limitations — 8 October 2026
+
+The new Gate C workflow is dormant; no corrected-Version invocation, provider response, fixture validation, persisted committed generation or coverage/accuracy improvement has been demonstrated. The last Cloudflare/D1 evidence is Gate B on 7 October, not a fresh 8 October inventory. Temporary workers.dev is briefly publicly reachable if a later live run is approved; the trigger is secret-gated. Historical continuation and Gate A/B workflows remain consumed. The general Data Steward D1 observer is reporting `D1_GOVERNANCE_MISMATCH` against migration-3 expectations while collector requires six migrations; investigate separately, do not relax Gate C admission. [Gate C](API-FOOTBALL-GATE-C-CONTROLLED-COLLECTION.md).
+
 ## Gate B closeout — remaining API-Football limitation
 
 Gate B run `37688525299` successfully promoted the corrected Version and independently reconciled the resulting topology as `TRANSPORT_REMEDIATED_DEPLOYMENT_PROMOTED_INERT`. Because workers.dev/Preview/routes/domains/Cron remained off and the Worker was never invoked, this **does not prove the provider transport issue is fixed**. No successful API-Football response, validation, persistence or committed generation has yet been established for the corrected Version. Gate C is separate and not implemented. See [Gate B live closeout](API-FOOTBALL-TRANSPORT-REMEDIATED-DEPLOYMENT-PROMOTION-CLOSEOUT.md).

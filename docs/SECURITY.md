@@ -1,3 +1,7 @@
+## Gate C repository-only security boundary (8 October 2026)
+
+A dormant manual workflow preserves exact-main/run-attempt-1 admission, protected environments, distinct Cloudflare read/mutation/topology credentials, one high-entropy attended trigger, zero Deployment/Version/Cron/routes/domains/Preview mutation, and immediate fresh read-only state proof before any later activation. Only the existing D1 collection enable/disable SQL and workers.dev toggles are executable from the protected runner, with one authenticated trigger, no automatic retry, always-attempted cleanup and independent reconciliation. No secrets, live operations or provider requests were made by repository work. Separate live owner approval mandatory. [Gate C](API-FOOTBALL-GATE-C-CONTROLLED-COLLECTION.md).
+
 ## API-Football Gate B security closeout — 7 October 2026
 
 Consumed run `37688525299` submitted exactly one allowlisted Deployment POST and no Version/D1/workers.dev/Preview/Cron/route/domain mutation beyond that Deployment creation. Execution evidence recorded zero Worker invocations, zero API-Football requests and zero secret values serialized; final independent reconciliation recorded zero secret values read. The Gate B workflow is now consumed and carries no retry authority. Gate C is separate and must preserve the existing explicit secret, retry, ambiguity and shadow-isolation boundaries. See [Gate B live closeout](API-FOOTBALL-TRANSPORT-REMEDIATED-DEPLOYMENT-PROMOTION-CLOSEOUT.md).

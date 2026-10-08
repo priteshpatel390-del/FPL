@@ -1,3 +1,7 @@
+## API-Football Gate C repository candidate — live NOT authorised (8 October 2026)
+
+Owner approval extends only to the dormant controlled new-day shadow collection implementation, tests and draft PR. Corrected Version `4171f3cf-953e-452e-9e5f-068df9a3ca47` remains selected by Gate B Deployment `9b48b57a-e505-4213-9547-fe44835a9bdb` on the last reconciled live evidence; the old failed `TRANSPORT_UNKNOWN` attempt remains consumed. No further live state or successful collection is claimed. See [Gate C design/implementation](API-FOOTBALL-GATE-C-CONTROLLED-COLLECTION.md). No merge or live dispatch authorised.
+
 ## API-Football Gate B live closeout — complete and consumed
 
 Gate B run `37688525299` on exact main `2516eeec669f3b44001f9cc5d22135dcbe0e235e` completed successfully and is consumed. New active Deployment `9b48b57a-e505-4213-9547-fe44835a9bdb` selects corrected Version `4171f3cf-953e-452e-9e5f-068df9a3ca47` at 100%; historical Deployment `2417a3e0-15db-4e45-a3c8-00b148a300f4` remains unchanged as history. Final reconciliation: `TRANSPORT_REMEDIATED_DEPLOYMENT_PROMOTED_INERT`. No Worker invocation or API-Football request occurred. Gate C is separate, unimplemented and owner-gated. See [Gate B live closeout](API-FOOTBALL-TRANSPORT-REMEDIATED-DEPLOYMENT-PROMOTION-CLOSEOUT.md).

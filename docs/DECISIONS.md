@@ -1,3 +1,7 @@
+## 8 October 2026 — Gate C repository-only implementation authorised
+
+**Decision:** implement the smallest defensible distinct new-day collection for the Gate B corrected, 100% promoted Version; retain immutable four-Version/two-Deployment topology, exact consumed historical `TRANSPORT_UNKNOWN` request and failed generation, five approved discovery endpoints, one trigger/zero retry, existing D1 reservation and normalized persistence, mandatory inert cleanup and independent reconciliation. Approval ends with tests/docs and a draft PR. **No merge, workflow dispatch, Cloudflare mutation or provider request is authorised.** Separate live owner gate remains mandatory. [Gate C approval record](API-FOOTBALL-GATE-C-CONTROLLED-COLLECTION.md).
+
 ## 7 October 2026 — API-Football Gate B promotion consumed
 
 **Decision:** accept successful run `37688525299` as the one-time Gate B Deployment promotion and close it as consumed history. Deployment `9b48b57a-e505-4213-9547-fe44835a9bdb` selects corrected Version `4171f3cf-953e-452e-9e5f-068df9a3ca47` at 100%, while the prior Deployment is retained unchanged as history. Final classification is `TRANSPORT_REMEDIATED_DEPLOYMENT_PROMOTED_INERT`.
