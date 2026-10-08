@@ -1,3 +1,7 @@
+## Current checkpoint — read-only forensic replay proposal for existing corrected Version (8 October 2026)
+
+Draft PR #324 now includes a dormant, manual-only read-only forensic replay workflow for existing Version `509f5a98-38fc-4e58-8a26-1b8fc4c9c787`. It SHA-256-pins the original run `37841681952` execution report, enforces latest-main and exact-head CI, uses the existing `data-steward-readonly` credentials and re-runs only the GET / fixed SELECT-only reconciliation. It must report a sanitized closed failure sub-reason without weakening byte or metadata verification. **The underlying drift root cause remains UNKNOWN; Version unqualified.** No forensic dispatch, Version upload, Deployment promotion, D1 write, API-Football invocation, or merge is authorised by this branch change. External GitHub protected-environment approval enforcement remains unverified. Details: [corrected Version preparation](docs/API-FOOTBALL-CORRECTED-VERSION-PREPARATION.md).
+
 ## Current checkpoint — corrected Version `509f5a98` created but unqualified; reconciliation diagnostics (8 October 2026)
 
 Run `37841681952` (main `073ac6a5…`) uploaded one Version, `509f5a98-38fc-4e58-8a26-1b8fc4c9c787`, then failed independent reconciliation with the aggregate `corrected_version_byte_or_metadata_drift`. **Root cause unproven; Version unqualified; not deployed.** Repository-only diagnostics now emit a closed sub-reason. No retry, upload, Deployment or collection is authorised. See [forensics](docs/API-FOOTBALL-CORRECTED-VERSION-PREPARATION.md).
