@@ -1,3 +1,7 @@
+## API-Football Gate C dormant collection boundary (8 October 2026)
+
+Repository-only Gate C reuses immutable reviewed Version identities, exact two-Deployment admission, existing one-shot workers.dev authentication and mandatory cleanup, and atomic D1 collector reservation/normalized persistence. New pure Gate C admission/reconciliation, GET-only inventory and protected executor are in `workers/api-football-collector/gate-c*.mjs` and `run-gate-c.mjs`; dormant manual workflow has exact-main, attempt-1, protected environments, shared concurrency, immutable artifact handoffs and independent read-only terminal proof. No Deployment/Version upload, Cron/route/domain/Preview, new endpoint/schema/provider, or production model/UI path. See [Gate C](API-FOOTBALL-GATE-C-CONTROLLED-COLLECTION.md).
+
 ## API-Football Gate B live topology — current accepted state
 
 Run `37688525299` promoted corrected Version `4171f3cf-953e-452e-9e5f-068df9a3ca47` through active Deployment `9b48b57a-e505-4213-9547-fe44835a9bdb` at 100%. Historical Deployment `2417a3e0-15db-4e45-a3c8-00b148a300f4` remains retained history. Independent reconciliation proved workers.dev and Preview off, zero Cron/routes/domains, collection disabled, no active lease, and unchanged consumed provider history. The topology is therefore active-by-Deployment but unreachable/inert. Gate B is consumed. Gate C is not implemented. See [Gate B live closeout](API-FOOTBALL-TRANSPORT-REMEDIATED-DEPLOYMENT-PROMOTION-CLOSEOUT.md).
