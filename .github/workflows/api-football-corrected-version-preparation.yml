@@ -1,0 +1,241 @@
+# DORMANT — corrected R1/R2 Version preparation, never Gate A/B/C. A separate explicit owner decision is required to dispatch.
+# A repository merge DOES NOT authorize a Version upload or any live read. Exactly one upload POST is representable.
+name: API-Football Corrected R1-R2 Version Preparation
+on:
+  workflow_dispatch:
+    inputs:
+      approved_sha:
+        description: Exact owner-approved main commit for one-time corrected Version creation
+        required: true
+        type: string
+permissions:
+  contents: read
+  actions: read
+  checks: read
+concurrency:
+  group: api-football-collector-attended-acceptance
+  cancel-in-progress: false
+jobs:
+  repository-gate:
+    if: github.event_name == 'workflow_dispatch' && github.run_attempt == 1
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    outputs:
+      approved_sha: ${{ steps.identity.outputs.approved_sha }}
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          ref: ${{ inputs.approved_sha }}
+          fetch-depth: 0
+          persist-credentials: false
+      - id: identity
+        env:
+          APPROVED_SHA: ${{ inputs.approved_sha }}
+          EVENT_SHA: ${{ github.sha }}
+          EVENT_REF: ${{ github.ref }}
+          RUN_ATTEMPT: ${{ github.run_attempt }}
+          EVENT_NAME: ${{ github.event_name }}
+        run: |
+          set -euo pipefail
+          test "$EVENT_NAME" = workflow_dispatch
+          test "$RUN_ATTEMPT" = 1
+          test "$EVENT_REF" = refs/heads/main
+          printf '%s' "$APPROVED_SHA" | grep -Eq '^[0-9a-f]{40}$'
+          test "$EVENT_SHA" = "$APPROVED_SHA"
+          test "$(git rev-parse HEAD)" = "$APPROVED_SHA"
+          test "$(git ls-remote https://github.com/priteshpatel390-del/FPL.git refs/heads/main | cut -f1)" = "$APPROVED_SHA"
+      - name: Require exact-main Verify Teamsheet success
+        env:
+          GH_TOKEN: ${{ github.token }}
+          APPROVED_SHA: ${{ steps.identity.outputs.approved_sha }}
+        run: |
+          set -euo pipefail
+          gh api "repos/priteshpatel390-del/FPL/commits/$APPROVED_SHA/check-runs" > "$RUNNER_TEMP/check-runs.json"
+          node --input-type=module - "$RUNNER_TEMP/check-runs.json" <<'NODE'
+          import fs from 'node:fs';
+          const body=JSON.parse(fs.readFileSync(process.argv[2],'utf8'));
+          if(!(body.check_runs??[]).some(x=>x.name==='Tests and deterministic build'&&x.status==='completed'&&x.conclusion==='success'&&x.head_sha===process.env.APPROVED_SHA))throw new Error('CORRECTED_VERIFY_REQUIRED');
+          NODE
+      - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
+        with:
+          node-version: 24.19.0
+      - name: Check corrected source and history test contracts offline
+        run: |
+          node --test tests/api-football-corrected-version-preparation.test.mjs tests/api-football-immutable-version-preservation.test.mjs
+          test -z "$(git status --porcelain --untracked-files=all)"
+  fresh-readonly-admission:
+    needs: repository-gate
+    if: github.event_name == 'workflow_dispatch' && github.run_attempt == 1
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    environment:
+      name: data-steward-readonly
+      deployment: false
+    outputs:
+      classification: ${{ steps.handoff.outputs.classification }}
+      artifact_sha256: ${{ steps.handoff.outputs.artifact_sha256 }}
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          ref: ${{ needs.repository-gate.outputs.approved_sha }}
+          persist-credentials: false
+      - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
+        with:
+          node-version: 24.19.0
+      - name: Recheck approved main before read-only inventory
+        env:
+          APPROVED_SHA: ${{ needs.repository-gate.outputs.approved_sha }}
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "$APPROVED_SHA"
+          test "$(git ls-remote https://github.com/priteshpatel390-del/FPL.git refs/heads/main | cut -f1)" = "$APPROVED_SHA"
+      - name: Read exact four Versions, two Deployments, 824 memberships and inert topology
+        env:
+          APPROVED_SHA: ${{ needs.repository-gate.outputs.approved_sha }}
+          API_FOOTBALL_CORRECTED_MODE: ADMISSION
+          API_FOOTBALL_CORRECTED_REPORT_PATH: ${{ runner.temp }}/corrected-admission.json
+          DATA_STEWARD_CLOUDFLARE_ACCOUNT_ID: ${{ secrets.DATA_STEWARD_CLOUDFLARE_ACCOUNT_ID }}
+          DATA_STEWARD_CLOUDFLARE_ACCOUNT_FINGERPRINT: ${{ vars.DATA_STEWARD_CLOUDFLARE_ACCOUNT_FINGERPRINT }}
+          DATA_STEWARD_CLOUDFLARE_READ_TOKEN: ${{ secrets.DATA_STEWARD_CLOUDFLARE_READ_TOKEN }}
+          CLOUDFLARE_TOPOLOGY_READ_TOKEN: ${{ secrets.CLOUDFLARE_REPLACEMENT_TOPOLOGY_READ_TOKEN }}
+        run: node workers/api-football-collector/corrected-version-readonly.mjs
+      - name: Bind read-only admission artifact
+        id: handoff
+        env:
+          REPORT: ${{ runner.temp }}/corrected-admission.json
+        run: |
+          set -euo pipefail
+          node --input-type=module - <<'NODE'
+          import fs from 'node:fs';import {createHash} from 'node:crypto';
+          const bytes=fs.readFileSync(process.env.REPORT),body=JSON.parse(bytes);
+          if(body.version!=='api-football-corrected-r1-r2-version-admission-v1'||body.ok!==true||body.classification!=='READY_FOR_CORRECTED_VERSION_UPLOAD'||body.retryAuthorized!==false)throw new Error('CORRECTED_ADMISSION_INVALID');
+          fs.appendFileSync(process.env.GITHUB_OUTPUT,'classification='+body.classification+'\nartifact_sha256='+createHash('sha256').update(bytes).digest('hex')+'\n');
+          NODE
+      - uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6
+        if: always()
+        with:
+          name: corrected-version-admission
+          path: ${{ runner.temp }}/corrected-admission.json
+          if-no-files-found: ignore
+          retention-days: 7
+  protected-version-upload:
+    needs: [repository-gate, fresh-readonly-admission]
+    if: github.event_name == 'workflow_dispatch' && github.run_attempt == 1 && needs.fresh-readonly-admission.outputs.classification == 'READY_FOR_CORRECTED_VERSION_UPLOAD'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    environment:
+      name: api-football-corrected-version-upload
+      deployment: false
+    outputs:
+      execution_artifact_sha256: ${{ steps.execution-handoff.outputs.execution_artifact_sha256 }}
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          ref: ${{ needs.repository-gate.outputs.approved_sha }}
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
+        with:
+          node-version: 24.19.0
+      - uses: actions/download-artifact@95815c38cf2ff2164869cbab79da8d1f422bc89e # v4
+        with:
+          name: corrected-version-admission
+          path: ${{ runner.temp }}/corrected-admission
+      - name: Recheck main and admission fingerprint
+        env:
+          APPROVED_SHA: ${{ needs.repository-gate.outputs.approved_sha }}
+          EXPECTED_SHA256: ${{ needs.fresh-readonly-admission.outputs.artifact_sha256 }}
+          ADMISSION: ${{ runner.temp }}/corrected-admission/corrected-admission.json
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "$APPROVED_SHA"
+          test "$(git ls-remote https://github.com/priteshpatel390-del/FPL.git refs/heads/main | cut -f1)" = "$APPROVED_SHA"
+          test "$(sha256sum "$ADMISSION" | cut -d' ' -f1)" = "$EXPECTED_SHA256"
+      - name: One corrected Version POST maximum, never Deployment/D1/provider mutation
+        env:
+          GITHUB_RUN_ATTEMPT: ${{ github.run_attempt }}
+          APPROVED_SHA: ${{ needs.repository-gate.outputs.approved_sha }}
+          API_FOOTBALL_CORRECTED_ADMISSION_PATH: ${{ runner.temp }}/corrected-admission/corrected-admission.json
+          API_FOOTBALL_CORRECTED_ADMISSION_SHA256: ${{ needs.fresh-readonly-admission.outputs.artifact_sha256 }}
+          API_FOOTBALL_CORRECTED_EXECUTION_PATH: ${{ runner.temp }}/corrected-execution.json
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          CLOUDFLARE_ACCOUNT_FINGERPRINT: ${{ vars.CLOUDFLARE_ACCOUNT_FINGERPRINT }}
+          CLOUDFLARE_ATTENDED_READ_TOKEN: ${{ secrets.CLOUDFLARE_ATTENDED_READ_TOKEN }}
+          CLOUDFLARE_ATTENDED_VERSION_UPLOAD_TOKEN: ${{ secrets.CLOUDFLARE_ATTENDED_VERSION_UPLOAD_TOKEN }}
+          CLOUDFLARE_TOPOLOGY_READ_TOKEN: ${{ secrets.CLOUDFLARE_TOPOLOGY_READ_TOKEN }}
+          API_FOOTBALL_API_KEY: ${{ secrets.API_FOOTBALL_API_KEY }}
+          API_FOOTBALL_ATTENDED_TRIGGER_SECRET: ${{ secrets.API_FOOTBALL_ATTENDED_TRIGGER_SECRET }}
+        run: node workers/api-football-collector/run-corrected-version-upload.mjs
+      - name: Bind sanitized one-POST execution evidence even after failure
+        id: execution-handoff
+        if: always()
+        env:
+          REPORT: ${{ runner.temp }}/corrected-execution.json
+        run: |
+          set -euo pipefail
+          node --input-type=module - <<'NODE'
+          import fs from 'node:fs';import {createHash} from 'node:crypto';
+          if(fs.existsSync(process.env.REPORT)){
+            const bytes=fs.readFileSync(process.env.REPORT),x=JSON.parse(bytes);
+            if(x.version!=='api-football-corrected-r1-r2-version-execution-v1'||x.retryAuthorized!==false||![0,1].includes(x.versionUploadAttempts))throw new Error('CORRECTED_EXECUTION_ARTIFACT_INVALID');
+            fs.appendFileSync(process.env.GITHUB_OUTPUT,'execution_artifact_sha256='+createHash('sha256').update(bytes).digest('hex')+'\n');
+          }
+          NODE
+      - uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6
+        if: always()
+        with:
+          name: corrected-version-execution
+          path: ${{ runner.temp }}/corrected-execution.json
+          if-no-files-found: ignore
+          retention-days: 7
+  final-readonly-reconciliation:
+    needs: [repository-gate, fresh-readonly-admission, protected-version-upload]
+    if: ${{ always() && github.event_name == 'workflow_dispatch' && github.run_attempt == 1 && needs.repository-gate.result == 'success' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    environment:
+      name: data-steward-readonly
+      deployment: false
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          ref: ${{ needs.repository-gate.outputs.approved_sha }}
+          persist-credentials: false
+      - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
+        with:
+          node-version: 24.19.0
+      - uses: actions/download-artifact@95815c38cf2ff2164869cbab79da8d1f422bc89e # v4
+        if: needs.protected-version-upload.outputs.execution_artifact_sha256 != ''
+        with:
+          name: corrected-version-execution
+          path: ${{ runner.temp }}/corrected-execution
+      - name: Recheck immutable main and execution artifact fingerprint
+        env:
+          APPROVED_SHA: ${{ needs.repository-gate.outputs.approved_sha }}
+          EXPECTED_SHA256: ${{ needs.protected-version-upload.outputs.execution_artifact_sha256 }}
+          REPORT: ${{ runner.temp }}/corrected-execution/corrected-execution.json
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "$APPROVED_SHA"
+          test "$(git ls-remote https://github.com/priteshpatel390-del/FPL.git refs/heads/main | cut -f1)" = "$APPROVED_SHA"
+          if [ -n "$EXPECTED_SHA256" ]; then
+            test "$(sha256sum "$REPORT" | cut -d' ' -f1)" = "$EXPECTED_SHA256"
+          fi
+      - name: Independent read-only reconciliation
+        env:
+          APPROVED_SHA: ${{ needs.repository-gate.outputs.approved_sha }}
+          API_FOOTBALL_CORRECTED_MODE: RECONCILIATION
+          API_FOOTBALL_CORRECTED_EXECUTION_PATH: ${{ needs.protected-version-upload.outputs.execution_artifact_sha256 != '' && format('{0}/corrected-execution/corrected-execution.json', runner.temp) || '' }}
+          API_FOOTBALL_CORRECTED_REPORT_PATH: ${{ runner.temp }}/corrected-reconciliation.json
+          DATA_STEWARD_CLOUDFLARE_ACCOUNT_ID: ${{ secrets.DATA_STEWARD_CLOUDFLARE_ACCOUNT_ID }}
+          DATA_STEWARD_CLOUDFLARE_ACCOUNT_FINGERPRINT: ${{ vars.DATA_STEWARD_CLOUDFLARE_ACCOUNT_FINGERPRINT }}
+          DATA_STEWARD_CLOUDFLARE_READ_TOKEN: ${{ secrets.DATA_STEWARD_CLOUDFLARE_READ_TOKEN }}
+          CLOUDFLARE_TOPOLOGY_READ_TOKEN: ${{ secrets.CLOUDFLARE_REPLACEMENT_TOPOLOGY_READ_TOKEN }}
+        run: node workers/api-football-collector/corrected-version-readonly.mjs
+      - uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6
+        if: always()
+        with:
+          name: corrected-version-reconciliation
+          path: ${{ runner.temp }}/corrected-reconciliation.json
+          if-no-files-found: ignore
+          retention-days: 7

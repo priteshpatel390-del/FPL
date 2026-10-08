@@ -1,3 +1,7 @@
+## Current checkpoint — corrected R1/R2 Version preparation, dormant review candidate
+
+**8 October 2026 — Corrected R1/R2 Version preparation foundation (repository-only review candidate).** Latest verified starting main `ce0d85fd058fc1bad160e66bb6eb188e2a47b80b` (PR #319 post-merge Verify `37801742455`, 2,627/2,627; deterministic exact-identity builds). A separate branch implements a dormant, upload-less-by-default corrected 17-module identity, new read-only admission/reconciliation for five total historical attempts, two failed generations and 824 memberships, a protected one-POST-only future upload path, offline regression tests and a manual-only workflow. **No new Version has been uploaded; no live Cloudflare/D1 query, Deployment, provider request, workflow dispatch or merge is authorised.** The new branch requires exact-head CI, owner review and explicit merge approval. Live upload, independent inventory, promotion and a new collection gate each require further separate approval. [Design and gates](API-FOOTBALL-CORRECTED-VERSION-PREPARATION.md).
+
 ## Current Gate C checkpoint — failed and consumed; R1/R2 remediation in draft (8 October 2026)
 
 Gate C run `37776873809` failed (3 of 4 requests succeeded, FA Cup schema failure, 824 retained revisions, no head, collection disabled) and is permanently consumed. Repository-only R1/R2 with immutable Version preservation is in a draft PR; no live action, Version upload, Deployment or merge is authorised. See [Gate C forensic remediation](API-FOOTBALL-GATE-C-FORENSIC-REMEDIATION.md).

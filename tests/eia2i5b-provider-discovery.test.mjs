@@ -658,6 +658,7 @@ test('API-Football discovery stays isolated from production, live config and mig
     // Separately approved dormant read-only readiness; never invokes or consumes Gate C collection.
     'api-football-gate-c-readonly-readiness.yml',
     'api-football-remediated-version-preparation.yml',
+    'api-football-corrected-version-preparation.yml',
     'api-football-remediated-deployment-promotion.yml',
     'api-football-version-url-lifecycle-observation.yml',
     'api-football-version-url-creation-experiment.yml',
@@ -796,6 +797,18 @@ test('API-Football discovery stays isolated from production, live config and mig
       assert.match(source,/github\.run_attempt == 1/);
       assert.match(source,/Tests and deterministic build/);
       assert.doesNotMatch(source.replace(/^\s*#.*$/gm,''),/x-apisports-key|v3\.football\.api-sports\.io|wrangler|\/deployments|\/subdomain|workers\.dev|CLOUDFLARE_ATTENDED_MUTATION_TOKEN|CLOUDFLARE_ATTENDED_D1_MUTATION_TOKEN|x-teamsheet-attended-trigger|^\s{2}schedule:/im);
+      continue;
+    }
+    if(file==='api-football-corrected-version-preparation.yml'){
+      assert.match(source,/name: API-Football Corrected R1-R2 Version Preparation/);
+      assert.match(source,/name: api-football-corrected-version-upload/);
+      assert.match(source,/name: data-steward-readonly/);
+      assert.match(source,/corrected-version-readonly\.mjs/);
+      assert.match(source,/run-corrected-version-upload\.mjs/);
+      assert.match(source,/github\.run_attempt == 1/);
+      assert.match(source,/Tests and deterministic build/);
+      assert.match(source,/group: api-football-collector-attended-acceptance/);
+      assert.doesNotMatch(source.replace(/^\s*#.*$/gm,''),/x-apisports-key|v3\.football\.api-sports\.io|wrangler\s+deploy|CLOUDFLARE_ATTENDED_MUTATION_TOKEN|CLOUDFLARE_ATTENDED_D1_MUTATION_TOKEN|x-teamsheet-attended-trigger|^\s{2}schedule:/im);
       continue;
     }
     if(file==='api-football-remediated-deployment-promotion.yml'){
