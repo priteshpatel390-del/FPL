@@ -46,7 +46,7 @@ export function gateCCriticalRecheckDiagnostic(report,deployments,versions,topol
 }
 
 export async function executeGateC({env=process.env,fetchImpl=globalThis.fetch,criticalRecheck=runApiFootballActivationLivePreflight,routeScan=readReplacementRouteTopology,
-  versionsReader=readPromotionVersions,dayReader=readGateCDayLedger,wait=delay}={}){
+  versionsReader=readPromotionVersions,dayReader=readGateCDayLedger,wait=delay,now=()=>new Date()}={}){
   // Every credential is required before any network request.
   const accountId=required(env,'CLOUDFLARE_ACCOUNT_ID'),fingerprint=required(env,'CLOUDFLARE_ACCOUNT_FINGERPRINT');
   const readToken=required(env,'CLOUDFLARE_ATTENDED_READ_TOKEN'),mutationToken=required(env,'CLOUDFLARE_ATTENDED_MUTATION_TOKEN');
@@ -58,7 +58,7 @@ export async function executeGateC({env=process.env,fetchImpl=globalThis.fetch,c
   if(!HEX64.test(fingerprint)||digest(accountId)!==fingerprint)fail('DEPLOYED_ONE_SHOT_ACCOUNT_IDENTITY_MISMATCH');
   if(env.GITHUB_RUN_ATTEMPT!=='1')fail('GATE_C_RERUN_FORBIDDEN');
   const admission=JSON.parse(fs.readFileSync(required(env,'API_FOOTBALL_GATE_C_ADMISSION_PATH'),'utf8'));
-  const utcDay=new Date().toISOString().slice(0,10);
+  const utcDay=now().toISOString().slice(0,10);
   validateGateCAdmissionHandoff(admission,{approvedSha,accountFingerprint:fingerprint,utcDay});
 
   const paths=deployedOneShotCloudflarePaths(accountId);
@@ -141,7 +141,7 @@ export async function executeGateC({env=process.env,fetchImpl=globalThis.fetch,c
     },
     enableCollection:async()=>{await runtime(DEPLOYED_ONE_SHOT_RUNTIME_SQL.enable,'ENABLE');collectionEnableSucceeded=true;},
     triggerOnce:async()=>{
-      if(new Date().toISOString().slice(0,10)!==admission.utcDay)fail('GATE_C_UTC_DAY_CHANGED_BEFORE_TRIGGER');
+      if(now().toISOString().slice(0,10)!==admission.utcDay)fail('GATE_C_UTC_DAY_CHANGED_BEFORE_TRIGGER');
       if(triggerRequests>=DEPLOYED_ONE_SHOT_MAX_TRIGGER_REQUESTS)fail('DEPLOYED_ONE_SHOT_SECOND_TRIGGER_FORBIDDEN');
       triggerRequests+=1;
       let response;
