@@ -217,9 +217,9 @@ jobs:
           import {createHash} from 'node:crypto';
           const bytes=fs.readFileSync(process.env.REPORT),report=JSON.parse(bytes);
           if(report.version!=='api-football-gate-c-execution-v1'||report.approvedSha!==process.env.APPROVED_SHA||
- report.retryAuthorized!==false||![0,1].includes(report.triggerRequests)||report.mutations?.createDeployment!==0||
- report.versionId!=='4171f3cf-953e-452e-9e5f-068df9a3ca47'||report.evidence?.apiFootballRequestsByExecutor!==0||
- report.evidence?.secretValuesSerialized!==0);
+             report.retryAuthorized!==false||![0,1].includes(report.triggerRequests)||report.mutations?.createDeployment!==0||
+             report.versionId!=='4171f3cf-953e-452e-9e5f-068df9a3ca47'||report.evidence?.apiFootballRequestsByExecutor!==0||
+             report.evidence?.secretValuesSerialized!==0)throw new Error('gate_c_execution_evidence_invalid');
           fs.appendFileSync(process.env.GITHUB_OUTPUT,`execution_artifact_sha256=${createHash('sha256').update(bytes).digest('hex')}\n`);
           NODE
       - uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6
