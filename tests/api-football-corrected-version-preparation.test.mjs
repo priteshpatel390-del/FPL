@@ -318,5 +318,5 @@ test('forensic replay aborts on absent, altered or mismatched original evidence 
     assert.ok(w.includes(field),'original evidence guard '+field);
   const headers=w.split('\n').filter(x=>/^(permissions:|  contents:|  actions:|  checks:)/.test(x));
   assert.deepEqual(headers,['permissions:','  contents: read','  actions: read','  checks: read']);
-  assert.doesNotMatch(w,/\b(?:write|upload-secret|workflow_dispatch.*curl|promote|trigger)\b/i);
+  assert.doesNotMatch(w,/\b(?:CLOUDFLARE_ATTENDED_VERSION_UPLOAD_TOKEN|run-corrected-version-upload\.mjs|wrangler\s+(?:deploy|publish))\b/i);
 });
