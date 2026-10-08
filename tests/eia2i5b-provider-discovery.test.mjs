@@ -762,10 +762,10 @@ test('API-Football discovery stays isolated from production, live config and mig
       assert.match(source,/name: API-Football Gate C Read-Only Readiness/);
       assert.match(source,/name: data-steward-readonly/);
       assert.match(source,/API_FOOTBALL_GATE_C_MODE: ADMISSION/);
-      assert.match(source,/gate-c-readonly\\.mjs/);
-      assert.match(source,/github\\.run_attempt == 1/);
+      assert.match(source,/gate-c-readonly\.mjs/);
+      assert.match(source,/github\.run_attempt == 1/);
       assert.match(source,/group: api-football-collector-attended-acceptance/);
-      assert.doesNotMatch(source.replace(/^\\s*#.*$/gm,''),/name: api-football-attended-acceptance|run-gate-c\\.mjs|GATE_C_DISPATCH_ALREADY_CONSUMED_OR_UNPROVEN|secrets\\.API_FOOTBALL_API_KEY|secrets\\.API_FOOTBALL_ATTENDED_TRIGGER_SECRET|CLOUDFLARE_ATTENDED_MUTATION_TOKEN|x-apisports-key|v3\\.football\\.api-sports\\.io|wrangler\\s+deploy|versions\\s+upload|^\\s{2}schedule:/im);
+      assert.doesNotMatch(source.replace(/^\s*#.*$/gm,''),/name: api-football-attended-acceptance|run-gate-c\.mjs|GATE_C_DISPATCH_ALREADY_CONSUMED_OR_UNPROVEN|secrets\.API_FOOTBALL_API_KEY|secrets\.API_FOOTBALL_ATTENDED_TRIGGER_SECRET|CLOUDFLARE_ATTENDED_MUTATION_TOKEN|x-apisports-key|v3\.football\.api-sports\.io|wrangler\s+deploy|versions\s+upload|^\s{2}schedule:/im);
       continue;
     }
     if(file==='api-football-gate-c-new-day-collection.yml'){
