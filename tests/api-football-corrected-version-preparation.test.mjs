@@ -223,3 +223,11 @@ test('stepOutputHandoffs detector fails when the identity output write is remove
   const text=read('.github/workflows/api-football-corrected-version-preparation.yml').replace('          echo "approved_sha=$APPROVED_SHA" >> "$GITHUB_OUTPUT"\n','');
   assert.deepEqual(stepOutputHandoffs(text),['identity.approved_sha:not_written']);
 });
+test('protected upload job maps CLOUDFLARE_TOPOLOGY_READ_TOKEN from the replacement topology secret only',()=>{
+  const text=read('.github/workflows/api-football-corrected-version-preparation.yml');
+  const job=text.slice(text.indexOf('  protected-version-upload:'),text.indexOf('  final-readonly-reconciliation:'));
+  assert.ok(job.length>0,'upload job slice must exist');
+  assert.equal(job.split('CLOUDFLARE_TOPOLOGY_READ_TOKEN: ').length-1,1,'exactly one topology token mapping in the upload job');
+  assert.match(job,/CLOUDFLARE_TOPOLOGY_READ_TOKEN: \$\{\{ secrets\.CLOUDFLARE_REPLACEMENT_TOPOLOGY_READ_TOKEN \}\}/);
+  assert.doesNotMatch(text,/secrets\.CLOUDFLARE_TOPOLOGY_READ_TOKEN\b/);
+});
