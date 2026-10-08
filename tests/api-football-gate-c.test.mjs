@@ -263,3 +263,123 @@ test('Gate C manual workflow is dormant, exact-main, protected, serialised and e
   assert.match(read('CLAUDE.md'),/Gate C repository-only/);
   assert.match(read('docs\/API-FOOTBALL-GATE-C-CONTROLLED-COLLECTION.md'),/No live dispatch is approved/);
 });
+
+ 
+// Hardening: use the actual Gate C executor, not just the underlying continuation helper.
+// Every network call is intercepted in-memory; unexpected destinations fail the test.
+import {executeGateC,buildGateCExecutionEvidence} from '../workers/api-football-collector/run-gate-c.mjs';
+import {runGateCAdmission,runGateCReconciliation} from '../workers/api-football-collector/gate-c-readonly.mjs';
+
+const FIXED_NOW=()=>new Date('2026-10-08T12:00:00.000Z');
+const gateCEnv=()=>({
+  CLOUDFLARE_ACCOUNT_ID:ACCOUNT,CLOUDFLARE_ACCOUNT_FINGERPRINT:FINGERPRINT,
+  CLOUDFLARE_ATTENDED_READ_TOKEN:READ,CLOUDFLARE_ATTENDED_MUTATION_TOKEN:'synthetic-mutation-secret',
+  CLOUDFLARE_TOPOLOGY_READ_TOKEN:TOPOLOGY_TOKEN,
+  API_FOOTBALL_ATTENDED_TRIGGER_SECRET:'synthetic-trigger-'.repeat(4),
+  APPROVED_SHA:EXEC_SHA,GITHUB_RUN_ATTEMPT:'1',
+  API_FOOTBALL_GATE_C_ADMISSION_PATH:tempFile(admitted())
+});
+function fakeGateCEgress({triggerStatus=202,mutatedDeployment=false,writeFailure=null}={}){
+  const calls=[],allowedPaths=deployedOneShotCloudflarePaths(ACCOUNT);
+  const fetchImpl=async(url,init={})=>{
+    const method=init.method??'GET';
+    calls.push({url,method,body:init.body??null});
+    if(url===API+allowedPaths.deployments&&method==='GET'){
+      const deployments=mutatedDeployment?[retainedRow,promotedRow]:[promotedRow,retainedRow];
+      return new Response(JSON.stringify({success:true,result:{deployments}}),{status:200});
+    }
+    if(url===API+allowedPaths.subdomain&&method==='POST'){
+      if(writeFailure==='workers-dev')return new Response(JSON.stringify({success:false}),{status:400});
+      const {enabled,previews_enabled}=JSON.parse(init.body);
+      return new Response(JSON.stringify({success:true,result:{enabled,previews_enabled}}),{status:200});
+    }
+    if(url===API+allowedPaths.d1&&method==='POST'){
+      const request=JSON.parse(init.body);
+      assert.equal(typeof request.sql,'string');
+      return new Response(JSON.stringify({success:true,result:[{success:true,meta:{changes:1}}]}),{status:200});
+    }
+    if(url.startsWith('https://teamsheet-api-football-shadow-collector.')&&url.endsWith('/__teamsheet/api-football/attended-one-shot')){
+      if(method==='GET')return new Response('Not found',{status:404,headers:{'cache-control':'no-store','content-type':'text/plain'}});
+      if(method==='POST')return new Response(triggerStatus===202?'Accepted':'Not accepted',{status:triggerStatus,headers:{'content-type':'text/plain'}});
+    }
+    throw new Error('unexpected_synthetic_network_destination');
+  };
+  return {calls,fetchImpl,paths:allowedPaths};
+}
+const gateCExecutorOptions=({fetchImpl,env=gateCEnv(),priorReport=report(),dayLedger=emptyDay}={})=>({
+  env,fetchImpl,criticalRecheck:async()=>priorReport,routeScan:async()=>ZONE,
+  versionsReader:async()=>clone(VERSIONS),dayReader:async()=>dayLedger,
+  now:FIXED_NOW,wait:async()=>{}
+});
+
+test('Gate C read-only admission composes fresh synthetic inventory; exact history drift stops',async()=>{
+  let requests=0;
+  const common={
+    env:{APPROVED_SHA:EXEC_SHA},
+    preflight:async()=>{requests++;return report();},
+    versionsReader:async()=>clone(VERSIONS),deploymentsReader:async()=>goodRows(),
+    topologyReader:async()=>({topology:ZONE}),dayReader:async()=>emptyDay,now:FIXED_NOW
+  };
+  // Inject the identity function's environment through its real contract.
+  Object.assign(common.env,{
+    DATA_STEWARD_CLOUDFLARE_ACCOUNT_ID:ACCOUNT,
+    DATA_STEWARD_CLOUDFLARE_ACCOUNT_FINGERPRINT:FINGERPRINT,
+    DATA_STEWARD_CLOUDFLARE_READ_TOKEN:READ,
+    CLOUDFLARE_TOPOLOGY_READ_TOKEN:TOPOLOGY_TOKEN
+  });
+  const admittedRead=await runGateCAdmission(common);
+  assert.equal(admittedRead.ok,true);
+  assert.equal(admittedRead.classification,GATE_C_READY);
+  assert.equal(requests,1);
+  const stopped=await runGateCAdmission({...common,preflight:async()=>report({priorState:{...CONSUMED,attempt2Count:1}})});
+  assert.equal(stopped.ok,false);
+  assert.equal(stopped.reason,'consumed_history_drift');
+  const final=await runGateCReconciliation({...common,preflight:async()=>report({priorState:completed()}),
+    dayReader:async()=>fullDay,execution:successfulExecution(),admission:admitted()});
+  assert.equal(final.classification,GATE_C_SUCCESS);
+});
+
+test('Gate C real executor synthetic accepted trigger: one trigger, two D1 controls and both cleanups, no Deployment write',async()=>{
+  const net=fakeGateCEgress();
+  const result=await executeGateC(gateCExecutorOptions(net));
+  assert.equal(result.ok,true,JSON.stringify(result));
+  const evidence=buildGateCExecutionEvidence(result,{approvedSha:EXEC_SHA});
+  assert.equal(evidence.triggerRequests,1);
+  assert.equal(evidence.mutations.createDeployment,0);
+  assert.equal(evidence.mutations.enableWorkersDev,1);
+  assert.equal(evidence.mutations.disableWorkersDev,1);
+  assert.equal(evidence.controlBudget.d1Calls,2);
+  assert.equal(evidence.cleanup.collectionDisable.outcome,'SUCCEEDED');
+  assert.equal(evidence.cleanup.workersDevDisable.outcome,'SUCCEEDED');
+  const posts=net.calls.filter(call=>call.method==='POST');
+  assert.equal(posts.length,5);
+  assert.equal(posts.filter(call=>call.url===API+net.paths.subdomain).length,2);
+  assert.equal(posts.filter(call=>call.url===API+net.paths.d1).length,2);
+  assert.equal(posts.filter(call=>call.url.includes('/attended-one-shot')).length,1);
+  assert.equal(posts.filter(call=>call.url===API+net.paths.deployments).length,0);
+  assert.equal(reconcile(report({priorState:completed()}),evidence).classification,GATE_C_SUCCESS);
+});
+
+test('Gate C real executor synthetic rejected trigger still cleans up and cannot be reconciled as success',async()=>{
+  const net=fakeGateCEgress({triggerStatus:409});
+  const result=await executeGateC(gateCExecutorOptions(net));
+  assert.equal(result.ok,false);
+  const evidence=buildGateCExecutionEvidence(result,{approvedSha:EXEC_SHA});
+  assert.equal(evidence.triggerRequests,1);
+  assert.equal(evidence.cleanup.collectionDisable.outcome,'SUCCEEDED');
+  assert.equal(evidence.cleanup.workersDevDisable.outcome,'SUCCEEDED');
+  assert.equal(net.calls.filter(call=>call.method==='POST'&&call.url.includes('/attended-one-shot')).length,1);
+  assert.equal(reconcile(report({priorState:completed()}),evidence).ok,false);
+});
+
+test('Gate C real executor pre-mutation drift, repeat attempt and UTC-day mismatch never activate a Worker',async()=>{
+  const changed=fakeGateCEgress({mutatedDeployment:true});
+  await assert.rejects(executeGateC(gateCExecutorOptions(changed)));
+  assert.equal(changed.calls.filter(call=>call.method==='POST').length,0);
+  const rerun=fakeGateCEgress();
+  await assert.rejects(executeGateC(gateCExecutorOptions({fetchImpl:rerun.fetchImpl,env:{...gateCEnv(),GITHUB_RUN_ATTEMPT:'2'}})),/RERUN_FORBIDDEN/);
+  assert.equal(rerun.calls.length,0);
+  const stale=fakeGateCEgress();
+  await assert.rejects(executeGateC({...gateCExecutorOptions(stale),now:()=>new Date('2026-10-09T00:00:00.000Z')}),/ADMISSION_HANDOFF_INVALID/);
+  assert.equal(stale.calls.length,0);
+});
