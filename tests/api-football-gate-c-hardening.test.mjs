@@ -77,5 +77,5 @@ test('Gate C live workflow is manual once-ever and read-only workflow is indepen
   assert.doesNotMatch(readOnly,/actions:\s*write|contents:\s*write|\bdeployment:\s*true/);
   assert.match(readOnly,/API_FOOTBALL_GATE_C_MODE: ADMISSION/);
   assert.match(readOnly,/gate-c-readonly\.mjs/);
-  assert.match(readOnly,/api-football-gate-c-readonly-readiness\.json/);
+  assert.match(readOnly,/gate-c-readonly-readiness\.json/);
 });
