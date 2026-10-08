@@ -94,7 +94,7 @@ export function validateCorrectedVersion({stable,beta,versionId,identity}={}){
 export function correctedHistoryDiagnostic(history,detail){
   if(!history||Object.entries(CORRECTED_EXPECTED_HISTORY).some(([k,v])=>history[k]!==v))return 'consumed_history_drift';
   // Extra targeted SELECT-only evidence, not inferred from revision.generation_id (content-addressed reuse is permitted).
-  if(!detail||detail.totalMemberships!==824||detail.failedMemberships!==824||detail.committedMemberships!==0||
+  if(!detail||detail.quotaState!=='QUOTA_UNCERTAIN'||detail.totalMemberships!==824||detail.failedMemberships!==824||detail.committedMemberships!==0||
     detail.orphanMemberships!==0||detail.mismatchedMembershipRevisions!==0||detail.discoveryHeads!==0||
     detail.october8Attempts!==4||detail.october8Succeeded!==3||detail.october8SchemaFailures!==1||
     detail.failedGenerationMemberships!==1)return 'failed_generation_membership_drift';
