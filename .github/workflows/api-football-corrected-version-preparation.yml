@@ -44,6 +44,7 @@ jobs:
           test "$EVENT_SHA" = "$APPROVED_SHA"
           test "$(git rev-parse HEAD)" = "$APPROVED_SHA"
           test "$(git ls-remote https://github.com/priteshpatel390-del/FPL.git refs/heads/main | cut -f1)" = "$APPROVED_SHA"
+          echo "approved_sha=$APPROVED_SHA" >> "$GITHUB_OUTPUT"
       - name: Require exact-main Verify Teamsheet success
         env:
           GH_TOKEN: ${{ github.token }}
