@@ -1,3 +1,7 @@
+## Current Gate C checkpoint — merged foundation; read-only readiness hardening proposed (8 October 2026)
+
+PR #317 is **merged** at main `f8c9820e290007e1d611ea4adf58a2709714a683`. Post-merge Verify `37770135682`: **2,592/2,592**, deterministic builds. The owner has separately approved **repository-only** readiness hardening on a new branch, including a dormant independently named **read-only** admission workflow that does not consume live Gate C. The collection workflow remains dormant and has never been dispatched. No Cloudflare/D1/provider activity or live readiness is asserted. The earlier draft/unmerged language below is historical and superseded here. [Hardening record](API-FOOTBALL-GATE-C-READINESS-HARDENING.md).
+
 ## Current checkpoint — Gate C merged; readiness hardening repository candidate (8 October 2026)
 
 PR #317 is merged at `f8c9820e290007e1d611ea4adf58a2709714a683`; exact-main Verify `37770135682` passed 2,592/2,592 and deterministic builds. Gate C remains dormant and transport/collection unproven. Owner approved separate repository-only non-consuming read-only readiness workflow, workflow-validation and simulated executor coverage; this is NOT dispatch or Cloudflare/D1 access approval. See [readiness hardening](API-FOOTBALL-GATE-C-READINESS-HARDENING.md). Earlier statements that Gate C is unmerged are historical.
