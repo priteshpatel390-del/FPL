@@ -229,7 +229,7 @@ test('Gate C executor has closed API allowlist, no Deployment or Version write a
 
 test('exact new-day ledger is SELECT-only, validates identity and proves five attempts',async()=>{
   assert.equal(gateCDayGenerationId('2026-10-08'),'api-football:generation:DISCOVERY:2026-27:2026:2026-10-08T00:00:00.000Z');
-  assert.match(GATE_C_DAY_LEDGER_SQL,/^SELECT/);assert.doesNotMatch(GATE_C_DAY_LEDGER_SQL,/\\b(INSERT|DELETE|UPDATE|DROP|ALTER|REPLACE)\\b/);
+  assert.match(GATE_C_DAY_LEDGER_SQL,/^SELECT/);assert.doesNotMatch(GATE_C_DAY_LEDGER_SQL,/\b(INSERT|DELETE|UPDATE|DROP|ALTER|REPLACE)\b/);
   assert.equal(gateCDayLedgerDiagnostic(emptyDay,{phase:'admission',utcDay:'2026-10-08'}),null);
   assert.equal(gateCDayLedgerDiagnostic(fullDay,{phase:'reconciliation',utcDay:'2026-10-08'}),null);
   assert.equal(gateCDayLedgerDiagnostic({...fullDay,succeeded:4},{phase:'reconciliation',utcDay:'2026-10-08'}),'day_generation_not_exactly_committed');
@@ -245,7 +245,7 @@ test('exact new-day ledger is SELECT-only, validates identity and proves five at
   const payload=JSON.parse(calls[0].init.body);
   assert.equal(payload.batch.length,1);assert.equal(payload.batch[0].params.length,7);
   assert.equal(payload.batch[0].params[2],'2026-10-08');
-  assert.match(calls[0].url,/\\/d1\\/database\\//);
+  assert.equal(calls[0].url.includes('/d1/database/'),true);
   assert.equal(calls[0].init.method,'POST');
 });
 
