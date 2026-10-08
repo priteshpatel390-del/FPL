@@ -45,7 +45,8 @@ export function gateCCriticalRecheckDiagnostic(report,deployments,versions,topol
   return diagnostic?'GATE_C_CRITICAL_STATE_DRIFT__'+diagnostic.toUpperCase():null;
 }
 
-export async function executeGateC({env=process.env,fetchImpl=globalThis.fetch,criticalRecheck=runApiFootballActivationLivePreflight,routeScan=readReplacementRouteTopology,wait=delay}={}){
+export async function executeGateC({env=process.env,fetchImpl=globalThis.fetch,criticalRecheck=runApiFootballActivationLivePreflight,routeScan=readReplacementRouteTopology,
+  versionsReader=readPromotionVersions,dayReader=readGateCDayLedger,wait=delay}={}){
   // Every credential is required before any network request.
   const accountId=required(env,'CLOUDFLARE_ACCOUNT_ID'),fingerprint=required(env,'CLOUDFLARE_ACCOUNT_FINGERPRINT');
   const readToken=required(env,'CLOUDFLARE_ATTENDED_READ_TOKEN'),mutationToken=required(env,'CLOUDFLARE_ATTENDED_MUTATION_TOKEN');
@@ -90,9 +91,9 @@ export async function executeGateC({env=process.env,fetchImpl=globalThis.fetch,c
   // Final pre-mutation proof: bound admission, fresh critical state, fresh Deployment GET, fresh authoritative zone route scan.
   const critical=await criticalRecheck({env:deployedOneShotPreflightEnv({accountId,accountFingerprint:fingerprint,readToken,approvedSha}),fetchImpl,stage:DEPLOYED_ONE_SHOT_PREFLIGHT_STAGE});
   const preDeployments=await readDeployment();
-  const preVersions=await readPromotionVersions({accountId,readToken,fetchImpl});
+  const preVersions=await versionsReader({accountId,readToken,fetchImpl});
   const finalRouteScan=await deployedOneShotFinalRouteScan({accountId,topologyToken,fetchImpl,routeScan});
-  const freshDayLedger=await readGateCDayLedger({accountId,readToken,utcDay,fetchImpl});
+  const freshDayLedger=await dayReader({accountId,readToken,utcDay,fetchImpl});
   const drift=gateCCriticalRecheckDiagnostic(critical,preDeployments,preVersions,finalRouteScan,freshDayLedger,
     {approvedSha,accountFingerprint:fingerprint,utcDay});
   if(drift)fail(drift);
