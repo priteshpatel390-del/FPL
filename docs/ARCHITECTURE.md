@@ -1,3 +1,7 @@
+## Gate C readiness-hardening architecture (8 October 2026)
+
+Merged Gate C (#317, main `f8c9820e`) remains a dormant one-shot executor. Separate `api-football-gate-c-readonly-readiness.yml` uses the existing `gate-c-readonly.mjs` ADMISSION path and protected read-only environment, not the one-shot executor and not its once-ever dispatch history. Added offline structural workflow validation and synthetic injection seams for readers/clock in the executor, with unchanged production defaults. No model, provider or deployed topology change. [Contract](API-FOOTBALL-GATE-C-READINESS-HARDENING.md).
+
 ## API-Football Gate C dormant collection boundary (8 October 2026)
 
 Repository-only Gate C reuses immutable reviewed Version identities, exact two-Deployment admission, existing one-shot workers.dev authentication and mandatory cleanup, and atomic D1 collector reservation/normalized persistence. New pure Gate C admission/reconciliation, GET-only inventory and protected executor are in `workers/api-football-collector/gate-c*.mjs` and `run-gate-c.mjs`; dormant manual workflow has exact-main, attempt-1, protected environments, shared concurrency, immutable artifact handoffs and independent read-only terminal proof. No Deployment/Version upload, Cron/route/domain/Preview, new endpoint/schema/provider, or production model/UI path. See [Gate C](API-FOOTBALL-GATE-C-CONTROLLED-COLLECTION.md).
