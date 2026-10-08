@@ -171,7 +171,7 @@ test('Gate C handoff refuses tampering and a different UTC day',()=>{
   const a=admitted();
   for(const modified of [{...a,versionId:ATTENDED_VERSION_ID},{...a,retryAuthorized:true},
     {...a,versionIds:[...a.versionIds,'extra']},{...a,deployments:rows([retainedRow])},
-    {...a,preflight:report({priorState:{...CONSUMED,attempt2Count:1}})]){
+    {...a,preflight:report({priorState:{...CONSUMED,attempt2Count:1}})}]){
     assert.throws(()=>validateGateCAdmissionHandoff(modified,{approvedSha:EXEC_SHA,accountFingerprint:FINGERPRINT,utcDay:'2026-10-08'}));
   }
   assert.throws(()=>validateGateCAdmissionHandoff(a,{approvedSha:EXEC_SHA,accountFingerprint:FINGERPRINT,utcDay:'2026-10-09'}));
