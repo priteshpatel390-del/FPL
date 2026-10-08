@@ -8,7 +8,7 @@ import test from 'node:test';
 const root=path.resolve(import.meta.dirname,'..');
 const workflowFiles=[
   '.github/workflows/api-football-gate-c-new-day-collection.yml',
-  '.github/workflows/api-football-gate-c-readonly-readiness.yml'
+  '.github/workflows/gate-c-readonly-readiness.yml'
 ];
 const load=file=>fs.readFileSync(path.join(root,file),'utf8');
 const linesOf=source=>source.split(/\r?\n/);
