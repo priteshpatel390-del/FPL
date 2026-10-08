@@ -1,3 +1,7 @@
+## Gate C repository-only regression baseline (8 October 2026)
+
+Starting exact main `bf15082bee56d8a6d5382055e1d873c29258d639`: post-merge Verify run `37691491606` confirmed 2,582/2,582 tests, zero failures, two byte-identical builds and exact manifest/build identity `7cafd62d767c0b98b919b505ec4ec4b48d69ad028b3b3f0e635fe516d235cbbc`. New `tests/api-football-gate-c.test.mjs` covers consumed-vs-new-day history, exact four Versions/two Deployments, stale/altered/extra state, artifact tampering, one-trigger/cleanup, no-writes guard, success/failure and workflow gates. The new candidate must pass exact-head full Verify after draft PR creation; no live acceptance is claimed. [Gate C](API-FOOTBALL-GATE-C-CONTROLLED-COLLECTION.md).
+
 ## API-Football Gate B verified baseline and closeout
 
 Post-merge Verify Teamsheet run `37686067572` on exact main `2516eeec669f3b44001f9cc5d22135dcbe0e235e` passed **2,581/2,581** tests with 0 failures, two deterministic production builds, exact `BUILD_COMMIT`, root `index.html == dist/index.html`, and exact manifest/build-input identity. Gate B live run `37688525299` then passed all four jobs and independently reconciled `TRANSPORT_REMEDIATED_DEPLOYMENT_PROMOTED_INERT`. The closeout adds a permanent regression assertion that the Gate B workflow is marked consumed and that canonical closeout identity is pinned. See [Gate B live closeout](API-FOOTBALL-TRANSPORT-REMEDIATED-DEPLOYMENT-PROMOTION-CLOSEOUT.md).
