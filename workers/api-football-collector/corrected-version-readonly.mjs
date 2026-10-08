@@ -25,7 +25,8 @@ export const CORRECTED_HISTORY_QUERY=`SELECT
  (SELECT COUNT(*) FROM api_football_request_attempts WHERE quota_utc_day='2026-10-08' AND operation_class='DISCOVERY') AS october8Attempts,
  (SELECT COUNT(*) FROM api_football_request_attempts WHERE quota_utc_day='2026-10-08' AND operation_class='DISCOVERY' AND outcome='SUCCEEDED') AS october8Succeeded,
  (SELECT COUNT(*) FROM api_football_request_attempts WHERE quota_utc_day='2026-10-08' AND operation_class='DISCOVERY' AND outcome='SCHEMA_FAILURE') AS october8SchemaFailures,
- (SELECT COUNT(DISTINCT gf.generation_id) FROM api_football_generation_fixtures gf JOIN api_football_discovery_generations g ON g.generation_id=gf.generation_id WHERE g.state='FAILED') AS failedGenerationMemberships`;
+ (SELECT COUNT(DISTINCT gf.generation_id) FROM api_football_generation_fixtures gf JOIN api_football_discovery_generations g ON g.generation_id=gf.generation_id WHERE g.state='FAILED') AS failedGenerationMemberships,
+ (SELECT quota_state FROM api_football_runtime_state WHERE provider='api-football') AS quotaState`;
 const DETAIL_FIELDS=Object.freeze(['totalMemberships','failedMemberships','committedMemberships','orphanMemberships',
   'mismatchedMembershipRevisions','discoveryHeads','october8Attempts','october8Succeeded','october8SchemaFailures','failedGenerationMemberships']);
 export async function readCorrectedHistoryDetail({accountId,readToken,fetchImpl=globalThis.fetch}={}){
@@ -47,10 +48,13 @@ export async function readCorrectedHistoryDetail({accountId,readToken,fetchImpl=
   if(!Array.isArray(rows)||rows.length!==1)return null;
   const row=rows[0],detail={};
   for(const key of DETAIL_FIELDS){
-    const value=Number(row?.[key]);
+    if(row?.[key]===null||row?.[key]===undefined)return null;
+    const value=Number(row[key]);
     if(!Number.isSafeInteger(value)||value<0)return null;
     detail[key]=value;
   }
+  if(row.quotaState!=='QUOTA_UNCERTAIN')return null;
+  detail.quotaState=row.quotaState;
   return safe(detail);
 }
 async function getExactVersion({accountId,readToken,versionId,fetchImpl=globalThis.fetch}={}){
