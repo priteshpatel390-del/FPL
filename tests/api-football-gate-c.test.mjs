@@ -107,16 +107,19 @@ function tempFile(value){const dir=fs.mkdtempSync(path.join(os.tmpdir(),'promoti
 import {
   GATE_C_ACTIVE_DEPLOYMENT_ID,GATE_C_READY,GATE_C_STOP,GATE_C_SUCCESS,GATE_C_OWNER_ATTENTION,GATE_C_CLEAN_STOP,
   GATE_C_EXECUTION_VERSION,GATE_C_EARLIEST_UTC_DAY,GATE_C_MUTATION_CEILINGS,
-  gateCHistoryDiagnostic,gateCAdmissionDiagnostic,buildGateCAdmission,validateGateCAdmissionHandoff,
+  gateCHistoryDiagnostic,gateCDayLedgerDiagnostic,gateCAdmissionDiagnostic,buildGateCAdmission,validateGateCAdmissionHandoff,
   classifyGateCReconciliation
 } from '../workers/api-football-collector/gate-c.mjs';
 import {gateCCriticalRecheckDiagnostic,assertGateCRequestAllowed} from '../workers/api-football-collector/run-gate-c.mjs';
 import {runDeployedOneShotContinuation} from '../workers/api-football-collector/deployed-one-shot.mjs';
 import {deployedOneShotCloudflarePaths} from '../workers/api-football-collector/run-deployed-one-shot.mjs';
+import {readGateCDayLedger,gateCDayGenerationId,GATE_C_DAY_LEDGER_SQL} from '../workers/api-football-collector/gate-c-readonly.mjs';
 
 const goodRows=()=>rows([promotedRow,retainedRow]);
+const emptyDay={utcDay:'2026-10-08',attempts:0,succeeded:0,attempt2:0,generations:0,committed:0,headMatches:0};
+const fullDay={utcDay:'2026-10-08',attempts:5,succeeded:5,attempt2:0,generations:1,committed:1,headMatches:1};
 const goodInput=(overrides={})=>({report:report(),deploymentRows:goodRows(),versions:clone(VERSIONS),
-  topology:ZONE,approvedSha:EXEC_SHA,accountFingerprint:FINGERPRINT,utcDay:'2026-10-08',...overrides});
+  topology:ZONE,dayLedger:emptyDay,approvedSha:EXEC_SHA,accountFingerprint:FINGERPRINT,utcDay:'2026-10-08',...overrides});
 const admitted=()=>buildGateCAdmission(goodInput());
 const completed=()=>({...CONSUMED,requestAttempts:6,attempt1Count:6,succeededAttemptCount:5,generations:2,
   committedGenerationCount:1,membershipConsistentCount:1,headMatchCount:1,fixtureRevisions:7});
@@ -129,6 +132,7 @@ function successfulExecution(){
 }
 const reconcile=(newReport=report({priorState:completed()}),execution=successfulExecution(),more={})=>
   classifyGateCReconciliation({report:newReport,deploymentRows:goodRows(),versions:clone(VERSIONS),topology:ZONE,
+    dayLedger:newReport?.priorState?.requestAttempts===1?emptyDay:fullDay,
     execution,admission:admitted(),approvedSha:EXEC_SHA,accountFingerprint:FINGERPRINT,...more});
 
 test('Gate C admits exact corrected two-Deployment inert state and consumed historical attempt',()=>{
@@ -174,9 +178,9 @@ test('Gate C handoff refuses tampering and a different UTC day',()=>{
 });
 
 test('Gate C pre-mutation rechecks current history, topology and four Version identities',()=>{
-  assert.equal(gateCCriticalRecheckDiagnostic(report(),goodRows(),clone(VERSIONS),ZONE,
+  assert.equal(gateCCriticalRecheckDiagnostic(report(),goodRows(),clone(VERSIONS),ZONE,emptyDay,
     {approvedSha:EXEC_SHA,accountFingerprint:FINGERPRINT,utcDay:'2026-10-08'}),null);
-  assert.match(gateCCriticalRecheckDiagnostic(report({priorState:{...CONSUMED,requestAttempts:2}}),goodRows(),clone(VERSIONS),ZONE,
+  assert.match(gateCCriticalRecheckDiagnostic(report({priorState:{...CONSUMED,requestAttempts:2}}),goodRows(),clone(VERSIONS),ZONE,emptyDay,
     {approvedSha:EXEC_SHA,accountFingerprint:FINGERPRINT,utcDay:'2026-10-08'}),/GATE_C_CRITICAL_STATE_DRIFT/);
 });
 
@@ -223,6 +227,28 @@ test('Gate C executor has closed API allowlist, no Deployment or Version write a
   assert.equal(result.ok,false);assert.equal(trigger,1);assert.equal(disableCollection,1);assert.equal(disableWorkersDev,1);
 });
 
+test('exact new-day ledger is SELECT-only, validates identity and proves five attempts',async()=>{
+  assert.equal(gateCDayGenerationId('2026-10-08'),'api-football:generation:DISCOVERY:2026-27:2026:2026-10-08T00:00:00.000Z');
+  assert.match(GATE_C_DAY_LEDGER_SQL,/^SELECT/);assert.doesNotMatch(GATE_C_DAY_LEDGER_SQL,/\\b(INSERT|DELETE|UPDATE|DROP|ALTER|REPLACE)\\b/);
+  assert.equal(gateCDayLedgerDiagnostic(emptyDay,{phase:'admission',utcDay:'2026-10-08'}),null);
+  assert.equal(gateCDayLedgerDiagnostic(fullDay,{phase:'reconciliation',utcDay:'2026-10-08'}),null);
+  assert.equal(gateCDayLedgerDiagnostic({...fullDay,succeeded:4},{phase:'reconciliation',utcDay:'2026-10-08'}),'day_generation_not_exactly_committed');
+  assert.equal(gateCDayLedgerDiagnostic(fullDay,{phase:'admission',utcDay:'2026-10-08'}),'new_day_already_consumed');
+  assert.equal(buildGateCAdmission(goodInput({dayLedger:fullDay})).ok,false);
+  const calls=[];
+  const ledger=await readGateCDayLedger({accountId:ACCOUNT,readToken:READ,utcDay:'2026-10-08',
+    fetchImpl:async(url,init)=>{
+      calls.push({url,init});
+      return new Response(JSON.stringify({success:true,result:[{success:true,results:[{attempts:0,succeeded:0,attempt2:0,generations:0,committed:0,headMatches:0}],meta:{rows_written:0}}]}),{status:200});
+    }});
+  assert.deepEqual(ledger,emptyDay);assert.equal(calls.length,1);
+  const payload=JSON.parse(calls[0].init.body);
+  assert.equal(payload.batch.length,1);assert.equal(payload.batch[0].params.length,7);
+  assert.equal(payload.batch[0].params[2],'2026-10-08');
+  assert.match(calls[0].url,/\\/d1\\/database\\//);
+  assert.equal(calls[0].init.method,'POST');
+});
+
 test('Gate C manual workflow is dormant, exact-main, protected, serialised and evidence-gated',()=>{
   const workflow=read('.github/workflows/api-football-gate-c-new-day-collection.yml');
   assert.match(workflow,/workflow_dispatch:/);assert.doesNotMatch(workflow,/\bschedule:\s*\n/);
@@ -231,6 +257,7 @@ test('Gate C manual workflow is dormant, exact-main, protected, serialised and e
   assert.match(workflow,/name: data-steward-readonly/);assert.match(workflow,/name: api-football-attended-acceptance/);
   assert.match(workflow,/gate-c-readonly\.mjs/);assert.match(workflow,/run-gate-c\.mjs/);
   assert.match(workflow,/sha256sum/);assert.match(workflow,/if: always\(\)/);
+  assert.match(workflow,/GATE_C_DISPATCH_ALREADY_CONSUMED_OR_UNPROVEN/);
   const old=read('.github/workflows/api-football-deployed-one-shot-continuation.yml');
   assert.match(old,/^# CONSUMED \(run 37511401491/);
   assert.match(read('CLAUDE.md'),/Gate C repository-only/);
