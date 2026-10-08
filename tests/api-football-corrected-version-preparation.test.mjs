@@ -28,7 +28,7 @@ const ID='11111111-2222-4333-8444-555555555555',API_KEY='synthetic-api-key-mater
 const ZONE={proof:'ZONE_ROUTE_SCAN',zoneCount:1,routeRowCount:0,routeCount:0};
 const detail={totalMemberships:824,failedMemberships:824,committedMemberships:0,orphanMemberships:0,
   mismatchedMembershipRevisions:0,discoveryHeads:0,october8Attempts:4,october8Succeeded:3,
-  october8SchemaFailures:1,failedGenerationMemberships:1};
+  october8SchemaFailures:1,failedGenerationMemberships:1,quotaState:'QUOTA_UNCERTAIN'};
 const deployments=promotionDeploymentRows({deployments:[
   {id:GATE_C_ACTIVE_DEPLOYMENT_ID,created_on:'2026-10-08T09:00:00Z',strategy:'percentage',versions:[{version_id:PROMOTION_CANDIDATE_VERSION_ID,percentage:100}]},
   {id:DEPLOYED_ONE_SHOT_EXISTING_DEPLOYMENT_ID,created_on:'2026-10-06T09:00:00Z',strategy:'percentage',versions:[{version_id:ATTENDED_VERSION_ID,percentage:100}]}
@@ -109,7 +109,7 @@ test('history requires two failed generations, 5 attempts, exact 824 memberships
     assert.notEqual(correctedHistoryDiagnostic({...CORRECTED_EXPECTED_HISTORY,[k]:value},detail),null);
   }
   for(const [k,value] of [['totalMemberships',823],['failedMemberships',823],['discoveryHeads',1],
-    ['mismatchedMembershipRevisions',1],['october8Attempts',5],['failedGenerationMemberships',2]])
+    ['mismatchedMembershipRevisions',1],['october8Attempts',5],['failedGenerationMemberships',2],['quotaState','KNOWN']])
     assert.notEqual(correctedHistoryDiagnostic(CORRECTED_EXPECTED_HISTORY,{...detail,[k]:value}),null);
 });
 test('new admission accepts only strict four-Version/two-Deployment inert non-pristine state',()=>{
