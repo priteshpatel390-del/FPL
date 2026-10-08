@@ -1,3 +1,7 @@
+## Gate C failure — no acquisition or data-governance change (8 October 2026)
+
+Run `37776873809` made four API-Football discovery requests and failed on the fourth (FA Cup, `provider_schema_invalid`); no further request is authorised. R1 stores only closed enums (HTTP class, sub-reason, content-type class, size bucket, quota-header state); no provider body, error text, key or credential is retained. API-Football remains shadow-only with no model or product path. See [Gate C forensic remediation](API-FOOTBALL-GATE-C-FORENSIC-REMEDIATION.md).
+
 ## Gate C readiness hardening — no acquisition or data-governance change (8 October 2026)
 
 PR #317 merged at `f8c9820e290007e1d611ea4adf58a2709714a683`. The next separate repository-only hardening candidate adds offline validation and a dormant **read-only** Gate C state-inventory workflow, not a data source or provider-call pathway. The existing five 2026 API-Football fixture-discovery request identities, security/fallback, 2,500-row ceiling, shadow-only retention, Official FPL authority and no-model/UI boundary remain unchanged. Historical `TRANSPORT_UNKNOWN` stays consumed; no provider success is claimed. [Hardening record](API-FOOTBALL-GATE-C-READINESS-HARDENING.md).

@@ -1,3 +1,7 @@
+## Current Gate C checkpoint — failed and consumed; R1/R2 remediation in draft (8 October 2026)
+
+Gate C run `37776873809` failed (3 of 4 requests succeeded, FA Cup schema failure, 824 retained revisions, no head, collection disabled) and is permanently consumed. Repository-only R1/R2 with immutable Version preservation is in a draft PR; no live action, Version upload, Deployment or merge is authorised. See [Gate C forensic remediation](API-FOOTBALL-GATE-C-FORENSIC-REMEDIATION.md).
+
 ## Current Gate C checkpoint — merged foundation; read-only readiness hardening proposed (8 October 2026)
 
 PR #317 is **merged** at main `f8c9820e290007e1d611ea4adf58a2709714a683`. Post-merge Verify `37770135682`: **2,592/2,592**, deterministic builds. The owner has separately approved **repository-only** readiness hardening on a new branch, including a dormant independently named **read-only** admission workflow that does not consume live Gate C. The collection workflow remains dormant and has never been dispatched. No Cloudflare/D1/provider activity or live readiness is asserted. The earlier draft/unmerged language below is historical and superseded here. [Hardening record](API-FOOTBALL-GATE-C-READINESS-HARDENING.md).
