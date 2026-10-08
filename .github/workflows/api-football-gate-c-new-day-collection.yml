@@ -72,9 +72,9 @@ jobs:
       - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
         with:
           node-version: 24.19.0
-      - name: Run focused continuation tests
+      - name: Run focused Gate C and historical guard tests
         run: |
-          node --test tests/api-football-gate-c.test.mjs tests/api-football-deployed-one-shot.test.mjs tests/api-football-collector-activation-live-preflight.test.mjs
+          node --test tests/api-football-gate-c.test.mjs tests/api-football-deployed-one-shot-continuation.test.mjs tests/api-football-transport-remediated-deployment-promotion.test.mjs tests/api-football-collector-activation-live-preflight.test.mjs
           test -z "$(git status --porcelain --untracked-files=all)"
 
   fresh-readonly-admission:
@@ -112,12 +112,12 @@ jobs:
           DATA_STEWARD_CLOUDFLARE_ACCOUNT_FINGERPRINT: ${{ vars.DATA_STEWARD_CLOUDFLARE_ACCOUNT_FINGERPRINT }}
           DATA_STEWARD_CLOUDFLARE_READ_TOKEN: ${{ secrets.DATA_STEWARD_CLOUDFLARE_READ_TOKEN }}
           CLOUDFLARE_TOPOLOGY_READ_TOKEN: ${{ secrets.CLOUDFLARE_REPLACEMENT_TOPOLOGY_READ_TOKEN }}
-          API_FOOTBALL_GATE_C_REPORT_PATH: ${{ runner.temp }}/deployed-one-shot-continuation-admission.json
+          API_FOOTBALL_GATE_C_REPORT_PATH: ${{ runner.temp }}/gate-c-admission.json
         run: node workers/api-football-collector/gate-c-readonly.mjs
       - name: Bind sanitized admission handoff
         id: handoff
         env:
-          REPORT: ${{ runner.temp }}/deployed-one-shot-continuation-admission.json
+          REPORT: ${{ runner.temp }}/gate-c-admission.json
           APPROVED_SHA: ${{ needs.repository-gate.outputs.approved_sha }}
         run: |
           set -euo pipefail
@@ -125,14 +125,14 @@ jobs:
           import fs from 'node:fs';
           import {createHash} from 'node:crypto';
           const bytes=fs.readFileSync(process.env.REPORT),report=JSON.parse(bytes);
-          if(report.version!=='api-football-gate-c-admission-v1'||report.ok!==true||report.approvedSha!==process.env.APPROVED_SHA||report.classification!=='READY_FOR_GATE_C_NEW_DAY_COLLECTION'||report.retryAuthorized!==false)throw new Error('deployed one-shot admission handoff invalid');
+          if(report.version!=='api-football-gate-c-admission-v1'||report.ok!==true||report.approvedSha!==process.env.APPROVED_SHA||report.classification!=='READY_FOR_GATE_C_NEW_DAY_COLLECTION'||report.retryAuthorized!==false)throw new Error('Gate C admission handoff invalid');
           fs.appendFileSync(process.env.GITHUB_OUTPUT,`classification=${report.classification}\nartifact_sha256=${createHash('sha256').update(bytes).digest('hex')}\n`);
           NODE
       - uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6
         if: always()
         with:
           name: api-football-gate-c-admission
-          path: ${{ runner.temp }}/deployed-one-shot-continuation-admission.json
+          path: ${{ runner.temp }}/gate-c-admission.json
           if-no-files-found: error
           retention-days: 7
 
@@ -165,14 +165,14 @@ jobs:
       - uses: actions/download-artifact@95815c38cf2ff2164869cbab79da8d1f422bc89e # v4
         with:
           name: api-football-gate-c-admission
-          path: ${{ runner.temp }}/deployed-one-shot-continuation-admission
+          path: ${{ runner.temp }}/gate-c-admission
       - name: Recheck state, Deployment and zone routes, enable workers.dev, trigger once, cleanup inside executor regardless of outcome
         id: execute
         continue-on-error: true
         env:
           APPROVED_SHA: ${{ needs.repository-gate.outputs.approved_sha }}
           API_FOOTBALL_ATTENDED_TRIGGER_SECRET: ${{ secrets.API_FOOTBALL_ATTENDED_TRIGGER_SECRET }}
-          API_FOOTBALL_GATE_C_ADMISSION_PATH: ${{ runner.temp }}/deployed-one-shot-continuation-admission/deployed-one-shot-continuation-admission.json
+          API_FOOTBALL_GATE_C_ADMISSION_PATH: ${{ runner.temp }}/gate-c-admission/gate-c-admission.json
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           CLOUDFLARE_ACCOUNT_FINGERPRINT: ${{ vars.CLOUDFLARE_ACCOUNT_FINGERPRINT }}
           CLOUDFLARE_ATTENDED_READ_TOKEN: ${{ secrets.CLOUDFLARE_ATTENDED_READ_TOKEN }}
@@ -180,7 +180,7 @@ jobs:
           # Read-only Zone Read + Workers Routes Read; used only for the final pre-mutation route scan.
           CLOUDFLARE_TOPOLOGY_READ_TOKEN: ${{ secrets.CLOUDFLARE_REPLACEMENT_TOPOLOGY_READ_TOKEN }}
           EXPECTED_ARTIFACT_SHA256: ${{ needs.fresh-readonly-admission.outputs.artifact_sha256 }}
-          API_FOOTBALL_GATE_C_EXECUTION_REPORT_PATH: ${{ runner.temp }}/deployed-one-shot-continuation-execution.json
+          API_FOOTBALL_GATE_C_EXECUTION_REPORT_PATH: ${{ runner.temp }}/gate-c-execution.json
         run: |
           set -euo pipefail
           test "$(git rev-parse HEAD)" = "$APPROVED_SHA"
@@ -192,7 +192,7 @@ jobs:
         id: execution-handoff
         if: always()
         env:
-          REPORT: ${{ runner.temp }}/deployed-one-shot-continuation-execution.json
+          REPORT: ${{ runner.temp }}/gate-c-execution.json
           APPROVED_SHA: ${{ needs.repository-gate.outputs.approved_sha }}
         run: |
           set -euo pipefail
@@ -211,7 +211,7 @@ jobs:
         if: always()
         with:
           name: api-football-gate-c-execution
-          path: ${{ runner.temp }}/deployed-one-shot-continuation-execution.json
+          path: ${{ runner.temp }}/gate-c-execution.json
           if-no-files-found: error
           retention-days: 7
       - name: Preserve protected execution outcome
@@ -246,11 +246,11 @@ jobs:
         if: needs.protected-one-shot-execution.outputs.execution_artifact_sha256 != ''
         with:
           name: api-football-gate-c-execution
-          path: ${{ runner.temp }}/deployed-one-shot-continuation-execution
+          path: ${{ runner.temp }}/gate-c-execution
       - name: Verify sanitized execution handoff
         if: needs.protected-one-shot-execution.outputs.execution_artifact_sha256 != ''
         env:
-          REPORT: ${{ runner.temp }}/deployed-one-shot-continuation-execution/deployed-one-shot-continuation-execution.json
+          REPORT: ${{ runner.temp }}/gate-c-execution/gate-c-execution.json
           EXPECTED_SHA256: ${{ needs.protected-one-shot-execution.outputs.execution_artifact_sha256 }}
         run: |
           set -euo pipefail
@@ -278,15 +278,15 @@ jobs:
           DATA_STEWARD_CLOUDFLARE_ACCOUNT_FINGERPRINT: ${{ vars.DATA_STEWARD_CLOUDFLARE_ACCOUNT_FINGERPRINT }}
           DATA_STEWARD_CLOUDFLARE_READ_TOKEN: ${{ secrets.DATA_STEWARD_CLOUDFLARE_READ_TOKEN }}
           CLOUDFLARE_TOPOLOGY_READ_TOKEN: ${{ secrets.CLOUDFLARE_REPLACEMENT_TOPOLOGY_READ_TOKEN }}
-          API_FOOTBALL_GATE_C_REPORT_PATH: ${{ runner.temp }}/deployed-one-shot-continuation-reconciliation.json
-          API_FOOTBALL_GATE_C_EXECUTION_PATH: ${{ needs.protected-one-shot-execution.outputs.execution_artifact_sha256 != '' && format('{0}/deployed-one-shot-continuation-execution/deployed-one-shot-continuation-execution.json', runner.temp) || '' }}
+          API_FOOTBALL_GATE_C_REPORT_PATH: ${{ runner.temp }}/gate-c-reconciliation.json
+          API_FOOTBALL_GATE_C_EXECUTION_PATH: ${{ needs.protected-one-shot-execution.outputs.execution_artifact_sha256 != '' && format('{0}/gate-c-execution/gate-c-execution.json', runner.temp) || '' }}
           API_FOOTBALL_GATE_C_ADMISSION_PATH: ${{ runner.temp }}/gate-c-admission/gate-c-admission.json
         run: node workers/api-football-collector/gate-c-readonly.mjs
       - uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6
         if: always()
         with:
           name: api-football-gate-c-reconciliation
-          path: ${{ runner.temp }}/deployed-one-shot-continuation-reconciliation.json
+          path: ${{ runner.temp }}/gate-c-reconciliation.json
           if-no-files-found: error
           retention-days: 7
       - name: Require independently reconciled success
