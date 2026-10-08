@@ -158,7 +158,7 @@ test('boundary is enforced statically: no import path, workflow or executor conn
     if(fs.existsSync(path.join(root,'build.mjs'))&&read('build.mjs').includes(name))hits.push('build.mjs');
     return hits.sort();
   };
-  assert.deepEqual(importersOf('corrected-version-candidate'),[],'nothing in workers, src, scripts, workflows or the build may import the candidate');
+  assert.deepEqual(importersOf('corrected-version-candidate'),['workers/api-football-collector/corrected-version-preparation.mjs'],'only the separately reviewed corrected-Version preparation contract may import the candidate');
   assert.deepEqual(importersOf('reviewed-remediated-snapshots'),[
     'workers/api-football-collector/stage-inactive-version.mjs','workers/api-football-collector/transport-remediated-version.mjs'
   ]);
