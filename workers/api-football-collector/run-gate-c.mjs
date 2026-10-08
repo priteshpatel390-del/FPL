@@ -19,6 +19,7 @@ import {ATTENDED_TRANSPORT_DIAGNOSTIC_HEADER} from './collector.mjs';
 import {isApiFootballTransportDiagnostic} from '../../src/decision-intelligence/api-football-foundation.mjs';
 import {PROMOTION_CANDIDATE_VERSION_ID,promotionPostStateExact} from './transport-remediated-deployment-promotion.mjs';
 import {readPromotionVersions} from './transport-remediated-deployment-promotion-readonly.mjs';
+import {readGateCDayLedger} from './gate-c-readonly.mjs';
 import {gateCAdmissionDiagnostic,gateCDeploymentDiagnostic,validateGateCAdmissionHandoff,
   GATE_C_EXECUTION_VERSION,GATE_C_ACTIVE_DEPLOYMENT_ID} from './gate-c.mjs';
 
@@ -38,9 +39,9 @@ export function assertGateCRequestAllowed(method,requestPath,{accountId}={}){
   return fail('DEPLOYED_ONE_SHOT_ENDPOINT_FORBIDDEN');
 }
 
-export function gateCCriticalRecheckDiagnostic(report,deployments,versions,topology,identity){
+export function gateCCriticalRecheckDiagnostic(report,deployments,versions,topology,dayLedger,identity){
   const diagnostic=gateCAdmissionDiagnostic({report,deploymentRows:deployments,versions,topology,
-    approvedSha:identity.approvedSha,accountFingerprint:identity.accountFingerprint,utcDay:identity.utcDay});
+    approvedSha:identity.approvedSha,accountFingerprint:identity.accountFingerprint,utcDay:identity.utcDay,dayLedger});
   return diagnostic?'GATE_C_CRITICAL_STATE_DRIFT__'+diagnostic.toUpperCase():null;
 }
 
@@ -91,7 +92,8 @@ export async function executeGateC({env=process.env,fetchImpl=globalThis.fetch,c
   const preDeployments=await readDeployment();
   const preVersions=await readPromotionVersions({accountId,readToken,fetchImpl});
   const finalRouteScan=await deployedOneShotFinalRouteScan({accountId,topologyToken,fetchImpl,routeScan});
-  const drift=gateCCriticalRecheckDiagnostic(critical,preDeployments,preVersions,finalRouteScan,
+  const freshDayLedger=await readGateCDayLedger({accountId,readToken,utcDay,fetchImpl});
+  const drift=gateCCriticalRecheckDiagnostic(critical,preDeployments,preVersions,finalRouteScan,freshDayLedger,
     {approvedSha,accountFingerprint:fingerprint,utcDay});
   if(drift)fail(drift);
   const target=deriveWorkersDevTarget({accountSubdomain:critical.inventory.accountSubdomain});
