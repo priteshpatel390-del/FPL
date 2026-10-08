@@ -135,7 +135,7 @@ jobs:
       - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
         with:
           node-version: 24.19.0
-      - uses: actions/download-artifact@018cc2cf4d0ffdd7e4b4b7c1a98d9e48b60d72c3 # v6
+      - uses: actions/download-artifact@95815c38cf2ff2164869cbab79da8d1f422bc89e # v4
         with:
           name: corrected-version-admission
           path: ${{ runner.temp }}/corrected-admission
@@ -187,7 +187,7 @@ jobs:
       - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
         with:
           node-version: 24.19.0
-      - uses: actions/download-artifact@018cc2cf4d0ffdd7e4b4b7c1a98d9e48b60d72c3 # v6
+      - uses: actions/download-artifact@95815c38cf2ff2164869cbab79da8d1f422bc89e # v4
         if: needs.protected-version-upload.result == 'success'
         with:
           name: corrected-version-execution
