@@ -168,13 +168,19 @@ test('read-only D1 detail query is fixed SELECT-only SQL and never exposes secre
 });
 test('independent reconciliation accepts five exact Versions but unchanged two Deployments and failed-generation state',async()=>{
   const admission=admit(),identity=source(),candidate=await candidateVersion();
-  const created={versionUploadAttempts:1,outcome:'CREATED',versionId:ID};
+  const created={version: 'api-football-corrected-r1-r2-version-execution-v1',approvedSha:SHA,
+    identity:{creationSha:identity.creationSha,graphSha256:identity.graphSha256,metadataSha256:identity.metadataSha256,moduleCount:17},
+    admission,versionUploadAttempts:1,productionMutations:1,outcome:'CREATED',versionId:ID,retryAuthorized:false,
+    deploymentMutations:0,d1Mutations:0,workersDevMutations:0,previewMutations:0,cronMutations:0,
+    routeMutations:0,domainMutations:0,workerInvocations:0,apiFootballRequests:0,secretValuesSerialized:0};
   const fields={admission,report:report(),detail,deployments,topology:ZONE,
     versions:{versionIds:[...CORRECTED_HISTORICAL_VERSION_IDS,ID],identityExact:true,candidate},
     created,identity,approvedSha:SHA,accountFingerprint:FINGERPRINT};
   const ok=classifyCorrectedReconciliation(fields);
   assert.equal(ok.classification,CORRECTED_PREPARED,ok.reason);assert.equal(ok.ok,true);assert.equal(ok.retryAuthorized,false);
   assert.equal(classifyCorrectedReconciliation({...fields,deployments:deployments.slice(1)}).ok,false);
+  assert.equal(classifyCorrectedReconciliation({...fields,created:{...created,productionMutations:2}}).ok,false);
+  assert.equal(classifyCorrectedReconciliation({...fields,created:{...created,identity:{...created.identity,creationSha:'a'.repeat(40)}}}).ok,false);
   assert.equal(classifyCorrectedReconciliation({...fields,versions:{...fields.versions,versionIds:CORRECTED_HISTORICAL_VERSION_IDS}}).ok,false);
   assert.equal(classifyCorrectedReconciliation({...fields,detail:{...detail,totalMemberships:823}}).ok,false);
 });
