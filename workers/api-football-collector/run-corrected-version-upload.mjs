@@ -31,7 +31,7 @@ export function createCorrectedGuardedFetch({accountId,readToken,uploadToken,top
   const guarded=async(input,init={})=>{
     const deny=()=>{counters.blockedEgress++;fail('CORRECTED_EGRESS_FORBIDDEN');};
     let url;try{url=new URL(String(input));}catch{return deny();}
-    if(url.origin!==API||url.username||url.password||!url.pathname.startsWith('/client/v4/'))return deny();
+    if(url.origin!=='https://api.cloudflare.com'||url.username||url.password||!url.pathname.startsWith('/client/v4/'))return deny();
     const method=String(init.method||'GET').toUpperCase(),path=url.pathname.slice('/client/v4'.length)+url.search;
     const auth=init.headers?.Authorization??init.headers?.authorization;
     const authorization=(token)=>auth==='Bearer '+token;
