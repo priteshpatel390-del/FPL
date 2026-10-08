@@ -279,3 +279,44 @@ test('reconciliation surfaces the closed sub-reason, flags missing evidence sepa
   const good=classifyCorrectedReconciliation(input(await candidateVersion()));
   assert.equal(good.ok,true);assert.equal(good.retryAuthorized,false);
 });
+
+test('dormant corrected Version forensic replay is immutable-artifact pinned, main-only and read-only',()=>{
+  const w=read('.github/workflows/api-football-corrected-version-forensic-replay.yml');
+  assert.match(w,/name: API-Football Corrected Version Forensic Replay/);
+  assert.match(w,/on:\n  workflow_dispatch:/);
+  assert.doesNotMatch(w,/\b(?:schedule|push|pull_request|workflow_run):/);
+  assert.match(w,/github\.event_name == 'workflow_dispatch' && github\.run_attempt == 1/);
+  assert.match(w,/test "\$EVENT_REF" = refs\/heads\/main/);
+  assert.match(w,/git ls-remote https:\/\/github\.com\/priteshpatel390-del\/FPL\.git refs\/heads\/main/);
+  assert.match(w,/Tests and deterministic build/);
+  assert.match(w,/name: data-steward-readonly\n\s+deployment: false/);
+  assert.match(w,/run-id: 37841681952/);
+  assert.match(w,/name: corrected-version-execution/);
+  assert.match(w,/dfac83bfc4bd67baa5dad7b59a8c51bc6f9d29ba474a0afe1c6513fa66629e43/);
+  assert.match(w,/approvedSha!=='073ac6a53d09f004e5ada5b94fb1cea6df3ef228'/);
+  assert.match(w,/versionId!=='509f5a98-38fc-4e58-8a26-1b8fc4c9c787'/);
+  assert.match(w,/versionUploadAttempts!==1/);
+  assert.match(w,/retryAuthorized!==false/);
+  assert.match(w,/API_FOOTBALL_CORRECTED_MODE: RECONCILIATION/);
+  assert.match(w,/API_FOOTBALL_CORRECTED_EXECUTION_PATH:/);
+  assert.match(w,/node workers\/api-football-collector\/corrected-version-readonly\.mjs/);
+  assert.match(w,/if: always\(\)/);
+  assert.match(w,/name: corrected-version-forensic-replay/);
+  for(const forbidden of ['run-corrected-version-upload','api-football-corrected-version-preparation.yml',
+    'CLOUDFLARE_ATTENDED_VERSION_UPLOAD_TOKEN','API_FOOTBALL_API_KEY',
+    'API_FOOTBALL_ATTENDED_TRIGGER_SECRET','CLOUDFLARE_ATTENDED_MUTATION_TOKEN',
+    'run-gate-c.mjs','wrangler deploy','workers/scripts/','versions POST'])
+    assert.equal(w.includes(forbidden),false,'forbidden forensic workflow capability: '+forbidden);
+});
+test('forensic replay aborts on absent, altered or mismatched original evidence and cannot approve deployment',()=>{
+  const w=read('.github/workflows/api-football-corrected-version-forensic-replay.yml');
+  const pinnedHash=w.indexOf('sha256sum "$REPORT"'),parse=w.indexOf("const v=JSON.parse");
+  const replay=w.indexOf('Replay independent reconciliation');
+  assert.ok(pinnedHash>=0&&parse>pinnedHash&&replay>parse);
+  for(const field of ['approvedSha','creationSha','moduleCount','versionId','outcome','versionUploadAttempts',
+    'productionMutations','retryAuthorized','deploymentMutations','d1Mutations','apiFootballRequests','workerInvocations'])
+    assert.ok(w.includes(field),'original evidence guard '+field);
+  const headers=w.split('\n').filter(x=>/^(permissions:|  contents:|  actions:|  checks:)/.test(x));
+  assert.deepEqual(headers,['permissions:','  contents: read','  actions: read','  checks: read']);
+  assert.doesNotMatch(w,/\b(?:write|upload-secret|workflow_dispatch.*curl|promote|trigger)\b/i);
+});
