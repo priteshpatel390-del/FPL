@@ -2,8 +2,13 @@
 //
 // The immutable attended Version 04d79556 (and the historical clone) are reproduced byte-for-byte from SHA-256-pinned
 // snapshots by the HISTORICAL builder in attended-version.mjs / stage-inactive-version.mjs. That path must never be used
-// to create a new Version: it would re-upload the old redirect:'error' provider request. This module is a separate,
-// explicitly named contract that reads the CURRENT TREE for the 17 reviewed modules and pins their hashes.
+// to create a new Version: it would re-upload the old redirect:'error' provider request.
+//
+// This module is the identity of the DEPLOYED, IMMUTABLE transport-remediated Version 4171f3cf (created from f01ccff5,
+// promoted by Gate B). Its default reader is the SHA-256-verified snapshot set in reviewed-remediated-snapshots.mjs, so
+// the identity stays bound to the deployed bytes and cannot drift when the working tree moves on. The pins below were
+// NOT changed to follow later source edits. The current tree (which now carries the Gate C forensic R1/R2 corrections)
+// is a DIFFERENT identity and lives in corrected-version-candidate.mjs, which has no upload or deploy surface.
 import {createHash} from 'node:crypto';
 import fs from 'node:fs';
 import path from 'node:path';
@@ -15,6 +20,7 @@ import {
 } from './stage-inactive-version.mjs';
 import {ATTENDED_VERSION_ID,ATTENDED_VERSION_MODULE_SHA256,ORIGINAL_BLOCKED_VERSION_ID} from './attended-version.mjs';
 import {GATE_C_CLONE_VERSION_ID} from './replacement-foundation.mjs';
+import {readReviewedRemediatedModuleSource} from './reviewed-remediated-snapshots.mjs';
 
 export const TRANSPORT_REMEDIATED_VERSION_CONTRACT='api-football-transport-remediated-version-v1';
 export const TRANSPORT_REMEDIATED_VERSION_WORKER=WORKER_NAME;
@@ -49,12 +55,13 @@ const sha256=value=>createHash('sha256').update(value).digest('hex');
 const fail=code=>{throw new Error(code);};
 
 // Current-tree reader. It deliberately has no snapshot indirection: it reads the working-tree bytes of reviewed paths only.
+// It is NOT the default of this module's identity builders any more: the deployed Version is verified from snapshots.
 export function readCurrentTreeModuleSource(repoPath){
   if(!REVIEWED_MODULE_PATHS.includes(repoPath))fail('collector_transport_remediated_unreviewed_module');
   return fs.readFileSync(path.join(root,repoPath),'utf8');
 }
 
-export function resolveTransportRemediatedModuleGraph({readFile=readCurrentTreeModuleSource}={}){
+export function resolveTransportRemediatedModuleGraph({readFile=readReviewedRemediatedModuleSource}={}){
   return resolveModuleGraph({readFile});
 }
 
