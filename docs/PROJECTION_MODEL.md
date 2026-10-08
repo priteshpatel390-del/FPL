@@ -1,3 +1,7 @@
+## Gate C remains model-isolated (8 October 2026)
+
+The approved Gate C repository candidate only concerns control-plane shadow collection and normalized D1 evidence, with no path to expected minutes, fixtures used by the model, projected points, starting XI, transfers, captaincy, simulations, global rank, Mini Leagues, rivals, DI, recommendations or strategy. Live collection is unapproved, and no predictive value, out-of-sample accuracy or improvement is established. [Gate C](API-FOOTBALL-GATE-C-CONTROLLED-COLLECTION.md).
+
 ## API-Football attended preparation remains model-isolated
 
 Attended preparation is control-plane/security plumbing only. It changes no expected minutes, fixture model, projected points, squad, XI, captaincy, transfer, simulation, rank, Mini-League, rival or strategy logic and creates no production read path from API-Football into the model. Its provider-egress budget is zero. A future preparation PASS would make no accuracy claim and would not authorize model influence.
