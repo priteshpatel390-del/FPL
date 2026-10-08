@@ -764,12 +764,12 @@ test('API-Football discovery stays isolated from production, live config and mig
       assert.match(source,/name: api-football-attended-acceptance/);
       assert.match(source,/API_FOOTBALL_ATTENDED_TRIGGER_SECRET/);
       assert.match(source,/GATE_C_DISPATCH_ALREADY_CONSUMED_OR_UNPROVEN/);
-      assert.match(source,/run-gate-c\\.mjs/);
-      assert.match(source,/gate-c-readonly\\.mjs/);
-      assert.match(source,/github\\.run_attempt == 1/);
+      assert.match(source,/run-gate-c\.mjs/);
+      assert.match(source,/gate-c-readonly\.mjs/);
+      assert.match(source,/github\.run_attempt == 1/);
       assert.match(source,/Tests and deterministic build/);
       assert.match(source,/group: api-football-collector-attended-acceptance/);
-      assert.doesNotMatch(source,/secrets\\.API_FOOTBALL_API_KEY|x-apisports-key|v3\\.football\\.api-sports\\.io|wrangler\\s+deploy|versions\\s+upload|teamsheet-api-football-shadow-collector-v2|^\\s{2}schedule:/im);
+      assert.doesNotMatch(source,/secrets\.API_FOOTBALL_API_KEY|x-apisports-key|v3\.football\.api-sports\.io|wrangler\s+deploy|versions\s+upload|teamsheet-api-football-shadow-collector-v2|^\s{2}schedule:/im);
       continue;
     }
     if(file==='api-football-remediated-version-preparation.yml'){
