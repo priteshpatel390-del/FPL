@@ -192,3 +192,34 @@ test('workflow is distinct, manual only, first attempt only and carries no live 
   assert.doesNotMatch(text,/CLOUDFLARE_ATTENDED_MUTATION_TOKEN|CLOUDFLARE_REMEDIATED_DEPLOYMENT_PROMOTION_TOKEN/);
   assert.doesNotMatch(text,/api-football-gate-c-new-day-collection\.yml|run-gate-c\.mjs/);
 });
+function stepOutputHandoffs(text){
+  const steps=text.split(/\n(?=      - )/);
+  const referenced=new Set([...text.matchAll(/steps\.([\w-]+)\.outputs\.(\w+)/g)].map(m=>m[1]+'.'+m[2]));
+  const problems=[];
+  for(const ref of referenced){
+    const [id,name]=ref.split('.');
+    const step=steps.find(s=>new RegExp('^      - (?:[^\\n]*\\n\\s+)?id: '+id+'\\s*$','m').test(s)||new RegExp('^\\s+id: '+id+'\\s*$','m').test(s));
+    if(!step){problems.push(ref+':step_missing');continue;}
+    const writes=/GITHUB_OUTPUT/.test(step)&&new RegExp('(?:\\\\n|[\'"\\s])'+name+'=').test(step);
+    if(!writes)problems.push(ref+':not_written');
+  }
+  return problems;
+}
+test('every steps.<id>.outputs.<name> consumed by the corrected preparation workflow is written to GITHUB_OUTPUT by that step',()=>{
+  assert.deepEqual(stepOutputHandoffs(read('.github/workflows/api-football-corrected-version-preparation.yml')),[]);
+  assert.deepEqual(stepOutputHandoffs(read('.github/workflows/api-football-corrected-version-readonly-admission.yml')),[]);
+});
+test('repository-gate approved_sha handoff is written only after every identity validation check',()=>{
+  const text=read('.github/workflows/api-football-corrected-version-preparation.yml');
+  const identity=text.slice(text.indexOf('- id: identity'),text.indexOf('- name: Require exact-main Verify Teamsheet success'));
+  const write=identity.indexOf('echo "approved_sha=$APPROVED_SHA" >> "$GITHUB_OUTPUT"');
+  assert.ok(write>0,'approved_sha must be written to GITHUB_OUTPUT');
+  for(const check of ['test "$EVENT_NAME" = workflow_dispatch','test "$RUN_ATTEMPT" = 1','test "$EVENT_REF" = refs/heads/main',"grep -Eq '^[0-9a-f]{40}$'",'test "$EVENT_SHA" = "$APPROVED_SHA"','test "$(git rev-parse HEAD)" = "$APPROVED_SHA"','git ls-remote'])
+    assert.ok(identity.indexOf(check)>=0&&identity.indexOf(check)<write,check+' must precede the output write');
+  assert.equal(identity.split('GITHUB_OUTPUT').length-1,1);
+  assert.match(text,/approved_sha: \$\{\{ steps\.identity\.outputs\.approved_sha \}\}/);
+});
+test('stepOutputHandoffs detector fails when the identity output write is removed',()=>{
+  const text=read('.github/workflows/api-football-corrected-version-preparation.yml').replace('          echo "approved_sha=$APPROVED_SHA" >> "$GITHUB_OUTPUT"\n','');
+  assert.deepEqual(stepOutputHandoffs(text),['identity.approved_sha:not_written']);
+});
