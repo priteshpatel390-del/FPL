@@ -1,3 +1,7 @@
+## Current next checkpoint — Gate C readiness hardening (8 October 2026)
+
+**Done:** PR #317 merged to `main` at `f8c9820e290007e1d611ea4adf58a2709714a683`; post-merge Verify `37770135682` passed 2,592/2,592 tests and deterministic builds. **Now:** owner-approved repository-only hardening of dormant Gate C: non-consuming protected read-only admission, stronger offline validation, synthetic executor tests, updated evidence/docs. **Then:** draft PR review and explicit merge approval, exact-main CI, separate owner-approved read-only infrastructure admission, and only after satisfactory live-read evidence a distinct one-time Gate C dispatch decision. The data-source trial and model are unchanged. [Readiness contract](API-FOOTBALL-GATE-C-READINESS-HARDENING.md). Historical unmerged statements below are superseded.
+
 ## API-Football next checkpoint — Gate C repository implementation (8 October 2026)
 
 Gate B is complete/consumed; post-merge Verify `37691491606` passed 2,582/2,582. Gate C is an owner-approved **repository-only** dormant draft candidate: implement/test two-Deployment consumed-history admission, one protected new-day five-request collection and independent terminal reconciliation. After green exact-head CI and draft PR review: owner decides merge; after post-merge exact-main check: separate owner decision on any one-time live dispatch. No provider transport success claimed. [Gate C](API-FOOTBALL-GATE-C-CONTROLLED-COLLECTION.md).
