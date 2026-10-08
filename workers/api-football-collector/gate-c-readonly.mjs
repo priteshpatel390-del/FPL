@@ -20,7 +20,7 @@ export const GATE_C_DAY_LEDGER_SQL=`SELECT
   (SELECT COUNT(*) FROM api_football_discovery_generations WHERE generation_id=? AND state='COMMITTED') AS committed,
   (SELECT COUNT(*) FROM api_football_discovery_heads WHERE generation_id=?) AS headMatches`;
 export function gateCDayGenerationId(utcDay){
-  if(typeof utcDay!=='string'||!/^\\d{4}-\\d{2}-\\d{2}$/.test(utcDay))throw Error('gate_c_day_invalid');
+  if(typeof utcDay!=='string'||!/^\d{4}-\d{2}-\d{2}$/.test(utcDay))throw Error('gate_c_day_invalid');
   return 'api-football:generation:DISCOVERY:2026-27:2026:'+utcDay+'T00:00:00.000Z';
 }
 export async function readGateCDayLedger({accountId,readToken,utcDay,fetchImpl=globalThis.fetch}={}){
