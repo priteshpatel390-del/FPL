@@ -56,7 +56,6 @@ export async function readCorrectedHistoryDetail({accountId,readToken,fetchImpl=
 async function getExactVersion({accountId,readToken,versionId,fetchImpl=globalThis.fetch}={}){
   if(!/^[a-z0-9-]{36}$/i.test(String(versionId)))return null;
   const root='/accounts/'+enc(accountId),script=root+'/workers/scripts/teamsheet-api-football-shadow-collector';
-  const beta=root+'/workers/workers/af6b59302acf49728e7deeb2f951397f'; // overridden below: authoritative existing Worker ID
   // The original Worker ID is a pinned repository constant rather than an inferred script identifier.
   const {DEPLOYED_ONE_SHOT_WORKER_ID}=await import('./deployed-one-shot.mjs');
   const requests=[script+'/versions/'+enc(versionId),root+'/workers/workers/'+enc(DEPLOYED_ONE_SHOT_WORKER_ID)+'/versions/'+enc(versionId)+'?include=modules'];
