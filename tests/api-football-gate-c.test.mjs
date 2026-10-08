@@ -282,23 +282,24 @@ const gateCEnv=()=>({
 function fakeGateCEgress({triggerStatus=202,mutatedDeployment=false,writeFailure=null}={}){
   const calls=[],allowedPaths=deployedOneShotCloudflarePaths(ACCOUNT);
   const fetchImpl=async(url,init={})=>{
+    const endpoint=String(url);
     const method=init.method??'GET';
-    calls.push({url,method,body:init.body??null});
-    if(url===API+allowedPaths.deployments&&method==='GET'){
+    calls.push({url:endpoint,method,body:init.body??null});
+    if(endpoint===API+allowedPaths.deployments&&method==='GET'){
       const deployments=mutatedDeployment?[retainedRow,promotedRow]:[promotedRow,retainedRow];
       return new Response(JSON.stringify({success:true,result:{deployments}}),{status:200});
     }
-    if(url===API+allowedPaths.subdomain&&method==='POST'){
+    if(endpoint===API+allowedPaths.subdomain&&method==='POST'){
       if(writeFailure==='workers-dev')return new Response(JSON.stringify({success:false}),{status:400});
       const {enabled,previews_enabled}=JSON.parse(init.body);
       return new Response(JSON.stringify({success:true,result:{enabled,previews_enabled}}),{status:200});
     }
-    if(url===API+allowedPaths.d1&&method==='POST'){
+    if(endpoint===API+allowedPaths.d1&&method==='POST'){
       const request=JSON.parse(init.body);
       assert.equal(typeof request.sql,'string');
       return new Response(JSON.stringify({success:true,result:[{success:true,meta:{changes:1}}]}),{status:200});
     }
-    if(url.startsWith('https://teamsheet-api-football-shadow-collector.')&&url.endsWith('/__teamsheet/api-football/attended-one-shot')){
+    if(endpoint.startsWith('https://teamsheet-api-football-shadow-collector.')&&endpoint.endsWith('/__teamsheet/api-football/attended-one-shot')){
       if(method==='GET')return new Response('Not found',{status:404,headers:{'cache-control':'no-store','content-type':'text/plain'}});
       if(method==='POST')return new Response(triggerStatus===202?'Accepted':'Not accepted',{status:triggerStatus,headers:{'content-type':'text/plain'}});
     }
