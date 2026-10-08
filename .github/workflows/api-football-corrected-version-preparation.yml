@@ -178,7 +178,7 @@ jobs:
           if(fs.existsSync(process.env.REPORT)){
             const bytes=fs.readFileSync(process.env.REPORT),x=JSON.parse(bytes);
             if(x.version!=='api-football-corrected-r1-r2-version-execution-v1'||x.retryAuthorized!==false||![0,1].includes(x.versionUploadAttempts))throw new Error('CORRECTED_EXECUTION_ARTIFACT_INVALID');
-            fs.appendFileSync(process.env.GITHUB_OUTPUT,'execution_artifact_sha256='+createHash('sha256').update(bytes).digest('hex')+'\\n');
+            fs.appendFileSync(process.env.GITHUB_OUTPUT,'execution_artifact_sha256='+createHash('sha256').update(bytes).digest('hex')+'\n');
           }
           NODE
       - uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6
