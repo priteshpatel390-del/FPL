@@ -51,3 +51,18 @@ This work proves only repository contracts on synthetic fixtures, **not** fresh 
 7. Owner separately designs/approves a **new** live collection gate able to handle non-pristine history and quota uncertainty, without reusing Gate C run `37776873809`.
 
 Every checkpoint stops unless newly and explicitly authorised.
+## Post-upload reconciliation failure forensics — run 37841681952 (8 October 2026)
+
+Run `37841681952` (main `073ac6a53d09f004e5ada5b94fb1cea6df3ef228`, attempt 1) uploaded Version `509f5a98-38fc-4e58-8a26-1b8fc4c9c787` (outcome `CREATED`, one POST) and then stopped in independent reconciliation with `corrected_version_byte_or_metadata_drift`. That string was an aggregate: `validateCorrectedVersion()` threw on any of about twenty conditions and the catch collapsed them all.
+
+**Verified:** the reconciliation job log carries only the aggregate reason; the reconciliation artifact is 695 bytes and holds no Version-level detail. The protected upload job started 7 seconds after creation, so no environment-reviewer wait occurred (the workflow correctly declares `api-football-corrected-version-upload`; reviewer enforcement is GitHub environment configuration that this repository cannot read or set).
+
+**Not verified:** which condition failed. Live Cloudflare Version JSON and the artifact blobs were not retrievable in the investigating session. The root cause is therefore **unproven**; the candidate Version is **unqualified**, neither verified nor shown to differ.
+
+**Hypothesis, not a finding:** the corrected validator compares the whole `annotations` object, while every previously live-proven validator (attended, transport-remediated) checks only `workers/message` and `workers/tag`. If Cloudflare adds its own annotation keys, a whole-object comparison would reject an identical Version. This must be confirmed from the real response before any comparison is changed.
+
+**Change (diagnostics only, no acceptance rule altered):** rejections now carry one closed sub-reason from `CORRECTED_VERSION_FAILURE_REASONS` (for example `annotations_mismatch`, `module_content_mismatch`, `binding_type_mismatch`). Reconciliation reports `corrected_version_byte_or_metadata_drift:<sub-reason>`; missing stable/beta evidence is reported as `corrected_version_evidence_unavailable` rather than as a mismatch. No remote value, name or hash is ever placed in a reason.
+
+**Next:** a separately approved read-only re-check of Version `509f5a98…` using these diagnostics. No upload, Deployment or collection is authorised by this change.
+
+**Owner action (external):** in GitHub → Settings → Environments, confirm `api-football-corrected-version-upload` has Required reviewers and that self-review is not allowed to bypass the pause you expect.

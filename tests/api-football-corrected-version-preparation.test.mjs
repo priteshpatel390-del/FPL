@@ -231,3 +231,51 @@ test('protected upload job maps CLOUDFLARE_TOPOLOGY_READ_TOKEN from the replacem
   assert.match(job,/CLOUDFLARE_TOPOLOGY_READ_TOKEN: \$\{\{ secrets\.CLOUDFLARE_REPLACEMENT_TOPOLOGY_READ_TOKEN \}\}/);
   assert.doesNotMatch(text,/secrets\.CLOUDFLARE_TOPOLOGY_READ_TOKEN\b/);
 });
+
+// ---- Forensic sub-reason diagnostics (run 37841681952 reported only the aggregate corrected_version_byte_or_metadata_drift) ----
+const reasonOf=(mutate)=>candidateVersion().then(v=>{const x=structuredClone(v);mutate(x);
+  try{validateCorrectedVersion({...x,versionId:ID,identity:source()});return null;}catch(e){return e.message;}});
+test('rejections carry one closed sanitised sub-reason and the exact valid response is still accepted',async()=>{
+  assert.equal(await reasonOf(()=>{}),null);
+  const cases=[
+    [x=>{x.beta.modules[0].content_base64=b64('corrupted');},'module_content_mismatch'],
+    [x=>{x.beta.modules.pop();},'module_count_mismatch'],
+    [x=>{x.beta.modules[1].name='modules/unexpected.mjs';},'module_unexpected'],
+    [x=>{x.beta.modules[1]={...x.beta.modules[0]};},'module_name_duplicate'],
+    [x=>{x.beta.modules[0].content_base64=undefined;},'module_content_encoding_invalid'],
+    [x=>{delete x.beta.modules;},'modules_response_incomplete'],
+    [x=>{x.stable.resources.script_runtime.compatibility_date='2026-01-01';},'runtime_compatibility_date_mismatch'],
+    [x=>{x.beta.compatibility_date='2026-01-01';},'beta_compatibility_date_mismatch'],
+    [x=>{delete x.beta.compatibility_date;},'version_response_incomplete'],
+    [x=>{x.beta.main_module='other.mjs';},'main_module_mismatch'],
+    [x=>{x.beta.annotations['workers/tag']='wrong';},'annotations_mismatch'],
+    [x=>{x.stable.resources.bindings.pop();},'binding_count_mismatch'],
+    [x=>{x.stable.resources.bindings.find(b=>b.type==='d1').database_id='x';},'d1_binding_identity_mismatch'],
+    [x=>{x.stable.resources.bindings.find(b=>b.type==='secret_text').text=API_KEY;},'secret_binding_value_exposed'],
+    [x=>{delete x.stable.resources.bindings;},'bindings_response_incomplete'],
+    [x=>{x.beta.urls=['https://x'];},'version_url_present'],
+    [x=>{x.beta.package_dependencies=[{}];},'external_dependency_present']
+  ];
+  for(const [mutate,token] of cases){
+    const message=await reasonOf(mutate);
+    assert.match(message,new RegExp('__'+token+'$'),token);
+    for(const secret of [API_KEY,TRIGGER,ACCOUNT])assert.equal(message.includes(secret),false);
+  }
+});
+test('reconciliation surfaces the closed sub-reason, flags missing evidence separately and never claims success',async()=>{
+  const identity=source(),admission=admit();
+  const v=await candidateVersion();v.beta.annotations={...v.beta.annotations,'workers/tag':'wrong'};
+  const created={version:'api-football-corrected-r1-r2-version-execution-v1',approvedSha:SHA,retryAuthorized:false,versionUploadAttempts:1,
+    productionMutations:1,identity:{creationSha:SHA,graphSha256:identity.graphSha256,metadataSha256:identity.metadataSha256,moduleCount:17},
+    admission,deploymentMutations:0,d1Mutations:0,workersDevMutations:0,previewMutations:0,cronMutations:0,routeMutations:0,
+    domainMutations:0,workerInvocations:0,apiFootballRequests:0,secretValuesSerialized:0,outcome:'CREATED',versionId:ID};
+  const input=cand=>({admission,report:admission.preflight,detail:admission.detail,deployments:admission.deployments,topology:admission.topology,
+    versions:{versionIds:[...CORRECTED_HISTORICAL_VERSION_IDS,ID],identityExact:true,candidate:cand},created,identity,approvedSha:SHA,accountFingerprint:FINGERPRINT});
+  const bad=classifyCorrectedReconciliation(input(v));
+  assert.equal(bad.ok,false);assert.equal(bad.reason,'corrected_version_byte_or_metadata_drift:annotations_mismatch');
+  for(const cand of [null,{stable:null,beta:null}]){
+    const r=classifyCorrectedReconciliation(input(cand));assert.equal(r.ok,false);assert.equal(r.reason,'corrected_version_evidence_unavailable');
+  }
+  const good=classifyCorrectedReconciliation(input(await candidateVersion()));
+  assert.equal(good.ok,true);assert.equal(good.retryAuthorized,false);
+});
