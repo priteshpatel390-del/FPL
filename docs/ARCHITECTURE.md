@@ -1,3 +1,7 @@
+## Gate C readiness hardening architecture — read-only separate from one-shot execution (8 October 2026)
+
+PR #317 merged at `f8c9820e290007e1d611ea4adf58a2709714a683`. The separately approved repository-only hardening candidate adds a **distinct workflow** `api-football-gate-c-readonly-readiness.yml` that invokes only `gate-c-readonly.mjs` in `ADMISSION` mode with protected read-only Cloudflare/D1 inventory. It never invokes the collection executor and does not consume `api-football-gate-c-new-day-collection.yml`'s once-only dispatch. Existing gate identities, provider acquisition and atomic generation writes are unchanged. For synthetic testing only, `executeGateC` now permits injected current-readers/clock with production defaults unchanged. [Hardening record](API-FOOTBALL-GATE-C-READINESS-HARDENING.md).
+
 ## Gate C readiness-hardening architecture (8 October 2026)
 
 Merged Gate C (#317, main `f8c9820e`) remains a dormant one-shot executor. Separate `api-football-gate-c-readonly-readiness.yml` uses the existing `gate-c-readonly.mjs` ADMISSION path and protected read-only environment, not the one-shot executor and not its once-ever dispatch history. Added offline structural workflow validation and synthetic injection seams for readers/clock in the executor, with unchanged production defaults. No model, provider or deployed topology change. [Contract](API-FOOTBALL-GATE-C-READINESS-HARDENING.md).
