@@ -40,7 +40,7 @@ export function createCorrectedGuardedFetch({accountId,readToken,uploadToken,top
       // Never let the upload token be used for reads or permit arbitrary CF endpoints.
       if(path.includes('/d1/')||path.includes('/secrets')||path.includes('/subdomain?')||path.includes('/settings'))return deny();
       const accountPrefix='/accounts/'+encodeURIComponent(accountId)+'/';
-      const zone=path==='/zones?per_page=50' || /^\/zones\/[a-z0-9_-]+\/workers\/routes(?:\?.*)?$/i.test(path);
+      const zone=(path.startsWith('/zones?account.id='+encodeURIComponent(accountId)+'&page=')&&path.includes('&per_page=')&&path.includes('&type=')) || /^\/zones\/[a-z0-9_-]+\/workers\/routes(?:\?.*)?$/i.test(path);
       const inventory=path.startsWith(accountPrefix)&&(
         /^\/accounts\/[^/]+\/workers\/scripts\/teamsheet-api-football-shadow-collector\/(?:deployments|schedules|subdomain|versions\?deployable=true|versions\/[a-f0-9-]{36})(?:\?.*)?$/i.test(path)||
         /^\/accounts\/[^/]+\/workers\/workers\/[^/]+\/versions\/[a-f0-9-]{36}\?include=modules$/i.test(path)||
