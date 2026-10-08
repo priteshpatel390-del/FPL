@@ -1,0 +1,103 @@
+# Gate C: separately named, repeatable READ-ONLY readiness; never consumes the one-shot live dispatch.
+# Dormant workflow_dispatch only. NO live dispatch is authorised by merging this file.
+# This job runs no executor, Worker invocation, API-Football request, D1 write or topology mutation.
+name: API-Football Gate C Read-Only Readiness
+
+on:
+  workflow_dispatch:
+    inputs:
+      approved_sha:
+        description: Exact owner-selected current main SHA for a separately approved read-only check
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: api-football-collector-attended-acceptance
+  cancel-in-progress: false
+
+jobs:
+  repository-gate:
+    if: github.event_name == 'workflow_dispatch' && github.run_attempt == 1
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    outputs:
+      approved_sha: ${{ steps.identity.outputs.approved_sha }}
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          ref: ${{ inputs.approved_sha }}
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Require owner-selected current protected main
+        id: identity
+        env:
+          APPROVED_SHA: ${{ inputs.approved_sha }}
+          EVENT_NAME: ${{ github.event_name }}
+          EVENT_REF: ${{ github.ref }}
+          EVENT_RUN_ATTEMPT: ${{ github.run_attempt }}
+          EVENT_REPOSITORY: ${{ github.repository }}
+          EVENT_SHA: ${{ github.sha }}
+        run: |
+          set -euo pipefail
+          test "$EVENT_NAME" = workflow_dispatch
+          test "$EVENT_REF" = refs/heads/main
+          test "$EVENT_REPOSITORY" = priteshpatel390-del/FPL
+          test "$EVENT_RUN_ATTEMPT" = 1
+          printf '%s' "$APPROVED_SHA" | grep -Eq '^[0-9a-f]{40}$'
+          test "$APPROVED_SHA" = "$EVENT_SHA"
+          test "$(git rev-parse HEAD)" = "$APPROVED_SHA"
+          test "$(git ls-remote https://github.com/priteshpatel390-del/FPL.git refs/heads/main | cut -f1)" = "$APPROVED_SHA"
+          test -z "$(git status --porcelain --untracked-files=all)"
+          echo "approved_sha=$APPROVED_SHA" >> "$GITHUB_OUTPUT"
+      - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
+        with:
+          node-version: 24.19.0
+      - name: Verify read-only gate contracts
+        run: |
+          node --test tests/api-football-gate-c.test.mjs tests/api-football-gate-c-hardening.test.mjs
+          test -z "$(git status --porcelain --untracked-files=all)"
+
+  fresh-readonly-admission:
+    needs: repository-gate
+    if: github.event_name == 'workflow_dispatch' && github.run_attempt == 1
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    environment:
+      name: data-steward-readonly
+      deployment: false
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          ref: ${{ needs.repository-gate.outputs.approved_sha }}
+          persist-credentials: false
+      - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
+        with:
+          node-version: 24.19.0
+      - name: Recheck main before the independent read-only Cloudflare/D1 inventory
+        env:
+          APPROVED_SHA: ${{ needs.repository-gate.outputs.approved_sha }}
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "$APPROVED_SHA"
+          test "$(git ls-remote https://github.com/priteshpatel390-del/FPL.git refs/heads/main | cut -f1)" = "$APPROVED_SHA"
+          test -z "$(git status --porcelain --untracked-files=all)"
+      - name: Record sanitised Gate C admission without triggering collection
+        env:
+          APPROVED_SHA: ${{ needs.repository-gate.outputs.approved_sha }}
+          API_FOOTBALL_GATE_C_MODE: ADMISSION
+          DATA_STEWARD_CLOUDFLARE_ACCOUNT_ID: ${{ secrets.DATA_STEWARD_CLOUDFLARE_ACCOUNT_ID }}
+          DATA_STEWARD_CLOUDFLARE_ACCOUNT_FINGERPRINT: ${{ vars.DATA_STEWARD_CLOUDFLARE_ACCOUNT_FINGERPRINT }}
+          DATA_STEWARD_CLOUDFLARE_READ_TOKEN: ${{ secrets.DATA_STEWARD_CLOUDFLARE_READ_TOKEN }}
+          CLOUDFLARE_TOPOLOGY_READ_TOKEN: ${{ secrets.CLOUDFLARE_REPLACEMENT_TOPOLOGY_READ_TOKEN }}
+          API_FOOTBALL_GATE_C_REPORT_PATH: ${{ runner.temp }}/gate-c-readonly-readiness.json
+        run: node workers/api-football-collector/gate-c-readonly.mjs
+      - uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6
+        if: always()
+        with:
+          name: api-football-gate-c-readonly-readiness
+          path: ${{ runner.temp }}/gate-c-readonly-readiness.json
+          if-no-files-found: warn
+          retention-days: 7

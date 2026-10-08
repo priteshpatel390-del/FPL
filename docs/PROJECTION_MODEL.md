@@ -1,3 +1,11 @@
+## Gate C readiness hardening — unchanged model isolation (8 October 2026)
+
+PR #317 merged and owner-approved follow-on readiness hardening remains **control-plane repository work**: workflow-validation tests, synthetic execution verification, and a dormant read-only admission workflow. Neither authorises live provider calls nor adds an API-Football path to expected minutes, fixtures used by model, xP, lineup, captaincy, transfers, rank, Mini Leagues, rivals, strategy or DI. No out-of-sample improvement claim is made. [Hardening record](API-FOOTBALL-GATE-C-READINESS-HARDENING.md).
+
+## Gate C post-merge readiness is strictly model-neutral (8 October 2026)
+
+PR #317 merged to `main` at `f8c9820e`; hardening changes only synthetic control-plane verification, a dormant read-only admission workflow and docs. No fixture-to-model import, expected-minutes/projected-points, XI, captaincy, transfer, rank, leagues, rivals, simulation, strategy, or AI logic changes. No provider validation or predictive accuracy claim is justified. [Gate C readiness hardening](API-FOOTBALL-GATE-C-READINESS-HARDENING.md).
+
 ## Gate C remains model-isolated (8 October 2026)
 
 The approved Gate C repository candidate only concerns control-plane shadow collection and normalized D1 evidence, with no path to expected minutes, fixtures used by the model, projected points, starting XI, transfers, captaincy, simulations, global rank, Mini Leagues, rivals, DI, recommendations or strategy. Live collection is unapproved, and no predictive value, out-of-sample accuracy or improvement is established. [Gate C](API-FOOTBALL-GATE-C-CONTROLLED-COLLECTION.md).

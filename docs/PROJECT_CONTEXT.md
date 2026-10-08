@@ -1,3 +1,11 @@
+## Current Gate C checkpoint — merged foundation; read-only readiness hardening proposed (8 October 2026)
+
+PR #317 is **merged** at main `f8c9820e290007e1d611ea4adf58a2709714a683`. Post-merge Verify `37770135682`: **2,592/2,592**, deterministic builds. The owner has separately approved **repository-only** readiness hardening on a new branch, including a dormant independently named **read-only** admission workflow that does not consume live Gate C. The collection workflow remains dormant and has never been dispatched. No Cloudflare/D1/provider activity or live readiness is asserted. The earlier draft/unmerged language below is historical and superseded here. [Hardening record](API-FOOTBALL-GATE-C-READINESS-HARDENING.md).
+
+## Current checkpoint — Gate C merged; readiness hardening repository candidate (8 October 2026)
+
+PR #317 is merged at `f8c9820e290007e1d611ea4adf58a2709714a683`; exact-main Verify `37770135682` passed 2,592/2,592 and deterministic builds. Gate C remains dormant and transport/collection unproven. Owner approved separate repository-only non-consuming read-only readiness workflow, workflow-validation and simulated executor coverage; this is NOT dispatch or Cloudflare/D1 access approval. See [readiness hardening](API-FOOTBALL-GATE-C-READINESS-HARDENING.md). Earlier statements that Gate C is unmerged are historical.
+
 ## API-Football Gate C repository candidate — live NOT authorised (8 October 2026)
 
 Owner approval extends only to the dormant controlled new-day shadow collection implementation, tests and draft PR. Corrected Version `4171f3cf-953e-452e-9e5f-068df9a3ca47` remains selected by Gate B Deployment `9b48b57a-e505-4213-9547-fe44835a9bdb` on the last reconciled live evidence; the old failed `TRANSPORT_UNKNOWN` attempt remains consumed. No further live state or successful collection is claimed. See [Gate C design/implementation](API-FOOTBALL-GATE-C-CONTROLLED-COLLECTION.md). No merge or live dispatch authorised.

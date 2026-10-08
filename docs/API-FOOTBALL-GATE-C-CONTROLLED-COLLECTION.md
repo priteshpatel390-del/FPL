@@ -1,5 +1,8 @@
 # API-Football Gate C — Controlled New-Day Shadow Collection (repository only)
 
+> **Post-merge authoritative update (8 October 2026):** Gate C repository implementation PR #317 is **merged** at `f8c9820e290007e1d611ea4adf58a2709714a683`. Exact-main Verify run `37770135682` passed 2,592/2,592 and deterministic builds. Gate C remains dormant and its live workflow has not been dispatched. The separately owner-approved repository-only readiness hardening is documented in [Gate C readiness hardening](API-FOOTBALL-GATE-C-READINESS-HARDENING.md). This update supersedes the candidate/draft/no-merge language below, which records the earlier implementation approval. **No live workflow dispatch or Cloudflare/API-Football mutation is approved.**
+
+
 Date: 8 October 2026
 Status: **owner-approved repository implementation candidate only**. No live dispatch is approved. No Cloudflare, D1, Worker routing, provider, credential or model mutation occurred during repository implementation.
 

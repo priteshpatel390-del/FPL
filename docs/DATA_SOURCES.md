@@ -1,3 +1,11 @@
+## Gate C readiness hardening — no acquisition or data-governance change (8 October 2026)
+
+PR #317 merged at `f8c9820e290007e1d611ea4adf58a2709714a683`. The next separate repository-only hardening candidate adds offline validation and a dormant **read-only** Gate C state-inventory workflow, not a data source or provider-call pathway. The existing five 2026 API-Football fixture-discovery request identities, security/fallback, 2,500-row ceiling, shadow-only retention, Official FPL authority and no-model/UI boundary remain unchanged. Historical `TRANSPORT_UNKNOWN` stays consumed; no provider success is claimed. [Hardening record](API-FOOTBALL-GATE-C-READINESS-HARDENING.md).
+
+## Gate C merged; readiness hardening does not add provider use (8 October 2026)
+
+PR #317 merged at `f8c9820e` (2,592/2,592 exact-main verification). Gate C is dormant. Separate readiness hardening adds only tests and a protected non-consuming read-only admission workflow; it makes no API-Football call, adds no source/field/retention path and changes no provider or model logic. Provider reliability remains unproven. [Readiness hardening](API-FOOTBALL-GATE-C-READINESS-HARDENING.md).
+
 ## API-Football Gate C — no new source or product use (8 October 2026)
 
 Repository-only dormant Gate C preserves the already qualified API-Football private shadow evidence boundary. Only five approved 2026 fixture-discovery league/season requests may be made by a separately approved future live run (2, 3, 848, 45, 48); the API key remains Worker-only, with no new fields, providers, raw payload storage or model/UI consumers. No successful corrected-Version provider response or coverage has been proven. [Gate C](API-FOOTBALL-GATE-C-CONTROLLED-COLLECTION.md).
