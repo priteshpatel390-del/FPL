@@ -138,6 +138,7 @@ export async function executeGateC({env=process.env,fetchImpl=globalThis.fetch,c
     },
     enableCollection:async()=>{await runtime(DEPLOYED_ONE_SHOT_RUNTIME_SQL.enable,'ENABLE');collectionEnableSucceeded=true;},
     triggerOnce:async()=>{
+      if(new Date().toISOString().slice(0,10)!==admission.utcDay)fail('GATE_C_UTC_DAY_CHANGED_BEFORE_TRIGGER');
       if(triggerRequests>=DEPLOYED_ONE_SHOT_MAX_TRIGGER_REQUESTS)fail('DEPLOYED_ONE_SHOT_SECOND_TRIGGER_FORBIDDEN');
       triggerRequests+=1;
       let response;
