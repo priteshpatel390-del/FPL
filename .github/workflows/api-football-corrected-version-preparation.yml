@@ -126,6 +126,8 @@ jobs:
     environment:
       name: api-football-corrected-version-upload
       deployment: false
+    outputs:
+      execution_artifact_sha256: ${{ steps.execution-handoff.outputs.execution_artifact_sha256 }}
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
         with:
@@ -164,6 +166,21 @@ jobs:
           API_FOOTBALL_API_KEY: ${{ secrets.API_FOOTBALL_API_KEY }}
           API_FOOTBALL_ATTENDED_TRIGGER_SECRET: ${{ secrets.API_FOOTBALL_ATTENDED_TRIGGER_SECRET }}
         run: node workers/api-football-collector/run-corrected-version-upload.mjs
+      - name: Bind sanitized one-POST execution evidence even after failure
+        id: execution-handoff
+        if: always()
+        env:
+          REPORT: ${{ runner.temp }}/corrected-execution.json
+        run: |
+          set -euo pipefail
+          node --input-type=module - <<'NODE'
+          import fs from 'node:fs';import {createHash} from 'node:crypto';
+          if(fs.existsSync(process.env.REPORT)){
+            const bytes=fs.readFileSync(process.env.REPORT),x=JSON.parse(bytes);
+            if(x.version!=='api-football-corrected-r1-r2-version-execution-v1'||x.retryAuthorized!==false||![0,1].includes(x.versionUploadAttempts))throw new Error('CORRECTED_EXECUTION_ARTIFACT_INVALID');
+            fs.appendFileSync(process.env.GITHUB_OUTPUT,'execution_artifact_sha256='+createHash('sha256').update(bytes).digest('hex')+'\\n');
+          }
+          NODE
       - uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6
         if: always()
         with:
@@ -188,15 +205,27 @@ jobs:
         with:
           node-version: 24.19.0
       - uses: actions/download-artifact@95815c38cf2ff2164869cbab79da8d1f422bc89e # v4
-        if: needs.protected-version-upload.result == 'success'
+        if: needs.protected-version-upload.outputs.execution_artifact_sha256 != ''
         with:
           name: corrected-version-execution
           path: ${{ runner.temp }}/corrected-execution
+      - name: Recheck immutable main and execution artifact fingerprint
+        env:
+          APPROVED_SHA: ${{ needs.repository-gate.outputs.approved_sha }}
+          EXPECTED_SHA256: ${{ needs.protected-version-upload.outputs.execution_artifact_sha256 }}
+          REPORT: ${{ runner.temp }}/corrected-execution/corrected-execution.json
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "$APPROVED_SHA"
+          test "$(git ls-remote https://github.com/priteshpatel390-del/FPL.git refs/heads/main | cut -f1)" = "$APPROVED_SHA"
+          if [ -n "$EXPECTED_SHA256" ]; then
+            test "$(sha256sum "$REPORT" | cut -d' ' -f1)" = "$EXPECTED_SHA256"
+          fi
       - name: Independent read-only reconciliation
         env:
           APPROVED_SHA: ${{ needs.repository-gate.outputs.approved_sha }}
           API_FOOTBALL_CORRECTED_MODE: RECONCILIATION
-          API_FOOTBALL_CORRECTED_EXECUTION_PATH: ${{ needs.protected-version-upload.result == 'success' && format('{0}/corrected-execution/corrected-execution.json', runner.temp) || '' }}
+          API_FOOTBALL_CORRECTED_EXECUTION_PATH: ${{ needs.protected-version-upload.outputs.execution_artifact_sha256 != '' && format('{0}/corrected-execution/corrected-execution.json', runner.temp) || '' }}
           API_FOOTBALL_CORRECTED_REPORT_PATH: ${{ runner.temp }}/corrected-reconciliation.json
           DATA_STEWARD_CLOUDFLARE_ACCOUNT_ID: ${{ secrets.DATA_STEWARD_CLOUDFLARE_ACCOUNT_ID }}
           DATA_STEWARD_CLOUDFLARE_ACCOUNT_FINGERPRINT: ${{ vars.DATA_STEWARD_CLOUDFLARE_ACCOUNT_FINGERPRINT }}
