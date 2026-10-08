@@ -167,7 +167,15 @@ export function classifyCorrectedReconciliation({admission,report,detail,deploym
     report?.inventory?.deploymentCount!==2||!promotionPostStateExact(deployments)||
     !same(deployments,admission.deployments)||!validateZoneTopology(topology)||!same(topology,admission.topology))
     return stop('preparation_state_drift');
-  if(!created||created.versionUploadAttempts!==1||!['CREATED','APPLIED_CONFIRMED_BY_READBACK'].includes(created.outcome)||
+  if(!created||created.version!==CORRECTED_EXECUTION_CONTRACT||created.approvedSha!==approvedSha||
+    created.retryAuthorized!==false||created.versionUploadAttempts!==1||created.productionMutations!==1||
+    created.identity?.creationSha!==identity?.creationSha||created.identity?.graphSha256!==identity?.graphSha256||
+    created.identity?.metadataSha256!==identity?.metadataSha256||created.identity?.moduleCount!==17||
+    !same(created.admission,admission)||created.deploymentMutations!==0||created.d1Mutations!==0||
+    created.workersDevMutations!==0||created.previewMutations!==0||created.cronMutations!==0||
+    created.routeMutations!==0||created.domainMutations!==0||created.workerInvocations!==0||
+    created.apiFootballRequests!==0||created.secretValuesSerialized!==0||
+    !['CREATED','APPLIED_CONFIRMED_BY_READBACK'].includes(created.outcome)||
     !uuid(created.versionId)||!ids(versions?.versionIds,[...CORRECTED_HISTORICAL_VERSION_IDS,created.versionId])||
     !versions?.identityExact)return stop('version_creation_unproven');
   try{validateCorrectedVersion({stable:versions.candidate?.stable,beta:versions.candidate?.beta,versionId:created.versionId,identity});}
