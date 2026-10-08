@@ -57,7 +57,20 @@ export function gateCDeploymentDiagnostic(rows,report){
   if(report?.inventory?.deploymentCount!==2)return 'deployment_count_mismatch';
   return null;
 }
-export function gateCAdmissionDiagnostic({report,deploymentRows,versions,topology,approvedSha,accountFingerprint,utcDay}={}){
+export function gateCDayLedgerDiagnostic(ledger,{phase='admission',utcDay}={}){
+  if(!ledger||ledger.utcDay!==utcDay||!/^\\d{4}-\\d{2}-\\d{2}$/.test(String(utcDay||'')))return 'day_ledger_unavailable';
+  for(const field of ['attempts','succeeded','attempt2','generations','committed','headMatches'])
+    if(!nonNegative(ledger[field]))return 'day_ledger_unreadable';
+  if(phase==='admission'){
+    if(['attempts','succeeded','attempt2','generations','committed','headMatches'].some(field=>ledger[field]!==0))
+      return 'new_day_already_consumed';
+  }else if(phase==='reconciliation'){
+    if(ledger.attempts!==5||ledger.succeeded!==5||ledger.attempt2!==0||
+      ledger.generations!==1||ledger.committed!==1||ledger.headMatches!==1)return 'day_generation_not_exactly_committed';
+  }else return 'day_phase_invalid';
+  return null;
+}
+export function gateCAdmissionDiagnostic({report,deploymentRows,versions,topology,approvedSha,accountFingerprint,utcDay,dayLedger}={}){
   if(!hex40(approvedSha)||!hex64(accountFingerprint))return 'execution_identity_invalid';
   if(typeof utcDay!=='string'||!/^\d{4}-\d{2}-\d{2}$/.test(utcDay)||utcDay<GATE_C_EARLIEST_UTC_DAY)return 'new_utc_day_not_approved';
   if(report?.ok!==false||report.classification!==DEPLOYED_ONE_SHOT_CONTINUATION_PREFLIGHT_STOP||
@@ -66,6 +79,7 @@ export function gateCAdmissionDiagnostic({report,deploymentRows,versions,topolog
   const deployment=gateCDeploymentDiagnostic(deploymentRows,report);if(deployment)return deployment;
   const inventory=promotionVersionInventoryDiagnostic(versions);if(inventory)return inventory;
   if(!validateZoneTopology(topology))return 'route_present_or_unproven';
+  const day=gateCDayLedgerDiagnostic(dayLedger,{phase:'admission',utcDay});if(day)return day;
   return null;
 }
 export function buildGateCAdmission(input={}){
@@ -78,7 +92,7 @@ export function buildGateCAdmission(input={}){
     deploymentId:GATE_C_ACTIVE_DEPLOYMENT_ID,
     versionIds:Array.isArray(input.versions?.versionIds)?safe([...input.versions.versionIds].sort()):null,
     deployments:Array.isArray(input.deploymentRows)?safe(input.deploymentRows):null,
-    topology:input.topology??null,preflight:input.report??null,retryAuthorized:false,
+    topology:input.topology??null,dayLedger:input.dayLedger??null,preflight:input.report??null,retryAuthorized:false,
     evidence:safe({productionMutations:0,apiFootballRequests:0,secretValuesRead:0})
   });
 }
@@ -90,12 +104,12 @@ export function validateGateCAdmissionHandoff(admission,{approvedSha,accountFing
     JSON.stringify(admission.versionIds)!==JSON.stringify([...PROMOTION_EXPECTED_VERSION_IDS].sort())||
     gateCDeploymentDiagnostic(admission.deployments,admission.preflight)||
     foundational(admission.preflight,{approvedSha,accountFingerprint},'admission')||
-    !validateZoneTopology(admission.topology)||admission.retryAuthorized!==false||
+    !validateZoneTopology(admission.topology)||gateCDayLedgerDiagnostic(admission.dayLedger,{phase:'admission',utcDay})||admission.retryAuthorized!==false||
     admission.evidence?.productionMutations!==0||admission.evidence?.apiFootballRequests!==0||admission.evidence?.secretValuesRead!==0)
     throw new Error('GATE_C_ADMISSION_HANDOFF_INVALID');
   return true;
 }
-export function classifyGateCReconciliation({report,deploymentRows,versions,topology,execution,approvedSha,accountFingerprint,admission}={}){
+export function classifyGateCReconciliation({report,deploymentRows,versions,topology,execution,approvedSha,accountFingerprint,admission,dayLedger}={}){
   const base={version:GATE_C_RECONCILIATION_VERSION,retryAuthorized:false};
   const stop=reason=>safe({...base,ok:false,classification:GATE_C_OWNER_ATTENTION,reason});
   if(!hex40(approvedSha)||!hex64(accountFingerprint))return stop('execution_identity_invalid');
@@ -106,6 +120,7 @@ export function classifyGateCReconciliation({report,deploymentRows,versions,topo
   const inventory=promotionVersionInventoryDiagnostic(versions);if(inventory)return stop(inventory);
   if(!validateZoneTopology(topology))return stop('route_present_or_unproven');
   const history=report.priorState;
+  const day=gateCDayLedgerDiagnostic(dayLedger,{phase:'reconciliation',utcDay:admission.utcDay});
   const executionValid=execution?.version===GATE_C_EXECUTION_VERSION&&execution.approvedSha===approvedSha&&
     execution.versionId===PROMOTION_CANDIDATE_VERSION_ID&&execution.deployment?.deploymentId===GATE_C_ACTIVE_DEPLOYMENT_ID&&
     execution.mutations?.createDeployment===0&&execution.triggerRequests===1&&execution.retryAuthorized===false&&
@@ -113,10 +128,12 @@ export function classifyGateCReconciliation({report,deploymentRows,versions,topo
   const gateCGeneration=gateCHistoryDiagnostic(history,{phase:'reconciliation'});
   if(gateCGeneration){
     const clean=gateCHistoryDiagnostic(history,{phase:'admission'})===null&&
+      gateCDayLedgerDiagnostic(dayLedger,{phase:'admission',utcDay:admission.utcDay})===null&&
       foundationDiagnostic({...report,priorState:TRANSPORT_REMEDIATED_CONSUMED_HISTORY},
         {approvedSha,accountFingerprint,requireVersionInventory:false})===null;
     return clean?safe({...base,ok:false,classification:GATE_C_CLEAN_STOP,reason:'no_new_generation',triggerRequests:execution?.triggerRequests??null}):stop(gateCGeneration);
   }
+  if(day)return stop(day);
   const basis=foundational(report,{approvedSha,accountFingerprint},'reconciliation');if(basis)return stop(basis);
   if(!executionValid||execution.ok!==true||execution.cleanup?.collectionDisable?.outcome!=='SUCCEEDED'||
     execution.cleanup?.workersDevDisable?.outcome!=='SUCCEEDED'||execution.controlBudget?.d1Calls>2||
