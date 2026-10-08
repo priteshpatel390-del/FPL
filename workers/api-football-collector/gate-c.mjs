@@ -58,7 +58,7 @@ export function gateCDeploymentDiagnostic(rows,report){
   return null;
 }
 export function gateCDayLedgerDiagnostic(ledger,{phase='admission',utcDay}={}){
-  if(!ledger||ledger.utcDay!==utcDay||!/^\\d{4}-\\d{2}-\\d{2}$/.test(String(utcDay||'')))return 'day_ledger_unavailable';
+  if(!ledger||ledger.utcDay!==utcDay||!/^\d{4}-\d{2}-\d{2}$/.test(String(utcDay||'')))return 'day_ledger_unavailable';
   for(const field of ['attempts','succeeded','attempt2','generations','committed','headMatches'])
     if(!nonNegative(ledger[field]))return 'day_ledger_unreadable';
   if(phase==='admission'){
