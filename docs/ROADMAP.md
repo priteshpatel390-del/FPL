@@ -1,3 +1,7 @@
+## Next checkpoint — Gate C failed and consumed; R1/R2 draft PR awaiting review (8 October 2026)
+
+Gate C run `37776873809` is consumed and must never be rerun; live collection remains NO-GO. Draft PR carries R2, R1 and immutable Version preservation. Separate future gates, none approved: review and merge; corrected-Version preparation (candidate pin review); one-time upload; Deployment promotion; a new live collection gate with admission that models the failed generation and its 824 retained revisions. R3 and R4 are unscheduled. See [Gate C forensic remediation](API-FOOTBALL-GATE-C-FORENSIC-REMEDIATION.md).
+
 ## Next checkpoint — Gate C readiness hardening; live collection remains NO-GO (8 October 2026)
 
 PR #317 is merged (`f8c9820e290007e1d611ea4adf58a2709714a683`), exact-main Verify run `37770135682` is green (2,592/2,592; deterministic). Current approved work is a **repository-only** draft PR to validate workflow sources, add synthetic coverage and provide a separately gated **read-only, non-consuming** Cloudflare/D1 admission path. After its CI and owner-approved merge, **separately** consider read-only workflow dispatch and review its actual evidence, including six migrations, exact two Deployments, four Versions, inert topology and consumed history. Only then propose a separately approved one-time live Gate C collection dispatch. **No live execution is authorised now.** Earlier draft-Gate-C statements below describe past checkpoints. [Hardening record](API-FOOTBALL-GATE-C-READINESS-HARDENING.md).

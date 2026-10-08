@@ -13,6 +13,7 @@ import {
   REVIEWED_ATTENDED_MODULE_SNAPSHOTS,REVIEWED_MODULE_PATHS,buildUploadModules,readReviewedAttendedModuleSource,resolveModuleGraph
 } from '../workers/api-football-collector/stage-inactive-version.mjs';
 import {GATE_C_CLONE_VERSION_ID} from '../workers/api-football-collector/replacement-foundation.mjs';
+import {readReviewedRemediatedModuleSource} from '../workers/api-football-collector/reviewed-remediated-snapshots.mjs';
 import {
   DEPLOYED_ONE_SHOT_CLONE_APPROVED_SHA,DEPLOYED_ONE_SHOT_CLONE_VERSION_ID,DEPLOYED_ONE_SHOT_CONTINUATION_PREFLIGHT_REASON,
   DEPLOYED_ONE_SHOT_CONTINUATION_PREFLIGHT_STOP,DEPLOYED_ONE_SHOT_EXISTING_DEPLOYMENT_ID,DEPLOYED_ONE_SHOT_PREFLIGHT_STAGE,
@@ -90,11 +91,12 @@ function attendedDetails(){
 }
 
 // ---------------- identity: historical vs current-tree builders ----------------
-test('historical builder reproduces the immutable Version from snapshots while the remediated builder reads the corrected current tree',()=>{
+test('historical builder reproduces the immutable Version from snapshots while the deployed remediated Version is verified from its own SHA-256-verified snapshots',()=>{
   const historicalGraph=resolveModuleGraph(),remediatedGraph=resolveTransportRemediatedModuleGraph();
   const f='src/decision-intelligence/api-football-foundation.mjs',c='workers/api-football-collector/collector.mjs';
   assert.equal(historicalGraph.get(f),readReviewedAttendedModuleSource(f));assert.equal(historicalGraph.get(c),readReviewedAttendedModuleSource(c));
-  assert.equal(remediatedGraph.get(f),read(f));assert.equal(remediatedGraph.get(c),read(c));
+  // The deployed Version 4171f3cf is bound to verified snapshots of its creation commit, never to the moving working tree.
+  assert.equal(remediatedGraph.get(f),readReviewedRemediatedModuleSource(f));assert.equal(remediatedGraph.get(c),readReviewedRemediatedModuleSource(c));
   assert.notEqual(historicalGraph.get(f),remediatedGraph.get(f));assert.notEqual(historicalGraph.get(c),remediatedGraph.get(c));
   for(const repoPath of Object.keys(REVIEWED_ATTENDED_MODULE_SNAPSHOTS))assert.notEqual(readReviewedAttendedModuleSource(repoPath),readCurrentTreeModuleSource(repoPath));
   // Old Version 04d79556 remains reproducible byte-for-byte through the historical path.

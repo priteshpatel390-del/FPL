@@ -107,59 +107,6 @@ export function classifyCompletion({status,headers,timedOut=false,transportUnkno
   return Object.freeze({ok:true,outcome:Number(status)>=200&&Number(status)<300?'SUCCEEDED':'HTTP_FAILURE',timeout:0,quotaState:'KNOWN',quota});
 }
 
-// Closed, sanitized schema-failure diagnostics. Every value is a repository-owned enum: no provider
-// text, body, header value, key name or number outside a fixed bucket is ever retained.
-export const API_FOOTBALL_SCHEMA_SUBREASONS=Object.freeze([
-  'body_empty','body_not_json','body_read_exception','payload_not_object','response_not_array','get_mismatch','parameters_shape',
-  'errors_shape','errors_nonempty_rate_limit','errors_nonempty_requests','errors_nonempty_plan','errors_nonempty_credential',
-  'errors_nonempty_access','errors_nonempty_other','results_not_integer','results_count_mismatch','envelope_keys','paging_shape','envelope_other'
-]);
-const CONTENT_TYPE_CODES=Object.freeze({json:'json',html:'html',text:'text',other:'other',absent:'none'});
-const BODY_BUCKET_CODES=Object.freeze({zero:'0',lt_1k:'lt1k',lt_64k:'lt64k',ge_64k:'ge64k'});
-const QUOTA_STATE_CODES=Object.freeze({known:'known',absent:'none',invalid:'bad',inconsistent:'skew'});
-export function httpStatusClass(status){
-  if(!Number.isInteger(status))return 'transport';
-  if(status>=200&&status<300)return '2xx';
-  if(status>=300&&status<400)return '3xx';
-  if(status>=400&&status<500)return '4xx';
-  if(status>=500&&status<600)return '5xx';
-  return 'unknown';
-}
-export function contentTypeClass(headers){
-  const raw=headers?.get?.('content-type');
-  if(typeof raw!=='string'||!raw.trim())return 'absent';
-  const type=raw.trim().toLowerCase();
-  if(type.startsWith('application/json')||type.includes('+json'))return 'json';
-  if(type.startsWith('text/html'))return 'html';
-  if(type.startsWith('text/'))return 'text';
-  return 'other';
-}
-export function bodyBytesBucket(size){
-  if(!Number.isInteger(size)||size<0)return null;
-  if(size===0)return 'zero';
-  if(size<1024)return 'lt_1k';
-  if(size<65_536)return 'lt_64k';
-  return 'ge_64k';
-}
-export function quotaHeaderState(headers){
-  const result=normalizeApiFootballQuotaHeaders(headers);
-  if(!result.ok)return 'invalid';
-  if(result.state!=='known')return 'absent';
-  if(result.requestsLimit!==null&&result.requestsRemaining!==null&&result.requestsRemaining>result.requestsLimit)return 'inconsistent';
-  if(result.rateLimit!==null&&result.remaining!==null&&result.remaining>result.rateLimit)return 'inconsistent';
-  return 'known';
-}
-// Only the persisted failure class gains a suffix; the returned `reason` stays exactly provider_schema_invalid.
-export function composeSchemaFailureClass(reason,diagnostic){
-  if(reason!=='provider_schema_invalid'||!diagnostic||typeof diagnostic!=='object')return reason;
-  let text=reason;
-  if(API_FOOTBALL_SCHEMA_SUBREASONS.includes(diagnostic.subReason))text+=`:${diagnostic.subReason}`;
-  if(Object.hasOwn(CONTENT_TYPE_CODES,diagnostic.contentTypeClass))text+=`;ct=${CONTENT_TYPE_CODES[diagnostic.contentTypeClass]}`;
-  if(Object.hasOwn(BODY_BUCKET_CODES,diagnostic.bodyBytesBucket))text+=`;b=${BODY_BUCKET_CODES[diagnostic.bodyBytesBucket]}`;
-  if(Object.hasOwn(QUOTA_STATE_CODES,diagnostic.quotaHeaderState))text+=`;q=${QUOTA_STATE_CODES[diagnostic.quotaHeaderState]}`;
-  return text;
-}
-
 export async function readBoundedJson(response,{maxBytes=API_FOOTBALL_MAX_RESPONSE_BYTES,maxRows=API_FOOTBALL_MAX_ROWS}={}){
   if(!Number.isInteger(maxBytes)||maxBytes<1)return fail('response_limit_unqualified');
   const declared=Number(response?.headers?.get?.('content-length'));
@@ -168,10 +115,7 @@ export async function readBoundedJson(response,{maxBytes=API_FOOTBALL_MAX_RESPON
   const reader=response.body.getReader(),chunks=[];let size=0;
   while(true){const {done,value}=await reader.read();if(done)break;size+=value.byteLength;if(size>maxBytes){await reader.cancel();return fail('provider_response_too_large');}chunks.push(value);}
   const bytes=new Uint8Array(size);let offset=0;for(const chunk of chunks){bytes.set(chunk,offset);offset+=chunk.byteLength;}
-  const schemaFail=subReason=>Object.freeze({ok:false,reason:'provider_schema_invalid',subReason,bodyBytes:size});
-  let payload;try{payload=JSON.parse(new TextDecoder().decode(bytes));}catch{return schemaFail(size===0?'body_empty':'body_not_json');}
-  if(!payload||typeof payload!=='object'||Array.isArray(payload))return schemaFail('payload_not_object');
-  if(!Array.isArray(payload.response))return schemaFail('response_not_array');
-  if(payload.response.length>maxRows)return fail('provider_row_limit_exceeded');
-  return Object.freeze({ok:true,payload,bodyBytes:size});
+  let payload;try{payload=JSON.parse(new TextDecoder().decode(bytes));}catch{return fail('provider_schema_invalid');}
+  if(!Array.isArray(payload?.response)||payload.response.length>maxRows)return fail(payload?.response?.length>maxRows?'provider_row_limit_exceeded':'provider_schema_invalid');
+  return Object.freeze({ok:true,payload});
 }

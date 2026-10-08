@@ -1,3 +1,7 @@
+## 8 October 2026 — Gate C forensic remediation (repository candidate)
+
+Gate C run `37776873809` failed and is consumed; R1 diagnostics, R2 planner isolation and immutable Version preservation are a repository-only draft. See [Gate C forensic remediation](API-FOOTBALL-GATE-C-FORENSIC-REMEDIATION.md).
+
 ## 8 October 2026 — Gate C readiness hardening (repository candidate)
 
 PR #317 merged Gate C at `f8c9820e290007e1d611ea4adf58a2709714a683`, exact-main Verify `37770135682` passed 2,592/2,592 and deterministic builds. The owner then approved a separate repository-only readiness hardening: synthetic workflow/executor tests and a new dormant, non-consuming read-only admission path. Neither live collection nor a read-only dispatch is authorised by this approval. See [Gate C readiness hardening](API-FOOTBALL-GATE-C-READINESS-HARDENING.md).
@@ -13,6 +17,7 @@ Run `37688525299`, attempt 1, exact main `2516eeec669f3b44001f9cc5d22135dcbe0e23
 # Historical Records Index
 
 - [Gate C readiness hardening](API-FOOTBALL-GATE-C-READINESS-HARDENING.md) — post-merge owner-approved repository-only workflow validation, synthetic executor regression and separately dormant non-consuming read-only admission, with no live dispatch or provider call.
+- [Gate C forensic remediation](API-FOOTBALL-GATE-C-FORENSIC-REMEDIATION.md) — failed consumed run `37776873809`, R1 diagnostics, R2 planner isolation, immutable deployed-Version snapshots and the separate corrected-code identity boundary (repository-only).
 
 - [API-Football Deployed One-Shot Continuation from the Existing Inert Deployment](API-FOOTBALL-DEPLOYED-ONE-SHOT-CONTINUATION.md) — records consumed run `37505586273` (one Deployment POST submitted, immediate classification ambiguous, independent reconciliation proved exact Deployment `2417a3e0-15db-4e45-a3c8-00b148a300f4`, no provider request, production inert, retry forbidden) and the repository-only continuation that reuses that Deployment with a zero-Deployment-mutation ceiling plus the generic apply-by-readback correction; no live dispatch authorized.
 - [API-Football Controlled Deployed One-Shot Shadow Collection](API-FOOTBALL-DEPLOYED-ONE-SHOT-COLLECTION.md) — current repository-only implementation of one owner-gated Deployment-based shadow collection on the original collector with exact admission, workers.dev-only exposure, one trigger, cleanup on every exit and independent reconciliation; not executed live.

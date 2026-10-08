@@ -1,3 +1,5 @@
+> **Superseded in part (8 October 2026):** the statements below that the remediated builder reads the **current tree** describe the original Gate A implementation. The deployed Version `4171f3cf` is now verified from SHA-256-verified byte snapshots of its 17 reviewed modules at `f01ccff5` (see [Gate C forensic remediation](API-FOOTBALL-GATE-C-FORENSIC-REMEDIATION.md)); the module pins, graph hash and metadata hash are unchanged. The current tree is a different identity (`corrected-version-candidate.mjs`).
+
 > **Current state after Gate B:** Gate A run `37680114065` remains consumed. Gate B run `37688525299` successfully promoted its corrected Version `4171f3cf-953e-452e-9e5f-068df9a3ca47` through active Deployment `9b48b57a-e505-4213-9547-fe44835a9bdb`, with final classification `TRANSPORT_REMEDIATED_DEPLOYMENT_PROMOTED_INERT`. Gate B is also consumed. No provider request occurred; Gate C remains separate and unimplemented. See [Gate B live closeout](API-FOOTBALL-TRANSPORT-REMEDIATED-DEPLOYMENT-PROMOTION-CLOSEOUT.md).
 
 # API-Football Remediated Reviewed Version Preparation (Gate A, repository only)

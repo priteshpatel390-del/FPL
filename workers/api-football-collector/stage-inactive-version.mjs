@@ -3,6 +3,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import {fileURLToPath,pathToFileURL} from 'node:url';
 import {EXPECTED_D1_DATABASE_ID} from '../data-platform/phase4b/live-contract.mjs';
+import {readReviewedRemediatedModuleSource} from './reviewed-remediated-snapshots.mjs';
 
 export const STAGING_CONTRACT_VERSION='api-football-inactive-version-staging-v1';
 export const WORKER_NAME='teamsheet-api-football-shadow-collector';
@@ -99,9 +100,13 @@ export const REVIEWED_ATTENDED_MODULE_SNAPSHOTS=Object.freeze({
   'src/decision-intelligence/api-football-foundation.mjs':Object.freeze({file:'workers/api-football-collector/reviewed-attended-module-snapshots/api-football-foundation.mjs.snapshot',sha256:'fecb1e70137c6a6cfda0a63f91f595497a973806a95e6ff500ac3124c29a2b9d'}),
   'workers/api-football-collector/collector.mjs':Object.freeze({file:'workers/api-football-collector/reviewed-attended-module-snapshots/collector.mjs.snapshot',sha256:'15fef416230115fd87226a76ac02513f5d24de5bec88577c61e8ea85ee8e6f77'})
 });
+// The remaining reviewed modules of the attended Version are byte-identical to the corresponding modules of the
+// later deployed Version 4171f3cf (their pinned hashes are equal), and have since been changed in the working
+// tree again (Gate C forensic remediation R1/R2). They are therefore read from the SHA-256-verified historical
+// snapshots, never from the working tree. Pins in attended-version.mjs still prove byte-identity to the attended Version.
 export function readReviewedAttendedModuleSource(repoPath){
   const snapshot=REVIEWED_ATTENDED_MODULE_SNAPSHOTS[repoPath];
-  if(!snapshot)return fs.readFileSync(path.join(root,repoPath),'utf8');
+  if(!snapshot)return readReviewedRemediatedModuleSource(repoPath);
   const source=fs.readFileSync(path.join(root,snapshot.file),'utf8');
   if(createHash('sha256').update(source).digest('hex')!==snapshot.sha256)fail('collector_staging_reviewed_snapshot_drift');
   return source;

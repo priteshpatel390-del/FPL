@@ -1,12 +1,11 @@
 import {API_FOOTBALL_TRANSPORT_DIAGNOSTICS,apiFootballRequestInit,buildPinnedApiFootballUrl,isApiFootballRedirectStatus,isApiFootballTransportDiagnostic,sendApiFootballRequest} from '../../src/decision-intelligence/api-football-foundation.mjs';
 import {createD1CollectorRepository} from './d1-persistence.mjs';
-import {bodyBytesBucket,classifyCompletion,contentTypeClass,httpStatusClass,quotaHeaderState,readBoundedJson,validateCollectorRequest,validatePlannerConfiguration,validateRuntimeActivation,validateRuntimeConfiguration,API_FOOTBALL_MAX_RESPONSE_BYTES} from './runtime-contracts.mjs';
+import {classifyCompletion,readBoundedJson,validateCollectorRequest,validatePlannerConfiguration,validateRuntimeActivation,validateRuntimeConfiguration,API_FOOTBALL_MAX_RESPONSE_BYTES} from './runtime-contracts.mjs';
 import {planScheduledCollection} from './planner-orchestrator.mjs';
 import {validateProviderPayload} from './semantic-validation.mjs';
 import {runOneShotDiscoveryGeneration} from './activation-orchestrator.mjs';
 
 const safe=result=>Object.freeze(result);
-const withHttpClass=(completion,httpClass)=>completion?.ok?safe({...completion,httpClass}):completion;
 export const ATTENDED_ACCEPTANCE_PATH='/__teamsheet/api-football/attended-one-shot';
 export const ATTENDED_TRIGGER_BINDING='API_FOOTBALL_ATTENDED_TRIGGER_SECRET';
 const GENERIC_REJECTION=Object.freeze({status:404,body:'Not found'});
@@ -30,17 +29,14 @@ export async function executeProviderTransport({env,request,fetchImpl=globalThis
     const transportDiagnostic=isApiFootballTransportDiagnostic(sent.transportDiagnostic)?sent.transportDiagnostic:API_FOOTBALL_TRANSPORT_DIAGNOSTICS.UNKNOWN;
     return safe({ok:false,reason:sent.reason,completion,transportDiagnostic});
   }
-  const httpClass=httpStatusClass(sent.response.status);
-  let completion=withHttpClass(classifyCompletion({status:sent.response.status,headers:sent.response.headers,now:now()}),httpClass);
+  let completion=classifyCompletion({status:sent.response.status,headers:sent.response.headers,now:now()});
   if(completion.outcome==='AUTH_FAILURE')return safe({ok:false,reason:'provider_authentication_failed',completion});
   if(sent.response.status===429)return safe({ok:false,reason:'quota_exhausted',completion});
   if(isApiFootballRedirectStatus(sent.response.status))return safe({ok:false,reason:'redirect_rejected',completion});
   if(!sent.response.ok)return safe({ok:false,reason:'provider_unavailable',completion});
-  let decoded;try{decoded=await readBoundedJson(sent.response,{maxBytes:maxResponseBytes});}catch{decoded=safe({ok:false,reason:'provider_schema_invalid',subReason:'body_read_exception'});}
-  // Descriptive only: closed enums and one fixed size bucket. No header value, body byte or provider text.
-  const diagnostic=safe({subReason:decoded.subReason,httpClass,contentTypeClass:contentTypeClass(sent.response.headers),bodyBytesBucket:bodyBytesBucket(decoded.bodyBytes),quotaHeaderState:quotaHeaderState(sent.response.headers)});
-  if(!decoded.ok){completion=safe({...completion,outcome:'SCHEMA_FAILURE'});return safe({ok:false,reason:decoded.reason,completion,diagnostic});}
-  return safe({ok:true,payload:decoded.payload,completion,fetchedAt,diagnostic});
+  let decoded;try{decoded=await readBoundedJson(sent.response,{maxBytes:maxResponseBytes});}catch{decoded=safe({ok:false,reason:'provider_schema_invalid'});}
+  if(!decoded.ok){completion=safe({...completion,outcome:'SCHEMA_FAILURE'});return safe({...decoded,completion});}
+  return safe({ok:true,payload:decoded.payload,completion,fetchedAt});
 }
 
 export function createCollectorExecutionDependencies({env,plan,fetchImpl=globalThis.fetch,timeoutSignal}={}){

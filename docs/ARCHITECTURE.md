@@ -1,3 +1,7 @@
+## Gate C forensic remediation — deployed code, verified snapshots and corrected code are separate identities (8 October 2026)
+
+Gate C run `37776873809` failed and is consumed. The deployed Version `4171f3cf-953e-452e-9e5f-068df9a3ca47` is verified from SHA-256-verified byte snapshots of its 17 reviewed modules at `f01ccff5` (`reviewed-remediated-snapshots.mjs`); the corrected current tree (R2 planner isolation, R1 closed diagnostics) is a distinct, pinned, upload-less identity (`corrected-version-candidate.mjs`) that cannot import or be satisfied by the snapshots. No migration, no new reviewed worker module, no production FPL path. See [Gate C forensic remediation](API-FOOTBALL-GATE-C-FORENSIC-REMEDIATION.md).
+
 ## Gate C readiness hardening architecture — read-only separate from one-shot execution (8 October 2026)
 
 PR #317 merged at `f8c9820e290007e1d611ea4adf58a2709714a683`. The separately approved repository-only hardening candidate adds a **distinct workflow** `api-football-gate-c-readonly-readiness.yml` that invokes only `gate-c-readonly.mjs` in `ADMISSION` mode with protected read-only Cloudflare/D1 inventory. It never invokes the collection executor and does not consume `api-football-gate-c-new-day-collection.yml`'s once-only dispatch. Existing gate identities, provider acquisition and atomic generation writes are unchanged. For synthetic testing only, `executeGateC` now permits injected current-readers/clock with production defaults unchanged. [Hardening record](API-FOOTBALL-GATE-C-READINESS-HARDENING.md).

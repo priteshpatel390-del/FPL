@@ -1,3 +1,17 @@
+## PR #319 verified baseline — Gate C forensic remediation (8 October 2026)
+
+**Exact-head GitHub CI verification.** PR #319 head `c92cd852624ac0a55f5c42a3d9f104d301e200c8`, workflow **Verify Teamsheet** run **`37797495780`** (attempt 1, event `pull_request`) concluded **success**: provenance check, complete `./run-tests.sh` suite, first production build, deterministic rebuild, build-identity check and artifact preservation all passed. **Tests: 2,627 passed, 0 failed.** The two exact-identity production builds are byte-identical, root `index.html` equals the deployable, the manifest commit equals the head and the committed build provenance is verified. This includes the 17 R1/R2 regression tests (`tests/api-football-gate-c-forensic-remediation.test.mjs`) and the 11 historical-Version-preservation tests (`tests/api-football-immutable-version-preservation.test.mjs`), which prove that Version `4171f3cf` still reproduces Gate A's recorded graph hash `03db54c4…8f6cc` and metadata hash `67097c83…b1119` from verified snapshots. The 63 Version-identity tests that failed when the modules were first edited pass without any pin change.
+
+**The earlier 2,592/2,592 figure (main `f8c9820e`, run `37770135682`) is a historical baseline for that merge, not the latest PR verification.** Main `91dfbcbf…` is the PR's base.
+
+**Three evidence levels must not be conflated.**
+
+1. *Exact-head GitHub CI* (above) is the authority for repository correctness.
+2. *Local environment limitations:* a sandbox without the `sqlite3` CLI and with a shallow clone reproduces the same 21 environmental failures on unmodified main and on this branch (19 need `sqlite3`, one needs full git history); they are not regressions and pass in CI. Local results are supporting evidence only.
+3. *Live Cloudflare/API-Football verification of the corrected code has not occurred.* The deployed Version still runs the old code, and no Version carrying R1/R2 has been created, uploaded, deployed or exercised.
+
+**Passing repository tests does not prove the FA Cup issue is fixed, nor that its cause is known.** They prove the diagnostics, isolation and identity preservation behave as specified against synthetic inputs. The exact FA Cup failure predicate remains unknown until a future, separately approved live attempt carries the diagnostics. See [Gate C forensic remediation](API-FOOTBALL-GATE-C-FORENSIC-REMEDIATION.md).
+
 ## Gate C post-merge baseline and read-only hardening regression gate (8 October 2026)
 
 PR #317 merged as main `f8c9820e290007e1d611ea4adf58a2709714a683`; exact-main Verify `37770135682` passed **2,592/2,592**, zero failures, two byte-identical production builds, exact build identity `7cafd62d767c0b98b919b505ec4ec4b48d69ad028b3b3f0e635fe516d235cbbc`. The independently owner-approved *repository-only* hardening candidate adds `tests/api-football-gate-c-hardening.test.mjs` for YAML/inline-JS workflow guards and augments `tests/api-football-gate-c.test.mjs` with actual executor synthetic network tests and read-only admission/reconciliation composition. **Candidate test/build results must come from exact-head CI after all edits**; no new passing count or workflow-runtime acceptance is assumed. No live dispatch is included. [Hardening record](API-FOOTBALL-GATE-C-READINESS-HARDENING.md).
