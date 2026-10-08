@@ -8,12 +8,35 @@ const STATUS=new Set(['TBD','NS','1H','HT','2H','ET','BT','P','SUSP','INT','FT',
 const positive=value=>/^\d+$/.test(String(value))&&Number(value)>0?String(value):null;
 const plan=apiFootballDiscoveryPlan(API_FOOTBALL_FPL_SEASON);
 
+// The returned `reason` stays exactly 'provider_schema_invalid'; `subReason` is a closed enum that names the
+// first failing predicate and never carries provider text. Provider error keys are mapped through a fixed
+// allowlist, and anything else collapses to `other`.
+const schemaFail=subReason=>safe({ok:false,reason:'provider_schema_invalid',subReason});
+const ERROR_KIND_PRIORITY=Object.freeze([['rateLimit','rate_limit'],['requests','requests'],['plan','plan'],['token','credential'],['access','access']]);
+function nonEmptyErrorsSubReason(errors){
+  if(Array.isArray(errors))return 'errors_nonempty_other';
+  const keys=new Set(Object.keys(errors));
+  for(const [key,kind] of ERROR_KIND_PRIORITY)if(keys.has(key))return `errors_nonempty_${kind}`;
+  return 'errors_nonempty_other';
+}
+export function diagnoseDecodeFailure(payload){
+  const keys=payload&&typeof payload==='object'&&!Array.isArray(payload)?Object.keys(payload):[];
+  const exact=['get','parameters','errors','results','paging','response'];
+  if(keys.length!==exact.length||exact.some(key=>!keys.includes(key)))return 'envelope_keys';
+  const paging=payload.paging&&typeof payload.paging==='object'&&!Array.isArray(payload.paging)?Object.keys(payload.paging):null;
+  if(!paging||paging.length!==2||!paging.includes('current')||!paging.includes('total'))return 'paging_shape';
+  return 'envelope_other';
+}
+
 function envelope(payload,request){
-  if(!payload||typeof payload!=='object'||Array.isArray(payload)||payload.get!=='fixtures'||!payload.parameters||typeof payload.parameters!=='object'||Array.isArray(payload.parameters))return fail('provider_schema_invalid');
+  if(!payload||typeof payload!=='object'||Array.isArray(payload))return schemaFail('payload_not_object');
+  if(payload.get!=='fixtures')return schemaFail('get_mismatch');
+  if(!payload.parameters||typeof payload.parameters!=='object'||Array.isArray(payload.parameters))return schemaFail('parameters_shape');
   const errorsEmpty=Array.isArray(payload.errors)?payload.errors.length===0:payload.errors&&typeof payload.errors==='object'&&!Array.isArray(payload.errors)&&Object.keys(payload.errors).length===0;
-  if(!errorsEmpty)return fail('provider_schema_invalid');
+  if(!errorsEmpty)return schemaFail(payload.errors&&typeof payload.errors==='object'?nonEmptyErrorsSubReason(payload.errors):'errors_shape');
   if(payload.paging?.current!==1||payload.paging?.total!==1)return fail('pagination_unsupported');
-  if(!Array.isArray(payload.response)||payload.results!==payload.response.length)return fail('provider_schema_invalid');
+  if(!Array.isArray(payload.response))return schemaFail('response_not_array');
+  if(payload.results!==payload.response.length)return schemaFail(Number.isInteger(payload.results)?'results_count_mismatch':'results_not_integer');
   const expected=Object.fromEntries(Object.entries(request.search).map(([key,value])=>[key,String(value)]));
   const actual=Object.fromEntries(Object.entries(payload.parameters).map(([key,value])=>[key,String(value)]));
   if(Object.keys(actual).length!==Object.keys(expected).length||Object.keys(expected).some(key=>actual[key]!==expected[key]))return fail('response_parameters_mismatch');
@@ -75,7 +98,7 @@ export function validateDiscoveryPayload(payload,request,{fetchedAt,sourceRevisi
   if(!planItem)return fail('competition_identity_invalid');
   if(!validMappings(teamMappings))return fail('qualified_mapping_unavailable');
   const normalized=normalizeApiFootballDiscoveryFixtures(payload,planItem,{fetchedAt,sourceRevision});
-  if(!normalized.ok)return normalized;
+  if(!normalized.ok)return normalized.reason==='provider_schema_invalid'?schemaFail(diagnoseDecodeFailure(payload)):normalized;
   return qualifyRows(normalized.fixtures,teamMappings);
 }
 

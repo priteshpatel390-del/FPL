@@ -1,4 +1,4 @@
-import {API_FOOTBALL_MAX_DISCOVERY_GENERATION_ROWS} from './runtime-contracts.mjs';
+import {API_FOOTBALL_MAX_DISCOVERY_GENERATION_ROWS,composeSchemaFailureClass} from './runtime-contracts.mjs';
 
 export const DISCOVERY_COMPETITION_COUNT=5;
 export const DISCOVERY_MAX_HTTP_ATTEMPTS=5;
@@ -49,9 +49,10 @@ export async function runOneShotDiscoveryGeneration({requests,repository,transpo
     attempts+=1;
     if(attempts>DISCOVERY_MAX_HTTP_ATTEMPTS){await repository.failGeneration(generation.generationId,'attempt_ceiling_exceeded',clock());return fail('attempt_ceiling_exceeded');}
     const transported=await transport(request);
-    if(!transported?.ok){await repository.completeFailure(request,transported?.completion,clock(),admission.runtimeState);await repository.failGeneration(generation.generationId,transported?.reason||'request_failed',clock());return transported||fail('request_failed');}
+    if(!transported?.ok){await repository.completeFailure(request,transported?.completion,clock(),admission.runtimeState);await repository.failGeneration(generation.generationId,composeSchemaFailureClass(transported?.reason||'request_failed',transported?.diagnostic),clock());return transported||fail('request_failed');}
     const semantic=await validate(transported.payload,request,transported.fetchedAt);
-    if(!semantic?.ok){await repository.completeFailure(request,{...transported.completion,outcome:'SCHEMA_FAILURE'},clock(),admission.runtimeState);await repository.failGeneration(generation.generationId,semantic?.reason||'provider_schema_invalid',clock());return semantic||fail('provider_schema_invalid');}
+    // Only the persisted class gains the closed suffix. The returned reason stays provider_schema_invalid.
+    if(!semantic?.ok){await repository.completeFailure(request,{...transported.completion,outcome:'SCHEMA_FAILURE'},clock(),admission.runtimeState);await repository.failGeneration(generation.generationId,composeSchemaFailureClass(semantic?.reason||'provider_schema_invalid',{...transported.diagnostic,subReason:semantic?.subReason}),clock());return semantic||fail('provider_schema_invalid');}
     const ceiling=enforceGenerationCeiling(totalRows,semantic.fixtures.length);
     if(!ceiling.ok){await repository.completeFailure(request,{...transported.completion,outcome:'SCHEMA_FAILURE'},clock(),admission.runtimeState);await repository.failGeneration(generation.generationId,ceiling.reason,clock());return ceiling;}
     const persisted=await repository.persistValidated(request,generation.generationId,semantic.fixtures,clock());
