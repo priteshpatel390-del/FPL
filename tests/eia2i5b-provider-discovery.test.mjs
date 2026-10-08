@@ -820,11 +820,11 @@ test('API-Football discovery stays isolated from production, live config and mig
       assert.match(source,/name: data-steward-readonly/);
       assert.match(source,/deployment: false/);
       assert.match(source,/API_FOOTBALL_CORRECTED_MODE: RECONCILIATION/);
-      assert.match(source,/corrected-version-readonly\\.mjs/);
+      assert.match(source,/corrected-version-readonly\.mjs/);
       assert.match(source,/run-id: 37841681952/);
-      assert.match(source,/github\\.run_attempt == 1/);
+      assert.match(source,/github\.run_attempt == 1/);
       assert.match(source,/Tests and deterministic build/);
-      assert.doesNotMatch(source.replace(/^\\s*#.*$/gm,''),/x-apisports-key|v3\\.football\\.api-sports\\.io|wrangler|run-corrected-version-upload|api-football-corrected-version-upload|VERSION_UPLOAD_TOKEN|API_FOOTBALL_API_KEY|ATTENDED_TRIGGER_SECRET|\\/deployments|^\\s{2}schedule:/im);
+      assert.doesNotMatch(source.replace(/^\s*#.*$/gm,''),/x-apisports-key|v3\.football\.api-sports\.io|wrangler|run-corrected-version-upload|api-football-corrected-version-upload|VERSION_UPLOAD_TOKEN|API_FOOTBALL_API_KEY|ATTENDED_TRIGGER_SECRET|\/deployments|^\s{2}schedule:/im);
       continue;
     }
     if(file==='api-football-corrected-version-readonly-admission.yml'){
