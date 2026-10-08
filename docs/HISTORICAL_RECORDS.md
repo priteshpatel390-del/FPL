@@ -1,3 +1,7 @@
+## 8 October 2026 — Corrected R1/R2 Version preparation foundation (repository-only)
+
+A separately approved repository-only candidate for a new, immutable R1/R2 collector Version uses exact current-tree 17-module hashes, a future creation-SHA identity, a dormant one-POST-only workflow, four-Version/two-Deployment non-pristine admission and independent inert reconciliation. No live upload, Cloudflare/D1 operation, provider call or merge is authorised. See [Corrected R1/R2 Version preparation](API-FOOTBALL-CORRECTED-VERSION-PREPARATION.md).
+
 ## 8 October 2026 — Gate C forensic remediation (repository candidate)
 
 Gate C run `37776873809` failed and is consumed; R1 diagnostics, R2 planner isolation and immutable Version preservation are a repository-only draft. See [Gate C forensic remediation](API-FOOTBALL-GATE-C-FORENSIC-REMEDIATION.md).
@@ -16,6 +20,7 @@ Run `37688525299`, attempt 1, exact main `2516eeec669f3b44001f9cc5d22135dcbe0e23
 
 # Historical Records Index
 
+- [Corrected R1/R2 Version preparation](API-FOOTBALL-CORRECTED-VERSION-PREPARATION.md) — distinct immutable source identity, five-attempt/two-failed-generation admission and owner-gated inert Version upload/reconciliation, with no live action authorised.
 - [Gate C readiness hardening](API-FOOTBALL-GATE-C-READINESS-HARDENING.md) — post-merge owner-approved repository-only workflow validation, synthetic executor regression and separately dormant non-consuming read-only admission, with no live dispatch or provider call.
 - [Gate C forensic remediation](API-FOOTBALL-GATE-C-FORENSIC-REMEDIATION.md) — failed consumed run `37776873809`, R1 diagnostics, R2 planner isolation, immutable deployed-Version snapshots and the separate corrected-code identity boundary (repository-only).
 
