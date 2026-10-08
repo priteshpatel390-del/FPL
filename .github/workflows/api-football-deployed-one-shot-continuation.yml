@@ -1,3 +1,6 @@
+# CONSUMED (run 37511401491, attempt 1): DO NOT DISPATCH AGAIN. Provider attempt 1 is permanently TRANSPORT_UNKNOWN.
+# Its pristine-history admission no longer holds and it selects the superseded old Version 04d79556-3070-429f-9944-b5b53d799842.
+# Gate C uses a distinct, separately owner-gated workflow and corrected promoted Version; historical continuation is never retry authority.
 # Dormant owner-gated CONTINUATION of the deployed one-shot API-Football shadow collection on the ORIGINAL collector.
 # Run 37505586273 (consumed, never rerun) submitted the single Deployment POST; independent readback proved Deployment
 # 2417a3e0-15db-4e45-a3c8-00b148a300f4 exists and selects the reviewed attended Version at 100%, with production inert.
