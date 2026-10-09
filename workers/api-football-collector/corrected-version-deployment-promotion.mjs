@@ -142,8 +142,8 @@ export function makeExecution({executionSha,outcome='NOT_SUBMITTED',deploymentId
 }
 const wait=ms=>new Promise(resolve=>setTimeout(resolve,ms));
 export async function executePromotion({env=process.env,fetchImpl=globalThis.fetch,routeScan=readReplacementRouteTopology,delay=wait}={}){
-  let attempts=0,executionSha=env.EXECUTION_SHA??null;
-  const evidence=(outcome,id=null,reads=0)=>makeExecution({executionSha,outcome,deploymentId:id,deploymentPosts:attempts,readbackAttempts:reads});
+  let guard=null,executionSha=env.EXECUTION_SHA??null;
+  const evidence=(outcome,id=null,reads=0)=>makeExecution({executionSha,outcome,deploymentId:id,deploymentPosts:guard?.counters.deploymentPostAttempts??0,readbackAttempts:reads});
   try{
     if(env.GITHUB_RUN_ATTEMPT!=='1'||env.GITHUB_REF!=='refs/heads/main'||env.GITHUB_SHA!==executionSha)
       fail('RUN_IDENTITY_INVALID');
@@ -158,7 +158,7 @@ export async function executePromotion({env=process.env,fetchImpl=globalThis.fet
     const admission=JSON.parse(fs.readFileSync(env.CORRECTED_PROMOTION_ADMISSION_PATH,'utf8'));
     validateAdmission(admission,{executionSha,accountFingerprint:fingerprint});
     const body=deploymentBody(executionSha);
-    const guard=createPromotionGuardedFetch({accountId,readToken,promotionToken,topologyToken,expectedBody:body,fetchImpl});
+    guard=createPromotionGuardedFetch({accountId,readToken,promotionToken,topologyToken,expectedBody:body,fetchImpl});
     const paths=promotionPaths(accountId);
     const settings=await readFreshPromotionInertState({guardedFetch:guard.fetch,paths,readToken});
     const deployments=await readPromotionDeploymentRows({accountId,readToken,fetchImpl:guard.fetch});
@@ -168,7 +168,7 @@ export async function executePromotion({env=process.env,fetchImpl=globalThis.fet
     const url='https://api.cloudflare.com/client/v4'+paths.deployments;
     let response=null,payload=null;
     try{
-      attempts=1;response=await guard.fetch(url,{method:'POST',redirect:'manual',
+      response=await guard.fetch(url,{method:'POST',redirect:'manual',
         headers:{Authorization:'Bearer '+promotionToken,Accept:'application/json','Content-Type':'application/json'},
         body,signal:AbortSignal.timeout(30000)});
       payload=await response.json();
@@ -187,7 +187,7 @@ export async function executePromotion({env=process.env,fetchImpl=globalThis.fet
       if(!same(result,admission.deployments))return evidence('AMBIGUOUS_OWNER_ATTENTION',null,i+1);
     }
     return evidence('AMBIGUOUS_OWNER_ATTENTION',null,3);
-  }catch{return evidence(attempts>0?'AMBIGUOUS_OWNER_ATTENTION':'NOT_SUBMITTED');}
+  }catch{return evidence((guard?.counters.deploymentPostAttempts??0)>0?'AMBIGUOUS_OWNER_ATTENTION':'NOT_SUBMITTED');}
 }
 export async function main(){
   const result=await executePromotion();
