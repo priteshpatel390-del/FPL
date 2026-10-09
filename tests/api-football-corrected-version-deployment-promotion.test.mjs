@@ -31,10 +31,15 @@ const qualification={ok:true,classification:PREPARED,createdVersionId:CANDIDATE_
   metadataSha256:METADATA_SHA256,retryAuthorized:false,
   evidence:{deploymentMutations:0,d1Mutations:0,apiFootballRequests:0,workerInvocations:0},
   observed:{versionCount:5,deploymentCount:2,history:{requestAttempts:5},detail:{totalMemberships:824,quotaState:'QUOTA_UNCERTAIN'}}};
+const MAPPING={state:'COMMITTED',mappingCount:20,memberCount:20};
+const OFFICIAL={valid:true,teamCount:20};
+const RUNTIME={collectionEnabled:0,credentialState:'AVAILABLE',activeLease:false};
+const digest=()=>sha(JSON.stringify([{requestAttempts:5},{totalMemberships:824},
+  MAPPING,OFFICIAL,0,false,RUNTIME]));
 const admission={contract:ADMISSION_CONTRACT,ok:true,executionSha:EXECUTION_SHA,creationSha:CREATION_SHA,
   candidateId:CANDIDATE_ID,graphSha256:GRAPH_SHA256,metadataSha256:METADATA_SHA256,
   accountFingerprint:FINGERPRINT,versionIds:[...EXPECTED_IDS].sort(),deployments:before,
-  topology:ZONE,historyDigest:sha(JSON.stringify([{requestAttempts:5},{totalMemberships:824}])),
+  topology:ZONE,historyDigest:digest(),
   retryAuthorized:false,evidence:{deploymentPosts:0,d1Writes:0,apiFootballRequests:0,workerInvocations:0}};
 
 test('new candidate is the independently qualified five-Version identity, NEVER the old consumed Gate B candidate',()=>{
@@ -132,7 +137,8 @@ test('complete synthetic post-promotion with valid 17 byte hashes and inert topo
   beta:{id:CANDIDATE_ID,main_module:'collector.mjs',compatibility_date:'2026-09-16',
     annotations:{...identity.metadata.annotations,'workers/triggered_by':'version_upload'},urls:[],modules}};
   const report={inventory:{deploymentCount:3,workersDev:false,previewUrls:false,cronCount:0,routeCount:0,customDomainCount:0},
-    runtime:{collectionEnabled:0,credentialState:'AVAILABLE',activeLease:false},priorState:{requestAttempts:5}};
+    runtime:RUNTIME,priorState:{requestAttempts:5},mapping:MAPPING,officialFplAuthority:OFFICIAL,
+    modelUiImportCount:0,rawPayloadStoragePresent:false};
   const state={deployments:after,versions:{versionIds:EXPECTED_IDS,identityExact:true,candidate},report,
     detail:{totalMemberships:824},topology:ZONE};
   const execution=makeExecution({executionSha:EXECUTION_SHA,outcome:'CREATED',deploymentId:NEW,deploymentPosts:1});
@@ -144,6 +150,12 @@ test('complete synthetic post-promotion with valid 17 byte hashes and inert topo
   const modified=structuredClone(state);
   modified.versions.candidate.beta.modules[0].content_base64=Buffer.from('tampered').toString('base64');
   assert.equal(classifyPost({admission,state:modified,execution}).ok,false,'tampered corrected module must fail');
+  const mappingDrift=structuredClone(state);mappingDrift.report.mapping.mappingCount=19;
+  assert.equal(classifyPost({admission,state:mappingDrift,execution}).ok,false,'qualified 20/20 mapping must not drift');
+  const officialDrift=structuredClone(state);officialDrift.report.officialFplAuthority.teamCount=19;
+  assert.equal(classifyPost({admission,state:officialDrift,execution}).ok,false,'Official FPL authority must not drift');
+  const runtimeDrift=structuredClone(state);runtimeDrift.report.runtime.credentialState='UNAVAILABLE';
+  assert.equal(classifyPost({admission,state:runtimeDrift,execution}).ok,false,'provider credential readiness must not drift');
   const changed=structuredClone(state);changed.report.priorState.requestAttempts=6;
   assert.equal(classifyPost({admission,state:changed,execution}).ok,false,'historical request count must not drift');
   const exposed=structuredClone(state);
