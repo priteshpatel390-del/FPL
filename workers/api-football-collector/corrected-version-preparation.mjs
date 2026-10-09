@@ -64,31 +64,51 @@ export function buildCorrectedUploadForm(identity,{apiKey,triggerSecret}={}){
     form.set(name,new File([source],name,{type:'application/javascript+module'}));
   return form;
 }
+// Closed, sanitised sub-reasons for a rejected returned Version. Each is a fixed repository-owned token; no remote value,
+// module name, binding name or hash is ever interpolated, so the reason cannot carry provider text or secret material.
+export const CORRECTED_VERSION_FAILURE_REASONS=Object.freeze([
+  'version_identity_invalid','version_response_incomplete','runtime_compatibility_date_mismatch','main_module_mismatch',
+  'beta_compatibility_date_mismatch','annotations_mismatch','bindings_response_incomplete','binding_count_mismatch',
+  'binding_missing','binding_type_mismatch','d1_binding_identity_mismatch','plain_text_binding_mismatch',
+  'secret_binding_value_exposed','version_url_present','external_dependency_present','modules_response_incomplete',
+  'module_count_mismatch','module_name_duplicate','module_unexpected','module_content_encoding_invalid','module_content_mismatch'
+]);
+const reasonFail=(prefix,reason)=>{throw new Error(prefix+'__'+reason);};
 export function validateCorrectedVersion({stable,beta,versionId,identity}={}){
   if(!identity||identity.contract!==CORRECTED_PREPARATION_CONTRACT||!uuid(versionId)||
     CORRECTED_HISTORICAL_VERSION_IDS.includes(versionId)||stable?.id!==versionId||beta?.id!==versionId)
-    fail('corrected_version_identity_invalid');
-  if(stable?.resources?.script_runtime?.compatibility_date!==EXPECTED_COMPATIBILITY_DATE||
-    beta?.compatibility_date!==EXPECTED_COMPATIBILITY_DATE||beta?.main_module!==ENTRY_MODULE||
-    !same(beta?.annotations,identity.metadata.annotations))fail('corrected_version_metadata_drift');
+    reasonFail('corrected_version_identity_invalid','version_identity_invalid');
+  const meta=reason=>reasonFail('corrected_version_metadata_drift',reason);
+  if(stable?.resources?.script_runtime?.compatibility_date===undefined||beta?.compatibility_date===undefined||beta?.annotations===undefined)
+    meta('version_response_incomplete');
+  if(stable.resources.script_runtime.compatibility_date!==EXPECTED_COMPATIBILITY_DATE)meta('runtime_compatibility_date_mismatch');
+  if(beta.main_module!==ENTRY_MODULE)meta('main_module_mismatch');
+  if(beta.compatibility_date!==EXPECTED_COMPATIBILITY_DATE)meta('beta_compatibility_date_mismatch');
+  if(!same(beta.annotations,identity.metadata.annotations))meta('annotations_mismatch');
+  const bind=reason=>reasonFail('corrected_version_bindings_drift',reason);
   const expected=identity.metadata.bindings,got=stable.resources?.bindings;
-  if(!Array.isArray(got)||got.length!==expected.length||new Set(got.map(x=>x.name)).size!==expected.length)
-    fail('corrected_version_bindings_drift');
+  if(!Array.isArray(got))bind('bindings_response_incomplete');
+  if(got.length!==expected.length||new Set(got.map(x=>x?.name)).size!==expected.length)bind('binding_count_mismatch');
   for(const binding of expected){
-    const actual=got.find(x=>x.name===binding.name);
-    if(!actual||actual.type!==binding.type||
-      (binding.type==='d1'&&actual.database_id!==binding.database_id)||
-      (binding.type==='plain_text'&&actual.text!==binding.text)||
-      (binding.type==='secret_text'&&Object.hasOwn(actual,'text')))fail('corrected_version_bindings_drift');
+    const actual=got.find(x=>x?.name===binding.name);
+    if(!actual)bind('binding_missing');
+    if(actual.type!==binding.type)bind('binding_type_mismatch');
+    if(binding.type==='d1'&&actual.database_id!==binding.database_id)bind('d1_binding_identity_mismatch');
+    if(binding.type==='plain_text'&&actual.text!==binding.text)bind('plain_text_binding_mismatch');
+    if(binding.type==='secret_text'&&Object.hasOwn(actual,'text'))bind('secret_binding_value_exposed');
   }
-  if(beta.urls!==undefined&&(!Array.isArray(beta.urls)||beta.urls.length!==0))fail('corrected_version_url_present');
+  if(beta.urls!==undefined&&(!Array.isArray(beta.urls)||beta.urls.length!==0))reasonFail('corrected_version_url_present','version_url_present');
   if(beta.package_dependencies!==undefined&&(!Array.isArray(beta.package_dependencies)||beta.package_dependencies.length!==0))
-    fail('corrected_version_external_dependency');
-  const list=beta.modules;
-  if(!Array.isArray(list)||list.length!==17||new Set(list.map(m=>m.name)).size!==17||
-    !list.every(m=>Object.hasOwn(identity.moduleSha256,m.name)&&typeof m.content_base64==='string'&&
-      sha(Buffer.from(m.content_base64,'base64'))===identity.moduleSha256[m.name]))
-    fail('corrected_version_module_drift');
+    reasonFail('corrected_version_external_dependency','external_dependency_present');
+  const mod=reason=>reasonFail('corrected_version_module_drift',reason),list=beta.modules;
+  if(!Array.isArray(list))mod('modules_response_incomplete');
+  if(list.length!==17)mod('module_count_mismatch');
+  if(new Set(list.map(m=>m?.name)).size!==17)mod('module_name_duplicate');
+  for(const m of list){
+    if(!m||typeof m.name!=='string'||!Object.hasOwn(identity.moduleSha256,m.name))mod('module_unexpected');
+    if(typeof m.content_base64!=='string')mod('module_content_encoding_invalid');
+    if(sha(Buffer.from(m.content_base64,'base64'))!==identity.moduleSha256[m.name])mod('module_content_mismatch');
+  }
   return true;
 }
 export function correctedHistoryDiagnostic(history,detail){
@@ -178,8 +198,15 @@ export function classifyCorrectedReconciliation({admission,report,detail,deploym
     !['CREATED','APPLIED_CONFIRMED_BY_READBACK'].includes(created.outcome)||
     !uuid(created.versionId)||!ids(versions?.versionIds,[...CORRECTED_HISTORICAL_VERSION_IDS,created.versionId])||
     !versions?.identityExact)return stop('version_creation_unproven');
+  // Missing stable/beta evidence is incomplete evidence, never reported as a byte or metadata mismatch.
+  if(!versions.candidate?.stable||!versions.candidate?.beta||typeof versions.candidate.stable!=='object'||typeof versions.candidate.beta!=='object')
+    return stop('corrected_version_evidence_unavailable');
   try{validateCorrectedVersion({stable:versions.candidate?.stable,beta:versions.candidate?.beta,versionId:created.versionId,identity});}
-  catch{return stop('corrected_version_byte_or_metadata_drift');}
+  catch(error){
+    // Aggregate prefix is unchanged; the suffix is one closed token from CORRECTED_VERSION_FAILURE_REASONS, else omitted.
+    const token=String(error?.message).split('__')[1];
+    return stop('corrected_version_byte_or_metadata_drift'+(CORRECTED_VERSION_FAILURE_REASONS.includes(token)?':'+token:''));
+  }
   return frozen({ok:true,version:CORRECTED_RECONCILIATION_CONTRACT,classification:CORRECTED_PREPARED,
     createdVersionId:created.versionId,graphSha256:identity.graphSha256,metadataSha256:identity.metadataSha256,
     retryAuthorized:false,evidence:frozen({deploymentMutations:0,d1Mutations:0,apiFootballRequests:0,workerInvocations:0})});

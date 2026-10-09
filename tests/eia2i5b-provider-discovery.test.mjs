@@ -659,6 +659,8 @@ test('API-Football discovery stays isolated from production, live config and mig
     'api-football-gate-c-readonly-readiness.yml',
     'api-football-remediated-version-preparation.yml',
     'api-football-corrected-version-preparation.yml',
+    // Owner-approved DORMANT forensic GET/SELECT-only replay; no upload capability or dispatch approval.
+    'api-football-corrected-version-forensic-replay.yml',
     'api-football-corrected-version-readonly-admission.yml',
     'api-football-remediated-deployment-promotion.yml',
     'api-football-version-url-lifecycle-observation.yml',
@@ -810,6 +812,19 @@ test('API-Football discovery stays isolated from production, live config and mig
       assert.match(source,/Tests and deterministic build/);
       assert.match(source,/group: api-football-collector-attended-acceptance/);
       assert.doesNotMatch(source.replace(/^\s*#.*$/gm,''),/x-apisports-key|v3\.football\.api-sports\.io|wrangler\s+deploy|CLOUDFLARE_ATTENDED_MUTATION_TOKEN|CLOUDFLARE_ATTENDED_D1_MUTATION_TOKEN|x-teamsheet-attended-trigger|^\s{2}schedule:/im);
+      continue;
+    }
+    if(file==='api-football-corrected-version-forensic-replay.yml'){
+      // Explicitly allow the narrowly scoped forensic replay, while preserving provider isolation.
+      assert.match(source,/name: API-Football Corrected Version Forensic Replay/);
+      assert.match(source,/name: data-steward-readonly/);
+      assert.match(source,/deployment: false/);
+      assert.match(source,/API_FOOTBALL_CORRECTED_MODE: RECONCILIATION/);
+      assert.match(source,/corrected-version-readonly\.mjs/);
+      assert.match(source,/run-id: 37841681952/);
+      assert.match(source,/github\.run_attempt == 1/);
+      assert.match(source,/Tests and deterministic build/);
+      assert.doesNotMatch(source.replace(/^\s*#.*$/gm,''),/x-apisports-key|v3\.football\.api-sports\.io|wrangler|run-corrected-version-upload|api-football-corrected-version-upload|VERSION_UPLOAD_TOKEN|API_FOOTBALL_API_KEY|ATTENDED_TRIGGER_SECRET|\/deployments|^\s{2}schedule:/im);
       continue;
     }
     if(file==='api-football-corrected-version-readonly-admission.yml'){

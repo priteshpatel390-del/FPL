@@ -231,3 +231,92 @@ test('protected upload job maps CLOUDFLARE_TOPOLOGY_READ_TOKEN from the replacem
   assert.match(job,/CLOUDFLARE_TOPOLOGY_READ_TOKEN: \$\{\{ secrets\.CLOUDFLARE_REPLACEMENT_TOPOLOGY_READ_TOKEN \}\}/);
   assert.doesNotMatch(text,/secrets\.CLOUDFLARE_TOPOLOGY_READ_TOKEN\b/);
 });
+
+// ---- Forensic sub-reason diagnostics (run 37841681952 reported only the aggregate corrected_version_byte_or_metadata_drift) ----
+const reasonOf=(mutate)=>candidateVersion().then(v=>{const x=structuredClone(v);mutate(x);
+  try{validateCorrectedVersion({...x,versionId:ID,identity:source()});return null;}catch(e){return e.message;}});
+test('rejections carry one closed sanitised sub-reason and the exact valid response is still accepted',async()=>{
+  assert.equal(await reasonOf(()=>{}),null);
+  const cases=[
+    [x=>{x.beta.modules[0].content_base64=b64('corrupted');},'module_content_mismatch'],
+    [x=>{x.beta.modules.pop();},'module_count_mismatch'],
+    [x=>{x.beta.modules[1].name='modules/unexpected.mjs';},'module_unexpected'],
+    [x=>{x.beta.modules[1]={...x.beta.modules[0]};},'module_name_duplicate'],
+    [x=>{x.beta.modules[0].content_base64=undefined;},'module_content_encoding_invalid'],
+    [x=>{delete x.beta.modules;},'modules_response_incomplete'],
+    [x=>{x.stable.resources.script_runtime.compatibility_date='2026-01-01';},'runtime_compatibility_date_mismatch'],
+    [x=>{x.beta.compatibility_date='2026-01-01';},'beta_compatibility_date_mismatch'],
+    [x=>{delete x.beta.compatibility_date;},'version_response_incomplete'],
+    [x=>{x.beta.main_module='other.mjs';},'main_module_mismatch'],
+    [x=>{x.beta.annotations['workers/tag']='wrong';},'annotations_mismatch'],
+    [x=>{x.stable.resources.bindings.pop();},'binding_count_mismatch'],
+    [x=>{x.stable.resources.bindings.find(b=>b.type==='d1').database_id='x';},'d1_binding_identity_mismatch'],
+    [x=>{x.stable.resources.bindings.find(b=>b.type==='secret_text').text=API_KEY;},'secret_binding_value_exposed'],
+    [x=>{delete x.stable.resources.bindings;},'bindings_response_incomplete'],
+    [x=>{x.beta.urls=['https://x'];},'version_url_present'],
+    [x=>{x.beta.package_dependencies=[{}];},'external_dependency_present']
+  ];
+  for(const [mutate,token] of cases){
+    const message=await reasonOf(mutate);
+    assert.match(message,new RegExp('__'+token+'$'),token);
+    for(const secret of [API_KEY,TRIGGER,ACCOUNT])assert.equal(message.includes(secret),false);
+  }
+});
+test('reconciliation surfaces the closed sub-reason, flags missing evidence separately and never claims success',async()=>{
+  const identity=source(),admission=admit();
+  const v=await candidateVersion();v.beta.annotations={...v.beta.annotations,'workers/tag':'wrong'};
+  const created={version:'api-football-corrected-r1-r2-version-execution-v1',approvedSha:SHA,retryAuthorized:false,versionUploadAttempts:1,
+    productionMutations:1,identity:{creationSha:SHA,graphSha256:identity.graphSha256,metadataSha256:identity.metadataSha256,moduleCount:17},
+    admission,deploymentMutations:0,d1Mutations:0,workersDevMutations:0,previewMutations:0,cronMutations:0,routeMutations:0,
+    domainMutations:0,workerInvocations:0,apiFootballRequests:0,secretValuesSerialized:0,outcome:'CREATED',versionId:ID};
+  const input=cand=>({admission,report:admission.preflight,detail:admission.detail,deployments:admission.deployments,topology:admission.topology,
+    versions:{versionIds:[...CORRECTED_HISTORICAL_VERSION_IDS,ID],identityExact:true,candidate:cand},created,identity,approvedSha:SHA,accountFingerprint:FINGERPRINT});
+  const bad=classifyCorrectedReconciliation(input(v));
+  assert.equal(bad.ok,false);assert.equal(bad.reason,'corrected_version_byte_or_metadata_drift:annotations_mismatch');
+  for(const cand of [null,{stable:null,beta:null}]){
+    const r=classifyCorrectedReconciliation(input(cand));assert.equal(r.ok,false);assert.equal(r.reason,'corrected_version_evidence_unavailable');
+  }
+  const good=classifyCorrectedReconciliation(input(await candidateVersion()));
+  assert.equal(good.ok,true);assert.equal(good.retryAuthorized,false);
+});
+
+test('dormant corrected Version forensic replay is immutable-artifact pinned, main-only and read-only',()=>{
+  const w=read('.github/workflows/api-football-corrected-version-forensic-replay.yml');
+  assert.match(w,/name: API-Football Corrected Version Forensic Replay/);
+  assert.match(w,/on:\n  workflow_dispatch:/);
+  assert.doesNotMatch(w,/\b(?:schedule|push|pull_request|workflow_run):/);
+  assert.match(w,/github\.event_name == 'workflow_dispatch' && github\.run_attempt == 1/);
+  assert.match(w,/test "\$EVENT_REF" = refs\/heads\/main/);
+  assert.match(w,/git ls-remote https:\/\/github\.com\/priteshpatel390-del\/FPL\.git refs\/heads\/main/);
+  assert.match(w,/Tests and deterministic build/);
+  assert.match(w,/name: data-steward-readonly\n\s+deployment: false/);
+  assert.match(w,/run-id: 37841681952/);
+  assert.match(w,/name: corrected-version-execution/);
+  assert.match(w,/dfac83bfc4bd67baa5dad7b59a8c51bc6f9d29ba474a0afe1c6513fa66629e43/);
+  assert.match(w,/approvedSha!=='073ac6a53d09f004e5ada5b94fb1cea6df3ef228'/);
+  assert.match(w,/versionId!=='509f5a98-38fc-4e58-8a26-1b8fc4c9c787'/);
+  assert.match(w,/versionUploadAttempts!==1/);
+  assert.match(w,/retryAuthorized!==false/);
+  assert.match(w,/API_FOOTBALL_CORRECTED_MODE: RECONCILIATION/);
+  assert.match(w,/API_FOOTBALL_CORRECTED_EXECUTION_PATH:/);
+  assert.match(w,/node workers\/api-football-collector\/corrected-version-readonly\.mjs/);
+  assert.match(w,/if: always\(\)/);
+  assert.match(w,/name: corrected-version-forensic-replay/);
+  for(const forbidden of ['run-corrected-version-upload','api-football-corrected-version-preparation.yml',
+    'CLOUDFLARE_ATTENDED_VERSION_UPLOAD_TOKEN','API_FOOTBALL_API_KEY',
+    'API_FOOTBALL_ATTENDED_TRIGGER_SECRET','CLOUDFLARE_ATTENDED_MUTATION_TOKEN',
+    'run-gate-c.mjs','wrangler deploy','workers/scripts/','versions POST'])
+    assert.equal(w.includes(forbidden),false,'forbidden forensic workflow capability: '+forbidden);
+});
+test('forensic replay aborts on absent, altered or mismatched original evidence and cannot approve deployment',()=>{
+  const w=read('.github/workflows/api-football-corrected-version-forensic-replay.yml');
+  const pinnedHash=w.indexOf('sha256sum "$REPORT"'),parse=w.indexOf("const v=JSON.parse");
+  const replay=w.indexOf('Replay independent reconciliation');
+  assert.ok(pinnedHash>=0&&parse>pinnedHash&&replay>parse);
+  for(const field of ['approvedSha','creationSha','moduleCount','versionId','outcome','versionUploadAttempts',
+    'productionMutations','retryAuthorized','deploymentMutations','d1Mutations','apiFootballRequests','workerInvocations'])
+    assert.ok(w.includes(field),'original evidence guard '+field);
+  const headers=w.split('\n').filter(x=>/^(permissions:|  contents:|  actions:|  checks:)/.test(x));
+  assert.deepEqual(headers,['permissions:','  contents: read','  actions: read','  checks: read']);
+  assert.doesNotMatch(w,/\b(?:CLOUDFLARE_ATTENDED_VERSION_UPLOAD_TOKEN|run-corrected-version-upload\.mjs|wrangler\s+(?:deploy|publish))\b/i);
+});

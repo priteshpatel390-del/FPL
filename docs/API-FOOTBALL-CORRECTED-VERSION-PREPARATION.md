@@ -51,3 +51,28 @@ This work proves only repository contracts on synthetic fixtures, **not** fresh 
 7. Owner separately designs/approves a **new** live collection gate able to handle non-pristine history and quota uncertainty, without reusing Gate C run `37776873809`.
 
 Every checkpoint stops unless newly and explicitly authorised.
+## Post-upload reconciliation failure forensics — run 37841681952 (8 October 2026)
+
+Run `37841681952` (main `073ac6a53d09f004e5ada5b94fb1cea6df3ef228`, attempt 1) uploaded Version `509f5a98-38fc-4e58-8a26-1b8fc4c9c787` (outcome `CREATED`, one POST) and then stopped in independent reconciliation with `corrected_version_byte_or_metadata_drift`. That string was an aggregate: `validateCorrectedVersion()` threw on any of about twenty conditions and the catch collapsed them all.
+
+**Verified:** the reconciliation job log carries only the aggregate reason; the reconciliation artifact is 695 bytes and holds no Version-level detail. The protected upload job started 7 seconds after creation, so no environment-reviewer wait occurred (the workflow correctly declares `api-football-corrected-version-upload`; reviewer enforcement is GitHub environment configuration that this repository cannot read or set).
+
+**Not verified:** which condition failed. Live Cloudflare Version JSON and the artifact blobs were not retrievable in the investigating session. The root cause is therefore **unproven**; the candidate Version is **unqualified**, neither verified nor shown to differ.
+
+**Hypothesis, not a finding:** the corrected validator compares the whole `annotations` object, while every previously live-proven validator (attended, transport-remediated) checks only `workers/message` and `workers/tag`. If Cloudflare adds its own annotation keys, a whole-object comparison would reject an identical Version. This must be confirmed from the real response before any comparison is changed.
+
+**Change (diagnostics only, no acceptance rule altered):** rejections now carry one closed sub-reason from `CORRECTED_VERSION_FAILURE_REASONS` (for example `annotations_mismatch`, `module_content_mismatch`, `binding_type_mismatch`). Reconciliation reports `corrected_version_byte_or_metadata_drift:<sub-reason>`; missing stable/beta evidence is reported as `corrected_version_evidence_unavailable` rather than as a mismatch. No remote value, name or hash is ever placed in a reason.
+
+**Next:** a separately approved read-only re-check of Version `509f5a98…` using these diagnostics. No upload, Deployment or collection is authorised by this change.
+
+**Owner action (external):** in GitHub → Settings → Environments, confirm `api-football-corrected-version-upload` has Required reviewers and that self-review is not allowed to bypass the pause you expect.
+
+## Read-only forensic replay for already-created Version 509f5a98 (pending owner dispatch)
+
+**8 October 2026.** The first corrected upload attempt run `37833971783` stopped `NOT_SUBMITTED` due to `CORRECTED_ACCOUNT_MISMATCH`; that run is consumed. The second, separately approved run `37841681952` successfully created one *inactive* Version `509f5a98-38fc-4e58-8a26-1b8fc4c9c787`, but independent reconciliation stopped with `corrected_version_byte_or_metadata_drift` (exact failing condition unknown). Last observed: five Versions, two Deployments, 824 failed-generation memberships, zero committed discovery heads. The Version **is not qualified for Deployment**. Run `37841681952` is also consumed; neither run may be re-run, and no new upload is authorised.
+
+A separate **dormant, manual-only, strictly read-only** workflow `.github/workflows/api-football-corrected-version-forensic-replay.yml` is proposed to replay the original reconciliation against this *already-created* Version. It does not call the upload executor. It requires fresh latest-main identity and exact-head Verify Teamsheet success; retrieves only the original `corrected-version-execution` artifact from run `37841681952`; validates the exact report SHA-256 `dfac83bfc4bd67baa5dad7b59a8c51bc6f9d29ba474a0afe1c6513fa66629e43`, creation SHA, target Version ID and zero non-Version mutation evidence; then executes `corrected-version-readonly.mjs` in `RECONCILIATION` mode. The source identity is the immutable creation commit `073ac6a53d09f004e5ada5b94fb1cea6df3ef228`, even though the replay workflow must run on a **newer verified main** after merge. The result is one sanitised JSON artifact, including a **closed sub-reason** for any rejecting validator; no Version payload, module bytes, tokens, secrets, or raw provider values are recorded.
+
+The replay uses only the existing `data-steward-readonly` environment and read/topology credentials. Existing readers perform Cloudflare GETs, and tightly fixed **SELECT-only D1 SQL** sent through Cloudflare's D1 query POST endpoint; no mutation SQL or provider request. The replay has no Version-upload token, provider key, trigger secret, Deployment authority, or automatic retry. Its artifact download expires with the source artifact retention window: if unavailable or the byte hash differs, the job must **fail before Cloudflare access**. This repository change **does not authorise dispatch**. A future dispatch requires separate approval, and a diagnostic result is **not** evidence the Version is qualified unless all strict invariants actually pass.
+
+The unexpected lack of visible GitHub environment reviewer wait remains an **unresolved external configuration/approval-gate concern**. This read-only workflow does not attempt to change environment protection. Before any later mutating workflow, independently verify that GitHub required reviewer rules are enforced; elapsed job timing alone cannot prove bypass or approval.
