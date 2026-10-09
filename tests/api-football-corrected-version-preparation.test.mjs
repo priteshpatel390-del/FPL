@@ -103,6 +103,62 @@ test('corrected Version validates independent module bytes, immutable SHA and me
   assert.throws(()=>validateCorrectedVersion({...leaked,versionId:ID,identity:source()}),/bindings_drift/);
   assert.throws(()=>validateCorrectedVersion({...v,versionId:CORRECTED_HISTORICAL_VERSION_IDS[0],identity:source()}),/identity_invalid/);
 });
+test('corrected Version accepts only typed Cloudflare-origin metadata beyond the exact creation-SHA annotations',async()=>{
+  const v=await candidateVersion(),identity=source(),required=v.beta.annotations;
+  for(const annotations of [
+    {...required},
+    {'workers/tag':required['workers/tag'],'workers/message':required['workers/message']},
+    {...required,'workers/triggered_by':'version_upload'},
+    {'workers/triggered_by':'version_upload','workers/tag':required['workers/tag'],'workers/message':required['workers/message']},
+    {...required,'workers/triggered_by':''}
+  ]){
+    assert.equal(validateCorrectedVersion({...v,beta:{...v.beta,annotations},versionId:ID,identity}),true);
+  }
+  assert.deepEqual(identity.metadata.annotations,required,'immutable upload-side annotations remain exactly two');
+  assert.equal(Object.keys(identity.metadata.annotations).length,2);
+});
+test('corrected annotations fail closed for modified or missing required fields, unknown metadata and bad types',async()=>{
+  const v=await candidateVersion(),identity=source(),required=v.beta.annotations;
+  const bad=[
+    {'workers/message':'incorrect','workers/tag':required['workers/tag'],'workers/triggered_by':'version_upload'},
+    {'workers/message':required['workers/message'],'workers/tag':'incorrect','workers/triggered_by':'version_upload'},
+    {'workers/message':required['workers/message'],'workers/triggered_by':'version_upload'},
+    {'workers/tag':required['workers/tag'],'workers/triggered_by':'version_upload'},
+    {...required,'workers/triggered_by':'version_upload','unreviewed_metadata':'never_accept'},
+    {...required,'unreviewed_metadata':'never_accept'},
+    ...[null,0,false,[],{},undefined,['version_upload']].map(value=>({...required,'workers/triggered_by':value})),
+    null,[],false,'invalid',42,
+    {...required,'workers/triggered_by':{value:'version_upload'}}
+  ];
+  const symbol={...required};symbol[Symbol('unknown')]=true;bad.push(symbol);
+  for(const annotations of bad){
+    assert.throws(()=>validateCorrectedVersion({...v,beta:{...v.beta,annotations},versionId:ID,identity}),
+      error=>error?.message==='corrected_version_metadata_drift__annotations_mismatch'||
+        error?.message==='corrected_version_metadata_drift__version_response_incomplete',
+      'must reject additional or malformed annotations');
+  }
+  for(const annotations of [{...required,'workers/triggered_by':'version_upload',secret:'sensitive-test-value'}]){
+    assert.throws(()=>validateCorrectedVersion({...v,beta:{...v.beta,annotations},versionId:ID,identity}),
+      error=>!String(error?.message).includes('sensitive-test-value')&&error?.message==='corrected_version_metadata_drift__annotations_mismatch');
+  }
+});
+test('accepted Cloudflare extra annotation does not bypass secret binding or 17 module SHA validation',async()=>{
+  const v=await candidateVersion(),identity=source();
+  const annotations={...v.beta.annotations,'workers/triggered_by':'version_upload'};
+  const trusted={...v,beta:{...v.beta,annotations}};
+  assert.equal(validateCorrectedVersion({...trusted,versionId:ID,identity}),true);
+  const corrupted=structuredClone(trusted);corrupted.beta.modules[0].content_base64=b64('invalid bytes');
+  assert.throws(()=>validateCorrectedVersion({...corrupted,versionId:ID,identity}),
+    /corrected_version_module_drift__module_content_mismatch/);
+  const badBindings=structuredClone(trusted);
+  badBindings.stable.resources.bindings.find(x=>x.type==='secret_text').text=API_KEY;
+  assert.throws(()=>validateCorrectedVersion({...badBindings,versionId:ID,identity}),
+    /corrected_version_bindings_drift__secret_binding_value_exposed/);
+  const missingModule=structuredClone(trusted);missingModule.beta.modules.pop();
+  assert.throws(()=>validateCorrectedVersion({...missingModule,versionId:ID,identity}),
+    /corrected_version_module_drift__module_count_mismatch/);
+});
+
 test('history requires two failed generations, 5 attempts, exact 824 memberships, zero committed heads',()=>{
   assert.equal(correctedHistoryDiagnostic(CORRECTED_EXPECTED_HISTORY,detail),null);
   for(const [k,value] of [['requestAttempts',4],['failedGenerationCount',1],['fixtureRevisions',0],['committedGenerationCount',1]]){

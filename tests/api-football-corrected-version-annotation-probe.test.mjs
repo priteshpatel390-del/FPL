@@ -122,6 +122,10 @@ test('manual-only workflow proves exact-main CI and original immutable evidence 
   assert.equal(ANNOTATION_PROBE_WORKER,'teamsheet-api-football-shadow-collector');
   assert.doesNotMatch(source,/method:'POST'|method:'PUT'|method:'DELETE'/);
   const validator=fs.readFileSync('workers/api-football-collector/corrected-version-preparation.mjs','utf8');
-  assert.match(validator,/if\(!same\(beta\.annotations,identity\.metadata\.annotations\)\)meta\('annotations_mismatch'\)/);
+  assert.match(validator,/if\(!correctedAnnotationsMatch\(beta\.annotations,identity\.metadata\.annotations\)\)meta\('annotations_mismatch'\)/);
+  assert.match(validator,/Reflect\.ownKeys\(actual\)/);
+  assert.match(validator,/Object\.hasOwn\(actual,'workers\/triggered_by'\)/);
+  assert.match(validator,/typeof actual\['workers\/triggered_by'\]==='string'/);
+  assert.doesNotMatch(validator,/if\(!same\(beta\.annotations,identity\.metadata\.annotations\)\)/);
   assert.match(validator,/module_content_mismatch/);
 });

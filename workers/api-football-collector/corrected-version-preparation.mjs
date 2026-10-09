@@ -74,6 +74,22 @@ export const CORRECTED_VERSION_FAILURE_REASONS=Object.freeze([
   'module_count_mismatch','module_name_duplicate','module_unexpected','module_content_encoding_invalid','module_content_mismatch'
 ]);
 const reasonFail=(prefix,reason)=>{throw new Error(prefix+'__'+reason);};
+// Cloudflare adds its own read-only workers/triggered_by annotation to returned Versions.
+// Preserve exact user-supplied creation-SHA annotations; accept only this one documented,
+// string-typed server field as optional. Object/property order is not identity.
+const correctedAnnotationsMatch=(actual,expected)=>{
+  if(!actual||typeof actual!=='object'||Array.isArray(actual)||
+    !expected||typeof expected!=='object'||Array.isArray(expected))return false;
+  const keys=Reflect.ownKeys(actual);
+  if(keys.length!==2&&keys.length!==3)return false;
+  if(!Object.hasOwn(actual,'workers/message')||!Object.hasOwn(actual,'workers/tag')||
+    typeof expected['workers/message']!=='string'||typeof expected['workers/tag']!=='string'||
+    actual['workers/message']!==expected['workers/message']||
+    actual['workers/tag']!==expected['workers/tag'])return false;
+  if(keys.length===2)return true;
+  return Object.hasOwn(actual,'workers/triggered_by')&&
+    typeof actual['workers/triggered_by']==='string';
+};
 export function validateCorrectedVersion({stable,beta,versionId,identity}={}){
   if(!identity||identity.contract!==CORRECTED_PREPARATION_CONTRACT||!uuid(versionId)||
     CORRECTED_HISTORICAL_VERSION_IDS.includes(versionId)||stable?.id!==versionId||beta?.id!==versionId)
@@ -84,7 +100,7 @@ export function validateCorrectedVersion({stable,beta,versionId,identity}={}){
   if(stable.resources.script_runtime.compatibility_date!==EXPECTED_COMPATIBILITY_DATE)meta('runtime_compatibility_date_mismatch');
   if(beta.main_module!==ENTRY_MODULE)meta('main_module_mismatch');
   if(beta.compatibility_date!==EXPECTED_COMPATIBILITY_DATE)meta('beta_compatibility_date_mismatch');
-  if(!same(beta.annotations,identity.metadata.annotations))meta('annotations_mismatch');
+  if(!correctedAnnotationsMatch(beta.annotations,identity.metadata.annotations))meta('annotations_mismatch');
   const bind=reason=>reasonFail('corrected_version_bindings_drift',reason);
   const expected=identity.metadata.bindings,got=stable.resources?.bindings;
   if(!Array.isArray(got))bind('bindings_response_incomplete');
