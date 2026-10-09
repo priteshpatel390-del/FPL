@@ -8,6 +8,8 @@ import {PROMOTION_CANDIDATE_VERSION_ID} from '../workers/api-football-collector/
 import {DEPLOYED_ONE_SHOT_VERSION_ID,DEPLOYED_ONE_SHOT_EXISTING_DEPLOYMENT_ID} from '../workers/api-football-collector/deployed-one-shot.mjs';
 import {GATE_C_ACTIVE_DEPLOYMENT_ID} from '../workers/api-football-collector/gate-c.mjs';
 import {CORRECTED_HISTORICAL_VERSION_IDS} from '../workers/api-football-collector/corrected-version-preparation.mjs';
+import {buildCorrectedUploadForm} from '../workers/api-football-collector/corrected-version-preparation.mjs';
+import {expectedAttendedBindings} from '../workers/api-football-collector/attended-version.mjs';
 import {
   CREATION_SHA,CANDIDATE_ID,GRAPH_SHA256,METADATA_SHA256,QUALIFICATION_RUN,QUALIFICATION_ARTIFACT_SHA256,
   EXPECTED_IDS,ADMISSION_CONTRACT,EXECUTION_CONTRACT,PREPARED,PROMOTED,
@@ -118,6 +120,37 @@ test('final result demands a new inert Deployment and exact consumed D1 history'
   assert.equal(classifyPost({admission,state,execution:makeExecution({executionSha:EXECUTION_SHA,outcome:'NOT_SUBMITTED'})}).ok,false);
   assert.equal(classifyPost({admission,state:{...state,detail:{totalMemberships:823}},execution}).ok,false);
 });
+test('complete synthetic post-promotion with valid 17 byte hashes and inert topology succeeds, but provenance drift fails',async()=>{
+  const identity=assertIdentity();
+  const form=buildCorrectedUploadForm(identity,{apiKey:'synthetic-api-key-value',triggerSecret:'synthetic-secret-trigger-material-0123456789'});
+  const modules=[];
+  for(const [name,file] of form.entries()){
+    if(name!=='metadata')modules.push({name,content_base64:Buffer.from(await file.text()).toString('base64')});
+  }
+  const candidate={stable:{id:CANDIDATE_ID,resources:{script_runtime:{compatibility_date:'2026-09-16'},
+    bindings:expectedAttendedBindings().map(x=>({...x}))}},
+  beta:{id:CANDIDATE_ID,main_module:'collector.mjs',compatibility_date:'2026-09-16',
+    annotations:{...identity.metadata.annotations,'workers/triggered_by':'version_upload'},urls:[],modules}};
+  const report={inventory:{deploymentCount:3,workersDev:false,previewUrls:false,cronCount:0,routeCount:0,customDomainCount:0},
+    runtime:{collectionEnabled:0,credentialState:'AVAILABLE',activeLease:false},priorState:{requestAttempts:5}};
+  const state={deployments:after,versions:{versionIds:EXPECTED_IDS,identityExact:true,candidate},report,
+    detail:{totalMemberships:824},topology:ZONE};
+  const execution=makeExecution({executionSha:EXECUTION_SHA,outcome:'CREATED',deploymentId:NEW,deploymentPosts:1});
+  const result=classifyPost({admission,state,execution});
+  assert.equal(result.ok,true,result.reason);
+  assert.equal(result.classification,PROMOTED);
+  assert.equal(result.activeDeploymentId,NEW);
+  assert.equal(result.retryAuthorized,false);
+  const modified=structuredClone(state);
+  modified.versions.candidate.beta.modules[0].content_base64=Buffer.from('tampered').toString('base64');
+  assert.equal(classifyPost({admission,state:modified,execution}).ok,false,'tampered corrected module must fail');
+  const changed=structuredClone(state);changed.report.priorState.requestAttempts=6;
+  assert.equal(classifyPost({admission,state:changed,execution}).ok,false,'historical request count must not drift');
+  const exposed=structuredClone(state);
+  exposed.versions.candidate.stable.resources.bindings.find(x=>x.type==='secret_text').text='unsafe';
+  assert.equal(classifyPost({admission,state:exposed,execution}).ok,false,'exposed secret value must fail');
+});
+
 test('workflow is manual-only, exact current main and CI gated, four distinct jobs, two immutable artifacts, no prior dispatch',()=>{
   const yml=fs.readFileSync('.github/workflows/api-football-corrected-version-inert-deployment-promotion.yml','utf8');
   assert.match(yml,/^on:\n  workflow_dispatch:/m);
