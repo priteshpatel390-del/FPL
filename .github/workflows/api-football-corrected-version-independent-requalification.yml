@@ -85,6 +85,6 @@ jobs:
         if: always()
         with:
           name: corrected-version-independent-requalification
-          path: ${{ runner.temp }}/corrected-forensic-replay.json
+          path: ${{ runner.temp }}/corrected-independent-requalification.json
           if-no-files-found: ignore
           retention-days: 7
