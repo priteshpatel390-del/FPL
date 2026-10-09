@@ -32,7 +32,14 @@ export const ATTENTION='CORRECTED_VERSION_PROMOTION_OWNER_ATTENTION';
 const fail=reason=>{throw new Error('CORRECTED_PROMOTION_'+reason);};
 const sha=s=>createHash('sha256').update(s).digest('hex');
 const same=(a,b)=>JSON.stringify(a)===JSON.stringify(b);
-const shaState=state=>sha(JSON.stringify([state?.report?.priorState??null,state?.detail??null]));
+// Bind all pre-existing private mapping, Official FPL authority, isolation and runtime data;
+// only the Deployment inventory count is permitted to change from two to three.
+const shaState=state=>sha(JSON.stringify([
+  state?.report?.priorState??null,state?.detail??null,
+  state?.report?.mapping??null,state?.report?.officialFplAuthority??null,
+  state?.report?.modelUiImportCount??null,state?.report?.rawPayloadStoragePresent??null,
+  state?.report?.runtime??null
+]));
 const sorted=arr=>Array.isArray(arr)&&arr.length===EXPECTED_IDS.length&&new Set(arr).size===arr.length&&
   EXPECTED_IDS.every(id=>arr.includes(id));
 const safe=x=>Object.freeze(x);
