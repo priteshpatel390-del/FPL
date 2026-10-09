@@ -1,0 +1,284 @@
+# DORMANT. New corrected R1/R2 Deployment promotion — never reuse consumed Gate B or Gate C workflows.
+# Repository merge DOES NOT approve dispatch, Cloudflare mutation, Worker invocation, or collection.
+name: API-Football Corrected Version Inert Deployment Promotion
+on:
+  workflow_dispatch:
+    inputs:
+      approved_sha:
+        description: Exact current main SHA separately owner-approved for this one-time promotion
+        required: true
+        type: string
+permissions:
+  contents: read
+  actions: read
+  checks: read
+concurrency:
+  group: api-football-collector-attended-acceptance
+  cancel-in-progress: false
+jobs:
+  repository-gate:
+    if: github.event_name == 'workflow_dispatch' && github.run_attempt == 1
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    outputs:
+      execution_sha: ${{ steps.identity.outputs.execution_sha }}
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          ref: ${{ inputs.approved_sha }}
+          persist-credentials: false
+          fetch-depth: 0
+      - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
+        with:
+          node-version: 24.19.0
+      - id: identity
+        env:
+          APPROVED_SHA: ${{ inputs.approved_sha }}
+          EVENT_SHA: ${{ github.sha }}
+          EVENT_REF: ${{ github.ref }}
+          EVENT_ATTEMPT: ${{ github.run_attempt }}
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          test "$EVENT_ATTEMPT" = 1
+          test "$EVENT_REF" = refs/heads/main
+          echo "$APPROVED_SHA" | grep -Eq '^[0-9a-f]{40}$'
+          test "$EVENT_SHA" = "$APPROVED_SHA"
+          test "$(git rev-parse HEAD)" = "$APPROVED_SHA"
+          test "$(git ls-remote https://github.com/priteshpatel390-del/FPL.git refs/heads/main | cut -f1)" = "$APPROVED_SHA"
+          gh api "repos/priteshpatel390-del/FPL/commits/$APPROVED_SHA/check-runs" > "$RUNNER_TEMP/corrected-check-runs.json"
+          node --input-type=module - "$RUNNER_TEMP/corrected-check-runs.json" <<'NODE'
+          import fs from 'node:fs';
+          const result=JSON.parse(fs.readFileSync(process.argv[2],'utf8'));
+          if(!(result.check_runs??[]).some(x=>x.name==='Tests and deterministic build'&&
+            x.status==='completed'&&x.conclusion==='success'&&x.head_sha===process.env.APPROVED_SHA))
+            throw new Error('CORRECTED_PROMOTION_EXACT_MAIN_VERIFY_REQUIRED');
+          NODE
+          echo "execution_sha=$APPROVED_SHA" >> "$GITHUB_OUTPUT"
+  fresh-readonly-admission:
+    needs: repository-gate
+    if: needs.repository-gate.result == 'success' && github.run_attempt == 1
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    environment:
+      name: data-steward-readonly
+      deployment: false
+    outputs:
+      admission_sha256: ${{ steps.admission_hash.outputs.admission_sha256 }}
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          ref: ${{ needs.repository-gate.outputs.execution_sha }}
+          persist-credentials: false
+          fetch-depth: 0
+      - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
+        with:
+          node-version: 24.19.0
+      - name: Recheck fresh main after protected-environment wait
+        env:
+          EXECUTION_SHA: ${{ needs.repository-gate.outputs.execution_sha }}
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "$EXECUTION_SHA"
+          test "$(git ls-remote https://github.com/priteshpatel390-del/FPL.git refs/heads/main | cut -f1)" = "$EXECUTION_SHA"
+      - name: Download immutable ORIGINAL upload evidence (not rerun)
+        uses: actions/download-artifact@95815c38cf2ff2164869cbab79da8d1f422bc89e # v4
+        with:
+          name: corrected-version-execution
+          run-id: 37841681952
+          github-token: ${{ github.token }}
+          path: ${{ runner.temp }}/corrected-original
+      - name: Download independent successful qualification evidence (not rerun)
+        uses: actions/download-artifact@95815c38cf2ff2164869cbab79da8d1f422bc89e # v4
+        with:
+          name: corrected-version-independent-requalification
+          run-id: 37987230679
+          github-token: ${{ github.token }}
+          path: ${{ runner.temp }}/corrected-qualified
+      - name: Verify both immutable artifacts before Cloudflare reads
+        env:
+          ORIGINAL_PATH: ${{ runner.temp }}/corrected-original/corrected-execution.json
+          QUALIFIED_PATH: ${{ runner.temp }}/corrected-qualified/corrected-independent-requalification.json
+        run: |
+          set -euo pipefail
+          test "$(sha256sum "$ORIGINAL_PATH" | cut -d' ' -f1)" = dfac83bfc4bd67baa5dad7b59a8c51bc6f9d29ba474a0afe1c6513fa66629e43
+          test "$(sha256sum "$QUALIFIED_PATH" | cut -d' ' -f1)" = c2620b87c243a0a0f22833a74ab76721694913c4835ddcc9a038bbefd6824a18
+          node --input-type=module - <<'NODE'
+          import fs from 'node:fs';
+          import {assertImmutableQualification,CREATION_SHA,CANDIDATE_ID} from './workers/api-football-collector/corrected-version-deployment-promotion.mjs';
+          const e=JSON.parse(fs.readFileSync(process.env.ORIGINAL_PATH,'utf8'));
+          const q=JSON.parse(fs.readFileSync(process.env.QUALIFIED_PATH,'utf8'));
+          assertImmutableQualification(q);
+          if(e.version!=='api-football-corrected-r1-r2-version-execution-v1'||
+            e.approvedSha!==CREATION_SHA||e.identity?.creationSha!==CREATION_SHA||
+            e.identity?.moduleCount!==17||e.versionId!==CANDIDATE_ID||
+            e.outcome!=='CREATED'||e.versionUploadAttempts!==1||
+            e.productionMutations!==1||e.deploymentMutations!==0||
+            e.d1Mutations!==0||e.apiFootballRequests!==0||
+            e.workerInvocations!==0||e.retryAuthorized!==false)
+            throw new Error('CORRECTED_PROMOTION_ORIGINAL_EVIDENCE_INVALID');
+          NODE
+      - name: Fresh independent GET and fixed SELECT-only admission
+        env:
+          GITHUB_RUN_ATTEMPT: ${{ github.run_attempt }}
+          GITHUB_REF: ${{ github.ref }}
+          GITHUB_SHA: ${{ github.sha }}
+          EXECUTION_SHA: ${{ needs.repository-gate.outputs.execution_sha }}
+          APPROVED_SHA: 073ac6a53d09f004e5ada5b94fb1cea6df3ef228
+          CORRECTED_PROMOTION_MODE: ADMISSION
+          CORRECTED_PROMOTION_ORIGINAL_PATH: ${{ runner.temp }}/corrected-original/corrected-execution.json
+          CORRECTED_PROMOTION_QUALIFICATION_PATH: ${{ runner.temp }}/corrected-qualified/corrected-independent-requalification.json
+          CORRECTED_PROMOTION_REPORT_PATH: ${{ runner.temp }}/corrected-promotion-admission.json
+          DATA_STEWARD_CLOUDFLARE_ACCOUNT_ID: ${{ secrets.DATA_STEWARD_CLOUDFLARE_ACCOUNT_ID }}
+          DATA_STEWARD_CLOUDFLARE_ACCOUNT_FINGERPRINT: ${{ vars.DATA_STEWARD_CLOUDFLARE_ACCOUNT_FINGERPRINT }}
+          DATA_STEWARD_CLOUDFLARE_READ_TOKEN: ${{ secrets.DATA_STEWARD_CLOUDFLARE_READ_TOKEN }}
+          CLOUDFLARE_TOPOLOGY_READ_TOKEN: ${{ secrets.CLOUDFLARE_REPLACEMENT_TOPOLOGY_READ_TOKEN }}
+        run: node workers/api-football-collector/corrected-version-deployment-promotion-readonly.mjs
+      - id: admission_hash
+        name: Hash fresh read-only admission for protected handoff
+        run: |
+          set -euo pipefail
+          echo "admission_sha256=$(sha256sum "$RUNNER_TEMP/corrected-promotion-admission.json" | cut -d' ' -f1)" >> "$GITHUB_OUTPUT"
+      - uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6
+        with:
+          name: corrected-promotion-admission
+          path: ${{ runner.temp }}/corrected-promotion-admission.json
+          if-no-files-found: error
+          retention-days: 7
+  protected-promotion:
+    needs: [repository-gate,fresh-readonly-admission]
+    if: needs.fresh-readonly-admission.result == 'success' && github.run_attempt == 1
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    environment:
+      name: api-football-corrected-deployment-promotion
+      deployment: false
+    outputs:
+      execution_sha256: ${{ steps.execution_hash.outputs.execution_sha256 }}
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          ref: ${{ needs.repository-gate.outputs.execution_sha }}
+          persist-credentials: false
+          fetch-depth: 0
+      - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
+        with:
+          node-version: 24.19.0
+      - name: Revalidate exact current main after the mutating environment gate
+        env:
+          EXECUTION_SHA: ${{ needs.repository-gate.outputs.execution_sha }}
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "$EXECUTION_SHA"
+          test "$(git ls-remote https://github.com/priteshpatel390-del/FPL.git refs/heads/main | cut -f1)" = "$EXECUTION_SHA"
+      - uses: actions/download-artifact@95815c38cf2ff2164869cbab79da8d1f422bc89e # v4
+        with:
+          name: corrected-promotion-admission
+          path: ${{ runner.temp }}/corrected-promotion-admission
+      - name: Verify exact read-only admission artifact before any request
+        env:
+          ADMISSION_HASH: ${{ needs.fresh-readonly-admission.outputs.admission_sha256 }}
+          REPORT: ${{ runner.temp }}/corrected-promotion-admission/corrected-promotion-admission.json
+        run: |
+          set -euo pipefail
+          test -n "$ADMISSION_HASH"
+          test "$(sha256sum "$REPORT" | cut -d' ' -f1)" = "$ADMISSION_HASH"
+      - name: At most one exact new Deployment POST, then bounded GET proof
+        id: promotion
+        continue-on-error: true
+        env:
+          GITHUB_RUN_ATTEMPT: ${{ github.run_attempt }}
+          GITHUB_REF: ${{ github.ref }}
+          GITHUB_SHA: ${{ github.sha }}
+          EXECUTION_SHA: ${{ needs.repository-gate.outputs.execution_sha }}
+          CORRECTED_PROMOTION_ADMISSION_PATH: ${{ runner.temp }}/corrected-promotion-admission/corrected-promotion-admission.json
+          CORRECTED_PROMOTION_EXECUTION_REPORT_PATH: ${{ runner.temp }}/corrected-promotion-execution.json
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          CLOUDFLARE_ACCOUNT_FINGERPRINT: ${{ vars.CLOUDFLARE_ACCOUNT_FINGERPRINT }}
+          CLOUDFLARE_ATTENDED_READ_TOKEN: ${{ secrets.CLOUDFLARE_ATTENDED_READ_TOKEN }}
+          CLOUDFLARE_CORRECTED_DEPLOYMENT_PROMOTION_TOKEN: ${{ secrets.CLOUDFLARE_CORRECTED_DEPLOYMENT_PROMOTION_TOKEN }}
+          CLOUDFLARE_TOPOLOGY_READ_TOKEN: ${{ secrets.CLOUDFLARE_REPLACEMENT_TOPOLOGY_READ_TOKEN }}
+        run: node workers/api-football-collector/corrected-version-deployment-promotion.mjs
+      - id: execution_hash
+        name: Bind execution evidence for final independent reconciliation
+        if: always()
+        run: |
+          set -euo pipefail
+          echo "execution_sha256=$(sha256sum "$RUNNER_TEMP/corrected-promotion-execution.json" | cut -d' ' -f1)" >> "$GITHUB_OUTPUT"
+      - uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6
+        if: always()
+        with:
+          name: corrected-promotion-execution
+          path: ${{ runner.temp }}/corrected-promotion-execution.json
+          if-no-files-found: error
+          retention-days: 7
+  independent-final-readonly:
+    needs: [repository-gate,fresh-readonly-admission,protected-promotion]
+    if: always() && github.run_attempt == 1 && needs.repository-gate.result == 'success' && needs.fresh-readonly-admission.result == 'success' && needs.protected-promotion.result == 'success'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    environment:
+      name: data-steward-readonly
+      deployment: false
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          ref: ${{ needs.repository-gate.outputs.execution_sha }}
+          persist-credentials: false
+          fetch-depth: 0
+      - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
+        with:
+          node-version: 24.19.0
+      - name: Verify execution SHA remains main
+        env:
+          EXECUTION_SHA: ${{ needs.repository-gate.outputs.execution_sha }}
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "$EXECUTION_SHA"
+          test "$(git ls-remote https://github.com/priteshpatel390-del/FPL.git refs/heads/main | cut -f1)" = "$EXECUTION_SHA"
+      - uses: actions/download-artifact@95815c38cf2ff2164869cbab79da8d1f422bc89e # v4
+        with:
+          name: corrected-promotion-admission
+          path: ${{ runner.temp }}/corrected-promotion-admission
+      - uses: actions/download-artifact@95815c38cf2ff2164869cbab79da8d1f422bc89e # v4
+        with:
+          name: corrected-promotion-execution
+          path: ${{ runner.temp }}/corrected-promotion-execution
+      - name: Verify both SHA-bound inter-job artifacts
+        env:
+          ADMISSION_SHA: ${{ needs.fresh-readonly-admission.outputs.admission_sha256 }}
+          EXECUTION_SHA256: ${{ needs.protected-promotion.outputs.execution_sha256 }}
+        run: |
+          set -euo pipefail
+          test -n "$ADMISSION_SHA"
+          test -n "$EXECUTION_SHA256"
+          test "$(sha256sum "$RUNNER_TEMP/corrected-promotion-admission/corrected-promotion-admission.json" | cut -d' ' -f1)" = "$ADMISSION_SHA"
+          test "$(sha256sum "$RUNNER_TEMP/corrected-promotion-execution/corrected-promotion-execution.json" | cut -d' ' -f1)" = "$EXECUTION_SHA256"
+      - name: Independently verify inert promotion, 17 module bytes and unchanged D1
+        id: final
+        continue-on-error: true
+        env:
+          GITHUB_RUN_ATTEMPT: ${{ github.run_attempt }}
+          GITHUB_REF: ${{ github.ref }}
+          GITHUB_SHA: ${{ github.sha }}
+          EXECUTION_SHA: ${{ needs.repository-gate.outputs.execution_sha }}
+          APPROVED_SHA: 073ac6a53d09f004e5ada5b94fb1cea6df3ef228
+          CORRECTED_PROMOTION_MODE: FINAL
+          CORRECTED_PROMOTION_ADMISSION_PATH: ${{ runner.temp }}/corrected-promotion-admission/corrected-promotion-admission.json
+          CORRECTED_PROMOTION_EXECUTION_PATH: ${{ runner.temp }}/corrected-promotion-execution/corrected-promotion-execution.json
+          CORRECTED_PROMOTION_REPORT_PATH: ${{ runner.temp }}/corrected-promotion-final.json
+          DATA_STEWARD_CLOUDFLARE_ACCOUNT_ID: ${{ secrets.DATA_STEWARD_CLOUDFLARE_ACCOUNT_ID }}
+          DATA_STEWARD_CLOUDFLARE_ACCOUNT_FINGERPRINT: ${{ vars.DATA_STEWARD_CLOUDFLARE_ACCOUNT_FINGERPRINT }}
+          DATA_STEWARD_CLOUDFLARE_READ_TOKEN: ${{ secrets.DATA_STEWARD_CLOUDFLARE_READ_TOKEN }}
+          CLOUDFLARE_TOPOLOGY_READ_TOKEN: ${{ secrets.CLOUDFLARE_REPLACEMENT_TOPOLOGY_READ_TOKEN }}
+        run: node workers/api-football-collector/corrected-version-deployment-promotion-readonly.mjs
+      - uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6
+        if: always()
+        with:
+          name: corrected-promotion-final-proof
+          path: ${{ runner.temp }}/corrected-promotion-final.json
+          if-no-files-found: ignore
+          retention-days: 7
+      - name: Require fully independently reconciled inert Deployment
+        if: steps.final.outcome != 'success'
+        run: exit 1

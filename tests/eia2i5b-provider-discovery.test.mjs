@@ -664,6 +664,8 @@ test('API-Football discovery stays isolated from production, live config and mig
     'api-football-corrected-version-annotation-proof.yml',
     // New independent GET+fixed SELECT-only Version proof; never dispatch consumed forensic replay.
     'api-football-corrected-version-independent-requalification.yml',
+    // DORMANT, separately approved repository-only new five-Version/three-Deployment inert promotion gate.
+    'api-football-corrected-version-inert-deployment-promotion.yml',
     'api-football-corrected-version-forensic-replay.yml',
     'api-football-corrected-version-readonly-admission.yml',
     'api-football-remediated-deployment-promotion.yml',
