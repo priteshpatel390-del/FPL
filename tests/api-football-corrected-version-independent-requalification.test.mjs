@@ -33,8 +33,8 @@ function verifyNewReadOnlyBoundary(yaml){
   assert.match(yaml,/CLOUDFLARE_REPLACEMENT_TOPOLOGY_READ_TOKEN/);
   assert.match(yaml,/name: corrected-version-independent-requalification/);
   const output='corrected-independent-requalification.json';
-  assert.match(yaml,new RegExp('API_FOOTBALL_CORRECTED_REPORT_PATH: .*'+output.replace(/\\./g,'\\\\.')));
-  assert.match(yaml,new RegExp('path: .*'+output.replace(/\\./g,'\\\\.')));
+  assert.ok(yaml.includes('API_FOOTBALL_CORRECTED_REPORT_PATH: ${{ runner.temp }}/'+output),'producer report path must be exact');
+  assert.ok(yaml.includes('path: ${{ runner.temp }}/'+output),'uploaded report path must equal producer path');
   assert.doesNotMatch(yaml,/corrected-forensic-replay\.json/);
   const guard=yaml.indexOf('Verify fresh main and successful exact-head CI before any live read');
   const evidence=yaml.indexOf('Verify byte-pinned execution evidence and immutable creation identity');
