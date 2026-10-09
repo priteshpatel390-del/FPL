@@ -662,6 +662,8 @@ test('API-Football discovery stays isolated from production, live config and mig
     // Owner-approved DORMANT forensic GET/SELECT-only replay; no upload capability or dispatch approval.
     // Owner-authorised dormant annotation-only GET probe; preserve closed workflow inventory.
     'api-football-corrected-version-annotation-proof.yml',
+    // New independent GET+fixed SELECT-only Version proof; never dispatch consumed forensic replay.
+    'api-football-corrected-version-independent-requalification.yml',
     'api-football-corrected-version-forensic-replay.yml',
     'api-football-corrected-version-readonly-admission.yml',
     'api-football-remediated-deployment-promotion.yml',
@@ -839,6 +841,20 @@ test('API-Football discovery stays isolated from production, live config and mig
       assert.match(source,/github\.run_attempt == 1/);
       assert.match(source,/Tests and deterministic build/);
       assert.doesNotMatch(source.replace(/^\s*#.*$/gm,''),/x-apisports-key|v3\.football\.api-sports\.io|wrangler|run-corrected-version-upload|api-football-corrected-version-upload|VERSION_UPLOAD_TOKEN|API_FOOTBALL_API_KEY|ATTENDED_TRIGGER_SECRET|\/deployments|\/d1\/|^\s{2}schedule:/im);
+      continue;
+    }
+    if(file==='api-football-corrected-version-independent-requalification.yml'){
+      // Closed inventory: protect evidence pin, main/CI identity and GET/SELECT-only credential isolation.
+      assert.match(source,/name: API-Football Corrected Version Independent Requalification/);
+      assert.match(source,/name: data-steward-readonly/);
+      assert.match(source,/deployment: false/);
+      assert.match(source,/run-id: 37841681952/);
+      assert.match(source,/dfac83bfc4bd67baa5dad7b59a8c51bc6f9d29ba474a0afe1c6513fa66629e43/);
+      assert.match(source,/API_FOOTBALL_CORRECTED_MODE: RECONCILIATION/);
+      assert.match(source,/corrected-version-readonly\.mjs/);
+      assert.match(source,/github\.run_attempt == 1/);
+      assert.match(source,/Tests and deterministic build/);
+      assert.doesNotMatch(source.replace(/^\s*#.*$/gm,''),/x-apisports-key|v3\.football\.api-sports\.io|wrangler|run-corrected-version-upload|api-football-corrected-version-upload|VERSION_UPLOAD_TOKEN|API_FOOTBALL_API_KEY|ATTENDED_TRIGGER_SECRET|CLOUDFLARE_ATTENDED_MUTATION_TOKEN|\/deployments|^\s{2}schedule:/im);
       continue;
     }
     if(file==='api-football-corrected-version-readonly-admission.yml'){
