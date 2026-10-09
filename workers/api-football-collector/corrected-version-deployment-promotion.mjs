@@ -81,7 +81,7 @@ export function buildAdmission({state,original,qualification,executionSha}={}){
   if(!/^[0-9a-f]{40}$/.test(String(executionSha)))fail('EXECUTION_SHA_INVALID');
   const verdict=classifyCorrectedReconciliation({...state,created:original,admission:original?.admission,identity,
     approvedSha:CREATION_SHA,accountFingerprint:state?.identity?.accountFingerprint});
-  if(verdict?.ok!==true||verdict.classification!==PREPARED||!same(verdict.observed,undefined)&&false)
+  if(verdict?.ok!==true||verdict.classification!==PREPARED)
     fail('INDEPENDENT_QUALIFICATION_NOT_REPEATABLE');
   if(!correctedPreDeployment(state?.deployments)||!sorted(state?.versions?.versionIds)||
     state.versions.identityExact!==true||!inert(state)||state.report.inventory.deploymentCount!==2)
